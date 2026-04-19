@@ -1,0 +1,41 @@
+name: Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Every 6h — catches breakage from upstream Circle/AISA/Arc changes.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke-prod:
+    name: "Smoke · Vercel production"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only smoke prod when we have secrets (i.e. not on forked PRs)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Smoke umbrella (auto-skips paid calls without Circle creds)
+        env:
+          SMOKE_APP_URL: https://obolark.vercel.app
+        # CI runs the umbrella without Circle creds → scripts/13-smoke-all.mjs
+        # skips the paid-call provider smoke and validates the public surface
+        # only (wallets.json, /api/state, 402 challenges, onchain tx census).
+        # Operator runs it locally with creds for the full 5/5 LLM pass.
+        run: node scripts/13-smoke-all.mjs
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: SMOKE-REPORT.md

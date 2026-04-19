@@ -1,6 +1,6 @@
 {
-  "at": "2026-04-19T22:38:14.759Z",
-  "appUrl": "http://localhost:3000",
+  "at": "2026-04-19T22:41:59.189Z",
+  "appUrl": "https://obolark.vercel.app",
   "pass": 5,
   "degraded": 0,
   "fail": 0,
@@ -8,14 +8,14 @@
     {
       "endpoint": "/api/research",
       "status": "PASS",
-      "wallMs": 8411,
+      "wallMs": 5792,
       "model": "claude-haiku-4-5-20251001",
       "verdict": "unsupported",
       "tokens": {
         "input": 241,
-        "output": 139
+        "output": 134
       },
-      "latencyMs": 7233,
+      "latencyMs": 4494,
       "result": {
         "verdict": "unsupported",
         "claims": [
@@ -25,141 +25,147 @@
             "confidence": 0
           },
           {
-            "statement": "USDC token decimals on Arc testnet",
+            "statement": "USDC decimals on Arc testnet",
             "source": null,
             "confidence": 0
           }
         ],
-        "summary": "No evidence available regarding Arc testnet chain ID or USDC decimals. Arc testnet appears insufficiently documented in accessible sources to verify these specific technical parameters."
+        "summary": "No evidence available for Arc testnet chain ID or USDC decimals. Arc testnet details require official documentation or verified blockchain explorers."
       }
     },
     {
       "endpoint": "/api/design-review",
       "status": "PASS",
-      "wallMs": 7051,
+      "wallMs": 6742,
       "model": "claude-haiku-4-5-20251001",
       "verdict": "revise",
       "tokens": {
         "input": 269,
-        "output": 307
+        "output": 315
       },
-      "latencyMs": 6053,
+      "latencyMs": 5796,
       "result": {
         "verdict": "revise",
         "findings": [
           {
             "severity": "blocker",
             "rule": "no default Tailwind indigo gradients",
-            "note": "Indigo gradient specified as background. PA·co brand requires always-light palette; substitute with neutral or branded gradient (e.g., light gray to off-white, or PA·co primary to light tint)."
+            "note": "Indigo gradient background violates brand constraint. Replace with PA·co always-light palette (off-white, soft grays, accent colors only)."
           },
           {
             "severity": "major",
-            "rule": "hierarchy & contrast",
-            "note": "Two centered CTAs risk equal visual weight. Primary CTA must dominate through size, color, or spacing. Establish clear conversion intent (which action is priority?)."
+            "rule": "hierarchy and contrast",
+            "note": "Two centered CTAs create ambiguity about primary action. Establish clear visual weight difference via size, color, or positioning (e.g., primary button prominent, secondary smaller/outline)."
           },
           {
             "severity": "minor",
-            "rule": "border-radius constraint (≤2px)",
-            "note": "Lucide icons and feature grid elements must not exceed 2px border-radius if rounded. Verify all radii conform."
+            "rule": "border-radius adherence",
+            "note": "Confirm lucide icons and feature grid elements use sharp 2px max border-radius. Default lucide is circular; verify grid cards do not exceed 2px."
           },
           {
             "severity": "minor",
-            "rule": "affordance clarity",
-            "note": "Centered dual CTAs on hero risk cognitive friction. Validate button labels are distinct and scannable; confirm spacing prevents misclick."
+            "rule": "density and affordance",
+            "note": "Feature grid density unclear. Pre-launch SaaS hero typically benefits from 3–4 features max to avoid cognitive overload. Confirm spacing is intentional, not cramped."
           }
         ],
-        "confidence": 0.87
+        "confidence": 0.88
       }
     },
     {
       "endpoint": "/api/qa",
       "status": "PASS",
-      "wallMs": 7024,
+      "wallMs": 9519,
       "model": "claude-haiku-4-5-20251001",
       "verdict": "fail",
       "tokens": {
         "input": 250,
-        "output": 316
+        "output": 284
       },
-      "latencyMs": 6009,
+      "latencyMs": 8523,
       "result": {
         "verdict": "fail",
         "testCases": [
           {
-            "name": "Admin role authorization check removed",
+            "name": "Admin-only endpoint rejects non-admin users",
             "steps": [
-              "Create a non-admin user with role='user'",
-              "Attempt to access a protected admin endpoint",
-              "Verify request is rejected or returns 401/403"
+              "Authenticate as non-admin user",
+              "Attempt access to admin-protected endpoint",
+              "Assert response status"
             ],
-            "expected": "Request should be denied; non-admin users cannot access admin resources",
+            "expected": "403 Forbidden or 401 Unauthorized",
             "priority": "P0"
           },
           {
-            "name": "Admin user can access protected route",
+            "name": "Admin-only endpoint allows admin users",
             "steps": [
-              "Create an admin user with role='admin'",
-              "Attempt to access a protected admin endpoint",
-              "Verify request proceeds to next middleware"
+              "Authenticate as admin user",
+              "Access admin-protected endpoint",
+              "Assert successful response"
             ],
-            "expected": "Request should proceed (next() called); admin users retain access",
+            "expected": "200 OK or equivalent success status",
             "priority": "P0"
           },
           {
-            "name": "Golden path: middleware chain continues for authorized users",
+            "name": "Unauthenticated user cannot access admin endpoint",
             "steps": [
-              "Set user.role='admin'",
-              "Call middleware function",
-              "Verify next() is invoked exactly once"
+              "Make request without authentication",
+              "Attempt access to admin-protected endpoint",
+              "Assert access denied"
             ],
-            "expected": "next() callback executes; request pipeline continues",
-            "priority": "P0"
+            "expected": "401 Unauthorized",
+            "priority": "P1"
           }
         ],
-        "confidence": 0.98
+        "confidence": 0.95
       }
     },
     {
       "endpoint": "/api/security-scan",
       "status": "PASS",
-      "wallMs": 10292,
+      "wallMs": 10996,
       "model": "claude-haiku-4-5-20251001",
       "verdict": "critical",
       "tokens": {
         "input": 260,
-        "output": 310
+        "output": 427
       },
-      "latencyMs": 9156,
+      "latencyMs": 10010,
       "result": {
         "verdict": "critical",
         "findings": [
           {
-            "cwe": "95",
+            "cwe": "CWE-95",
             "severity": "critical",
-            "exploit": "GET /run?cmd=require('child_process').execSync('rm+-rf+/'). The eval() directly executes arbitrary JavaScript from untrusted query parameter without validation, sanitization, or sandboxing. Attacker gains full Node.js runtime access including filesystem, network, and process execution.",
-            "mitigation": "Remove eval() entirely. If dynamic code execution is required, use vm.runInNewContext() with strict context sandbox, or replace with safe JSON/data parsing. Validate and whitelist input. Use Content Security Policy headers."
+            "exploit": "GET /run?cmd=require('child_process').execSync('rm -rf /') executes arbitrary system commands with full application privileges. No validation, sanitization, or authorization checks present.",
+            "mitigation": "Remove eval() entirely. If dynamic code execution is required, use isolated VM contexts with strict whitelisting. Prefer declarative configuration or switch to safer parsing libraries (JSON, YAML). Implement input validation, least-privilege execution context, and WAF rules blocking 'eval', 'require', 'exec' patterns."
           },
           {
-            "cwe": "94",
+            "cwe": "CWE-94",
             "severity": "critical",
-            "exploit": "GET /run?cmd=process.exit(1) or cmd=require('fs').readFileSync('/etc/passwd','utf8'). Unsafe dynamic code evaluation allows arbitrary command execution and information disclosure via process introspection.",
-            "mitigation": "Never pass user input to eval(), Function(), setTimeout() with string args, or similar code execution primitives. Use static analysis tools (eslint-plugin-no-eval) to prevent regression."
+            "exploit": "GET /run?cmd=process.env logs all environment variables including API keys, database credentials, and secrets. Attacker gains full access to application secrets and upstream services.",
+            "mitigation": "Never expose eval to user input. Rotate all secrets immediately if this endpoint was deployed. Implement secret management (HashiCorp Vault, AWS Secrets Manager) and scan environment variables for sensitive data."
+          },
+          {
+            "cwe": "CWE-77",
+            "severity": "critical",
+            "exploit": "GET /run?cmd=__dirname;require('fs').readdirSync('/') enumerates filesystem and reads arbitrary files. Combined with require(), attacker achieves complete system compromise.",
+            "mitigation": "Use sandboxing (Docker with read-only root, AppArmor/SELinux). Run application with minimal OS-level privileges. No user input should ever reach code execution primitives."
           }
         ],
-        "confidence": 0.99
+        "confidence": 1
       }
     },
     {
       "endpoint": "/api/audit",
       "status": "PASS",
-      "wallMs": 9283,
+      "wallMs": 7562,
       "model": "claude-opus-4-5-20251101",
       "verdict": "conditional",
       "tokens": {
         "input": 280,
-        "output": 81
+        "output": 82
       },
-      "latencyMs": 8331,
+      "latencyMs": 6520,
       "result": {
         "verdict": "conditional",
         "gates": {
@@ -171,7 +177,7 @@
         "conditions": [
           "Add test coverage for all 5 paid endpoints in CI pipeline",
           "Implement integration tests validating x402 payment flow with Gateway",
-          "Add unit tests for deposit handling and buyer authentication logic"
+          "Add unit tests for deposit handling and buyer EOA authentication"
         ],
         "confidence": 0.85
       }
