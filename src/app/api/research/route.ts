@@ -1,23 +1,19 @@
 /**
  * POST /api/research  —  PA·co Radar · $0.003 USDC per query
  *
- * 1. Returns 402 PAYMENT-REQUIRED on first call (per x402 scheme "exact",
- *    batched via Circle Gateway so settlement is gas-free).
- * 2. On retry with PAYMENT-SIGNATURE header, verifies + settles (Day 2),
- *    then runs the actual research (Day 1 returns a templated response so
- *    we can smoke the full loop; Day 2 will wire Claude/AISA).
- *
- * Input body (JSON): { "query": string }
- * Output body (JSON): { "result": string, "agent": "RADAR", "paid": "0.003", ... }
- *
- * Runtime MUST be Node (Circle SDK not Edge-compatible).
+ * Day 2: real x402 handshake via Circle BatchFacilitatorClient.
+ * 1. No PAYMENT-SIGNATURE → 402 PAYMENT-REQUIRED.
+ * 2. With PAYMENT-SIGNATURE → facilitator.verify() + facilitator.settle()
+ *    → if both green, run handler and echo settlement tx hash in
+ *    PAYMENT-RESPONSE header.
  */
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requirePayment } from '@/lib/x402-gateway';
+import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
+import { txUrl } from '@/lib/arc';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,9 +23,10 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  // 1. Gate: require payment or emit 402 challenge.
-  const gate = requirePayment('research', req);
-  if (gate) return gate;
+  // 1. Gate: 402 challenge, error, or settled receipt.
+  const gate = await requirePayment('research', req);
+  if (gate.kind === 'challenge') return gate.response;
+  if (gate.kind === 'error') return gate.response;
 
   // 2. Validate input.
   let parsedBody;
@@ -47,29 +44,30 @@ export async function POST(req: NextRequest) {
   }
   const { query } = parsedBody.data;
 
-  // 3. Seller info (for response metadata).
   const price = priceOf('research');
   const seller = getWalletByCode(price.seller);
 
-  // 4. Day-1 stub: return a templated "research result".
-  //    Day-2 will replace with Claude + optional AISA.one pass-through.
-  const result = `[Radar stub · Day-1] received query "${query}". ` +
-    `This endpoint is live on Arc testnet (chainId 5042002) and accepts ` +
-    `sub-cent USDC via x402 batched settlement. Real research answer will ` +
-    `ship Day-2 (Claude 4.7 primary; AISA.one fallback for specialized data).`;
+  // 3. Day-2 stub result (Day-3 replaces with Claude + AISA fallback).
+  const result =
+    `[Radar · Day-2 live-paid] Query: "${query}". ` +
+    `Settled on Arc testnet via Circle Nanopayments x402 batched settlement. ` +
+    `Tx: ${gate.receipt.transactionHash ?? '(pending)'}. ` +
+    `Real research response (Claude + AISA fallback) ships Day-3.`;
 
   const body = {
     ok: true,
     agent: price.seller,
-    seller: {
-      address: seller.address,
-      walletId: seller.walletId,
-    },
+    seller: { address: seller.address, walletId: seller.walletId },
     paid: {
       scheme: 'exact',
-      network: 'arc-testnet',
+      network: gate.receipt.network,
       amount: price.price,
       supervisionFee: price.supervisionFee,
+      payer: gate.receipt.payer,
+      transactionHash: gate.receipt.transactionHash,
+      txExplorer: gate.receipt.transactionHash
+        ? txUrl(gate.receipt.transactionHash)
+        : null,
     },
     query,
     result,
@@ -79,17 +77,13 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(body, {
     status: 200,
     headers: {
-      // Echo back a placeholder settlement receipt so clients can detect success.
-      // Day-2 replaces this with the real Circle settle() response.
-      'PAYMENT-RESPONSE': Buffer.from(
-        JSON.stringify({ settled: 'day1-stub', at: body.at }),
-      ).toString('base64'),
+      'PAYMENT-RESPONSE': encodeReceipt(gate.receipt),
+      'X-PAYMENT-RESPONSE': encodeReceipt(gate.receipt), // legacy alias
     },
   });
 }
 
 export async function GET() {
-  // Convenience: GET returns endpoint metadata (no payment gate).
   const price = priceOf('research');
   const seller = getWalletByCode(price.seller);
   return NextResponse.json({
@@ -99,12 +93,9 @@ export async function GET() {
       amount: price.price,
       supervisionFee: price.supervisionFee,
       currency: 'USDC',
-      network: 'arc-testnet',
+      network: 'arc-testnet (eip155:5042002)',
     },
-    seller: {
-      agent: price.seller,
-      address: seller.address,
-    },
+    seller: { agent: price.seller, address: seller.address },
     description: price.description,
     hint:
       'POST { "query": "..." } to exercise the endpoint. Without PAYMENT-SIGNATURE ' +

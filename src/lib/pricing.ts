@@ -34,7 +34,7 @@ export const PRICING: Record<EndpointKey, EndpointPricing> = {
     price: '0.003',
     supervisionFee: '0.0005',
     description: 'PA·co Radar — single research query (web search + synthesis)',
-    maxTimeoutSeconds: 30,
+    maxTimeoutSeconds: 86400,
   },
   'design-review': {
     seller: 'PIXEL',
