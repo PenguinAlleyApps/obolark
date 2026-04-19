@@ -75,7 +75,7 @@ if (AGENTS.length !== 22) {
 export const AGENT_COUNT = 22;
 export const TREASURY_AGENT = AGENTS[0]; // PAco
 
-/** agent code (uppercase) → index 0..21 */
+/** agent code (case-insensitive) → index 0..21 */
 export const AGENT_INDEX_BY_CODE: Record<string, number> = Object.fromEntries(
-  AGENTS.map((a, i) => [a.code, i]),
+  AGENTS.map((a, i) => [a.code.toUpperCase(), i]),
 );
