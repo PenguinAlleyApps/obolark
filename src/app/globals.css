@@ -1,26 +1,239 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Obolark · Direction B — "Obolark Terminal"
+   Mission-control ops console, inverted for light mode.
+   Locked 2026-04-19 per VISUAL_SIGNATURE.md.
+   EO-016 compliant · brand always-light (no dark auto-flip).
+   ═══════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Palette (7 roles + 1 secondary accent) ─────────────────────────── */
+  --bone:        #FAFAF7;    /* body background · warm bone white */
+  --bone-dark:   #E6E4DB;    /* secondary surface · card fills */
+  --grid-line:   #E6E5E0;    /* 8px grid · hairline rules · card edges */
+  --ink:         #0D0D0D;    /* primary text · display · chart ink */
+  --graphite:    #2F3A3E;    /* PA·co brand neutral · nav · status bar */
+  --muted:       #5A5A52;    /* secondary text · metric labels */
+  --signal:      #F5C518;    /* THE accent · active · settlement · CTA */
+  --signal-dark: #B8991F;    /* signal hover / pressed */
+  --oxide:       #C0392B;    /* error · failed tx · VOID */
+  --moss:        #3E5E47;    /* reputation positive · ok state */
+  --pale-brass:  #D9B87A;    /* cleared · passed · secondary accent */
+
+  /* ── Semantic roles (map palette to usage) ──────────────────────────── */
+  --background:        var(--bone);
+  --foreground:        var(--ink);
+  --surface:           var(--bone);
+  --surface-elevated:  var(--bone-dark);
+  --border:            var(--grid-line);
+  --border-strong:     var(--ink);
+  --text-primary:      var(--ink);
+  --text-secondary:    var(--muted);
+  --accent:            var(--signal);
+  --accent-dark:       var(--signal-dark);
+  --status-ok:         var(--moss);
+  --status-error:      var(--oxide);
+  --status-cleared:    var(--pale-brass);
+
+  /* ── Typography stack ───────────────────────────────────────────────── */
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body:    var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ── Layout primitives ──────────────────────────────────────────────── */
+  --radius-sharp: 2px;         /* sharp 2px max · no pills */
+  --ring-width: 2px;
+  --baseline: 8px;             /* 8px grid rhythm */
+
+  /* ── Motion timings ─────────────────────────────────────────────────── */
+  --motion-pulse: 180ms;       /* signal pulse on settlement */
+  --motion-fade:  400ms;       /* fade to transparent after pulse */
+  --motion-edge:  320ms;       /* amber dot travel across graph edge */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* Brand rule: always-light. NO auto dark-flip. EO-016. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: only light;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ─── Tailwind v4 @theme tokens (exposed as utilities) ───────────────── */
+@theme inline {
+  --color-bone:         var(--bone);
+  --color-bone-dark:    var(--bone-dark);
+  --color-grid:         var(--grid-line);
+  --color-ink:          var(--ink);
+  --color-graphite:     var(--graphite);
+  --color-muted:        var(--muted);
+  --color-signal:       var(--signal);
+  --color-signal-dark:  var(--signal-dark);
+  --color-oxide:        var(--oxide);
+  --color-moss:         var(--moss);
+  --color-pale-brass:   var(--pale-brass);
+
+  --color-background:   var(--background);
+  --color-foreground:   var(--foreground);
+  --color-surface:      var(--surface);
+  --color-border:       var(--border);
+
+  --font-display:  var(--font-display);
+  --font-sans:     var(--font-body);
+  --font-mono:     var(--font-mono);
+
+  --radius-sharp:  var(--radius-sharp);
 }
+
+/* ─── Base ──────────────────────────────────────────────────────────── */
+html {
+  color-scheme: light;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--bone);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: "ss01", "cv01", "cv11";
+}
+
+/* Tabular figures globally — numbers must align in the ledger */
+.tnum,
+[data-numeric],
+code,
+pre,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" on;
+}
+
+/* ─── Motion keyframes ─────────────────────────────────────────────── */
+@keyframes signal-pulse {
+  0%   { background-color: color-mix(in oklab, var(--signal) 40%, transparent); }
+  100% { background-color: transparent; }
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes edge-dot {
+  0%   { offset-distance: 0%; opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* ─── Primitives (shadcn-free) ─────────────────────────────────────── */
+.status-led {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: led-blink 2s ease-in-out infinite;
+}
+.status-led[data-state="idle"]  { background: var(--muted);  box-shadow: none; animation: none; }
+.status-led[data-state="error"] { background: var(--oxide);  box-shadow: 0 0 6px var(--oxide); }
+.status-led[data-state="signal"]{ background: var(--signal); box-shadow: 0 0 6px var(--signal); }
+
+.panel {
+  background: var(--surface);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--grid-line);
+  padding: calc(var(--baseline) * 3) calc(var(--baseline) * 3);
+}
+
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: calc(var(--baseline) * 1.5);
+  border-bottom: 1px solid var(--grid-line);
+  margin-bottom: calc(var(--baseline) * 2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.metric-column {
+  border-left: 2px solid var(--ink);
+  padding-left: calc(var(--baseline) * 2);
+}
+.metric-column .label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.metric-column .value {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.metric-column .value[data-role="signal"] { color: var(--signal-dark); }
+.metric-column .value[data-role="alert"]  { color: var(--oxide); }
+
+.ledger-row {
+  display: grid;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: calc(var(--baseline) * 1) 4px;
+  border-bottom: 1px dashed var(--grid-line);
+  transition: background-color var(--motion-fade) ease-out;
+}
+.ledger-row[data-settled="true"] {
+  animation: signal-pulse var(--motion-fade) ease-out;
+}
+
+.stamp-button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  background: var(--ink);
+  color: var(--bone);
+  border: none;
+  border-radius: var(--radius-sharp);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: background-color 180ms ease-out;
+}
+.stamp-button:hover { background: var(--graphite); }
+.stamp-button:active { transform: translateY(1px); }
+.stamp-button[data-accent="signal"] {
+  background: var(--signal);
+  color: var(--ink);
+}
+.stamp-button[data-accent="signal"]:hover { background: var(--signal-dark); color: var(--bone); }
+
+/* ─── Ticker strip ─────────────────────────────────────────────────── */
+.ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ticker > .ticker-track {
+  display: inline-block;
+  animation: ticker-scroll 30s linear infinite;
+  padding-left: 100%;
+}
+.ticker:hover > .ticker-track { animation-play-state: paused; }
+
+/* ─── Guardrails (EO-016 enforcement) ──────────────────────────────── */
+/* Block default indigo/purple: these colors should not appear anywhere in markup. */

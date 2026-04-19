@@ -1,0 +1,122 @@
+[
+  {
+    "to": "ATLAS",
+    "address": "0x2b8285f1dd0be47f80d0f249d9a2cbad5baec532",
+    "txId": "ed4abe76-061d-5917-9724-c340e2d5f1c6",
+    "ts": "2026-04-19T20:45:07.838Z"
+  },
+  {
+    "to": "PIXEL",
+    "address": "0xfcc319f0171762e2a93b37f9bdd1c09b801a6185",
+    "txId": "78c4ec71-e655-56a1-9b4f-45f0ab81616e",
+    "ts": "2026-04-19T20:45:08.660Z"
+  },
+  {
+    "to": "SENTINEL",
+    "address": "0xd898cdbe80699d59964a9576e55a022be6115901",
+    "txId": "951b1dc0-b2ac-5208-97e7-600b1a99a841",
+    "ts": "2026-04-19T20:45:09.467Z"
+  },
+  {
+    "to": "PHANTOM",
+    "address": "0x8a0bd2376f6d32ae18d1267d4efe843cabc12b5f",
+    "txId": "ea5ee093-f380-5c5b-973f-bee85ffe685b",
+    "ts": "2026-04-19T20:45:10.323Z"
+  },
+  {
+    "to": "ARGUS",
+    "address": "0xf8929f961136f85abebc5488b64f9ed3ae2fd2d5",
+    "txId": "3ee4e63a-55bd-5b06-b3f6-65b270f3f41e",
+    "ts": "2026-04-19T20:45:11.137Z"
+  },
+  {
+    "to": "GUARDIAN",
+    "address": "0x6d616bf7a58aa00f50db225cf4d827dc090d0d4b",
+    "txId": "9f3da99e-3b38-5c40-9fb2-d738db34cb60",
+    "ts": "2026-04-19T20:45:11.952Z"
+  },
+  {
+    "to": "RADAR",
+    "address": "0x40a63070254cf3a4844a29996cff6852553c5535",
+    "txId": "17191f6b-ee6d-5683-b249-893f4d93c896",
+    "ts": "2026-04-19T20:45:12.772Z"
+  },
+  {
+    "to": "COMPASS",
+    "address": "0xececf423d0a76e483053a0dd974f3744e69be02c",
+    "txId": "bc221836-392c-5996-aed2-ddc1fe29a795",
+    "ts": "2026-04-19T20:45:13.607Z"
+  },
+  {
+    "to": "ECHO",
+    "address": "0xc72724d3cceb06addfb01177b3640e5a43b8ad75",
+    "txId": "03f89aa6-ecc1-5058-b35c-0b9987779469",
+    "ts": "2026-04-19T20:45:14.501Z"
+  },
+  {
+    "to": "HUNTER",
+    "address": "0xf0d6c9492e501bfc0af59d6e8b8953d0ae6fdd92",
+    "txId": "d7227d91-878c-5702-96ad-6ec42c821e1d",
+    "ts": "2026-04-19T20:45:15.370Z"
+  },
+  {
+    "to": "LENS",
+    "address": "0x38206b56ef55745b76d387ba36d7ce138f27f4de",
+    "txId": "b36d5923-b521-5ae2-9581-71a8f742ef92",
+    "ts": "2026-04-19T20:45:16.219Z"
+  },
+  {
+    "to": "FRAME",
+    "address": "0xc3e3d9180829f77bb95f5eafdbbd56e97bd8cfce",
+    "txId": "b82926ac-ac29-5c59-87e6-5853fbf360c1",
+    "ts": "2026-04-19T20:45:17.009Z"
+  },
+  {
+    "to": "REEL",
+    "address": "0x3bcf937f1944a8081a9a43ace03671379c795314",
+    "txId": "9ede2d79-7420-5c34-9543-15f4d091f94b",
+    "ts": "2026-04-19T20:45:17.846Z"
+  },
+  {
+    "to": "LEDGER",
+    "address": "0xbc5652e2648a482c51eceb59cacf9aa617282692",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  },
+  {
+    "to": "SHIELD",
+    "address": "0x5e4c8aabcf7ec1325db60a632ef57bb4ab54c812",
+    "txId": "8b0f94ae-11aa-5c72-abe9-456094e23f5a",
+    "ts": "2026-04-19T20:45:19.605Z"
+  },
+  {
+    "to": "HARBOR",
+    "address": "0x7c6c4fcca9c78902a2540e05f5cbfc0ce94292d8",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  },
+  {
+    "to": "DISCOVERY",
+    "address": "0x15e9013863d48d7d359341abec0aac43bada0094",
+    "txId": "9d4a9187-33c7-5993-b211-f21286e89055",
+    "ts": "2026-04-19T20:45:21.241Z"
+  },
+  {
+    "to": "FOREMAN",
+    "address": "0x83a8a2c17d678e28c95f4d047318bd0560c6a1f4",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  },
+  {
+    "to": "SCOUT",
+    "address": "0x9107bb2e4e4d02973b4dad4378873acc5557e49a",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  },
+  {
+    "to": "WATCHMAN",
+    "address": "0xf018a2dc4c61b569208ec060aafcf0049ae2b2d4",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  },
+  {
+    "to": "PIONEER",
+    "address": "0x8c7aa0549aa426d4a0121d51bb68d3e8db56133e",
+    "error": "Wait for pending transactions to be included on the blockchain before submitting new requests. EVM chains restrict the number of queued transactions per sender address."
+  }
+]

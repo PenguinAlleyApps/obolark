@@ -9,9 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@circle-fin/developer-controlled-wallets": "^10.3.0",
+    "@circle-fin/x402-batching": "^2.1.0",
+    "dotenv": "^17.4.2",
     "next": "16.2.4",
+    "pino": "^10.3.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-force-graph-2d": "^1.29.1",
+    "viem": "^2.48.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
