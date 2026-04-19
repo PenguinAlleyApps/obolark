@@ -8,14 +8,16 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
+import { runProvider } from '@/lib/providers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const bodySchema = z.object({
-  target: z.string().min(3).max(500),
-  depth: z.enum(['shallow', 'deep']).optional(),
-});
+const bodySchema = z.union([
+  z.object({ code: z.string().min(10).max(4000), depth: z.enum(['shallow', 'deep']).optional() }),
+  z.object({ url: z.string().url().max(500), depth: z.enum(['shallow', 'deep']).optional() }),
+  z.object({ target: z.string().min(3).max(500), depth: z.enum(['shallow', 'deep']).optional() }),
+]);
 
 export async function POST(req: NextRequest) {
   const gate = await requirePayment('security-scan', req);
@@ -34,16 +36,14 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { target, depth } = parsedBody.data;
 
   const price = priceOf('security-scan');
   const seller = getWalletByCode(price.seller);
 
-  const result =
-    `[Phantom · live-paid] Security scan (${depth ?? 'shallow'}) of "${target}". ` +
-    'Threat model: OWASP Top 10 + secret exposure + dependency drift vs CVE feed. ' +
-    `Settled on Arc testnet via Circle Gateway batched x402. ` +
-    `Tx: ${gate.receipt.transactionHash ?? '(pending)'}.`;
+  const outcome = await runProvider('security-scan', parsedBody.data, {
+    payer: gate.receipt.payer,
+    txId: gate.receipt.transactionHash,
+  });
 
   return NextResponse.json(
     {
@@ -59,9 +59,8 @@ export async function POST(req: NextRequest) {
         transactionHash: gate.receipt.transactionHash,
         txExplorer: gate.receipt.transactionHash ? txUrl(gate.receipt.transactionHash) : null,
       },
-      target,
-      depth: depth ?? 'shallow',
-      result,
+      input: parsedBody.data,
+      result: outcome,
       at: new Date().toISOString(),
     },
     {
@@ -80,14 +79,9 @@ export async function GET() {
   return NextResponse.json({
     endpoint: '/api/security-scan',
     method: 'POST',
-    pricing: {
-      amount: price.price,
-      supervisionFee: price.supervisionFee,
-      currency: 'USDC',
-      network: 'arc-testnet (eip155:5042002)',
-    },
+    pricing: { amount: price.price, supervisionFee: price.supervisionFee, currency: 'USDC', network: 'arc-testnet (eip155:5042002)' },
     seller: { agent: price.seller, address: seller.address },
     description: price.description,
-    hint: 'POST { "target": "url or repo", "depth": "shallow|deep" } to exercise.',
+    hint: 'POST { "code": "..." } OR { "url": "https://..." } OR { "target": "..." }. Output: {verdict, findings[cwe, exploit, mitigation], confidence}.',
   });
 }

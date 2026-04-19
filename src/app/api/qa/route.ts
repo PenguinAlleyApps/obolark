@@ -8,14 +8,15 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
+import { runProvider } from '@/lib/providers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const bodySchema = z.object({
-  target: z.string().min(3).max(500),
-  kind: z.enum(['route', 'pr', 'feature']).optional(),
-});
+const bodySchema = z.union([
+  z.object({ diff: z.string().min(5).max(4000), kind: z.literal('pr').optional() }),
+  z.object({ target: z.string().min(3).max(500), kind: z.enum(['route', 'feature']).optional() }),
+]);
 
 export async function POST(req: NextRequest) {
   const gate = await requirePayment('qa', req);
@@ -34,16 +35,14 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { target, kind } = parsedBody.data;
 
   const price = priceOf('qa');
   const seller = getWalletByCode(price.seller);
 
-  const result =
-    `[Sentinel · live-paid] QA pass on ${kind ?? 'target'} "${target}". ` +
-    'Checklist: golden path + 3 edge cases + regression against last known-good. ' +
-    `Settled on Arc testnet via Circle Gateway batched x402. ` +
-    `Tx: ${gate.receipt.transactionHash ?? '(pending)'}.`;
+  const outcome = await runProvider('qa', parsedBody.data, {
+    payer: gate.receipt.payer,
+    txId: gate.receipt.transactionHash,
+  });
 
   return NextResponse.json(
     {
@@ -59,9 +58,8 @@ export async function POST(req: NextRequest) {
         transactionHash: gate.receipt.transactionHash,
         txExplorer: gate.receipt.transactionHash ? txUrl(gate.receipt.transactionHash) : null,
       },
-      target,
-      kind: kind ?? 'target',
-      result,
+      input: parsedBody.data,
+      result: outcome,
       at: new Date().toISOString(),
     },
     {
@@ -80,14 +78,9 @@ export async function GET() {
   return NextResponse.json({
     endpoint: '/api/qa',
     method: 'POST',
-    pricing: {
-      amount: price.price,
-      supervisionFee: price.supervisionFee,
-      currency: 'USDC',
-      network: 'arc-testnet (eip155:5042002)',
-    },
+    pricing: { amount: price.price, supervisionFee: price.supervisionFee, currency: 'USDC', network: 'arc-testnet (eip155:5042002)' },
     seller: { agent: price.seller, address: seller.address },
     description: price.description,
-    hint: 'POST { "target": "url or PR", "kind": "route|pr|feature" } to exercise.',
+    hint: 'POST { "diff": "..." } OR { "target": "...", "kind": "route|feature" }. Output: {verdict, testCases[], confidence}.',
   });
 }

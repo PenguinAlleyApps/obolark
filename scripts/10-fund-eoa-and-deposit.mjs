@@ -22,8 +22,8 @@ const apiKey = process.env.CIRCLE_API_KEY;
 const entitySecret = process.env.CIRCLE_ENTITY_SECRET;
 if (!apiKey || !entitySecret) { console.error('[10] Missing creds'); process.exit(1); }
 
-const FUND_DECIMAL    = '0.1';     // USDC sent from PAco → buyer
-const DEPOSIT_DECIMAL = '0.05';    // USDC deposited into Gateway
+const FUND_DECIMAL    = '1.0';     // USDC sent from PAco → buyer
+const DEPOSIT_DECIMAL = '0.5';     // USDC deposited into Gateway — enough for ~160 mixed calls
 
 const USDC           = '0x3600000000000000000000000000000000000000';
 const GATEWAY_WALLET = '0x0077777d7EBA4688BDeF3E311b846F25870A19B9';

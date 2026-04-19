@@ -34,8 +34,11 @@ export function getWallets(): WalletRecord[] {
     );
   }
   cached = JSON.parse(fs.readFileSync(p, 'utf-8')) as WalletRecord[];
-  if (cached.length !== 22) {
-    throw new Error(`wallets.json must have exactly 22 entries; got ${cached.length}`);
+  // 22 agent SCAs are required; BUYER-EOA and future auxiliary wallets may
+  // follow but don't participate in the AGENT_INDEX_BY_CODE lookup used by
+  // sellers / treasury.
+  if (cached.length < 22) {
+    throw new Error(`wallets.json must have at least 22 entries; got ${cached.length}`);
   }
   return cached;
 }

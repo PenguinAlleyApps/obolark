@@ -1,0 +1,180 @@
+{
+  "at": "2026-04-19T22:38:14.759Z",
+  "appUrl": "http://localhost:3000",
+  "pass": 5,
+  "degraded": 0,
+  "fail": 0,
+  "report": [
+    {
+      "endpoint": "/api/research",
+      "status": "PASS",
+      "wallMs": 8411,
+      "model": "claude-haiku-4-5-20251001",
+      "verdict": "unsupported",
+      "tokens": {
+        "input": 241,
+        "output": 139
+      },
+      "latencyMs": 7233,
+      "result": {
+        "verdict": "unsupported",
+        "claims": [
+          {
+            "statement": "Arc testnet chain ID specification",
+            "source": null,
+            "confidence": 0
+          },
+          {
+            "statement": "USDC token decimals on Arc testnet",
+            "source": null,
+            "confidence": 0
+          }
+        ],
+        "summary": "No evidence available regarding Arc testnet chain ID or USDC decimals. Arc testnet appears insufficiently documented in accessible sources to verify these specific technical parameters."
+      }
+    },
+    {
+      "endpoint": "/api/design-review",
+      "status": "PASS",
+      "wallMs": 7051,
+      "model": "claude-haiku-4-5-20251001",
+      "verdict": "revise",
+      "tokens": {
+        "input": 269,
+        "output": 307
+      },
+      "latencyMs": 6053,
+      "result": {
+        "verdict": "revise",
+        "findings": [
+          {
+            "severity": "blocker",
+            "rule": "no default Tailwind indigo gradients",
+            "note": "Indigo gradient specified as background. PA·co brand requires always-light palette; substitute with neutral or branded gradient (e.g., light gray to off-white, or PA·co primary to light tint)."
+          },
+          {
+            "severity": "major",
+            "rule": "hierarchy & contrast",
+            "note": "Two centered CTAs risk equal visual weight. Primary CTA must dominate through size, color, or spacing. Establish clear conversion intent (which action is priority?)."
+          },
+          {
+            "severity": "minor",
+            "rule": "border-radius constraint (≤2px)",
+            "note": "Lucide icons and feature grid elements must not exceed 2px border-radius if rounded. Verify all radii conform."
+          },
+          {
+            "severity": "minor",
+            "rule": "affordance clarity",
+            "note": "Centered dual CTAs on hero risk cognitive friction. Validate button labels are distinct and scannable; confirm spacing prevents misclick."
+          }
+        ],
+        "confidence": 0.87
+      }
+    },
+    {
+      "endpoint": "/api/qa",
+      "status": "PASS",
+      "wallMs": 7024,
+      "model": "claude-haiku-4-5-20251001",
+      "verdict": "fail",
+      "tokens": {
+        "input": 250,
+        "output": 316
+      },
+      "latencyMs": 6009,
+      "result": {
+        "verdict": "fail",
+        "testCases": [
+          {
+            "name": "Admin role authorization check removed",
+            "steps": [
+              "Create a non-admin user with role='user'",
+              "Attempt to access a protected admin endpoint",
+              "Verify request is rejected or returns 401/403"
+            ],
+            "expected": "Request should be denied; non-admin users cannot access admin resources",
+            "priority": "P0"
+          },
+          {
+            "name": "Admin user can access protected route",
+            "steps": [
+              "Create an admin user with role='admin'",
+              "Attempt to access a protected admin endpoint",
+              "Verify request proceeds to next middleware"
+            ],
+            "expected": "Request should proceed (next() called); admin users retain access",
+            "priority": "P0"
+          },
+          {
+            "name": "Golden path: middleware chain continues for authorized users",
+            "steps": [
+              "Set user.role='admin'",
+              "Call middleware function",
+              "Verify next() is invoked exactly once"
+            ],
+            "expected": "next() callback executes; request pipeline continues",
+            "priority": "P0"
+          }
+        ],
+        "confidence": 0.98
+      }
+    },
+    {
+      "endpoint": "/api/security-scan",
+      "status": "PASS",
+      "wallMs": 10292,
+      "model": "claude-haiku-4-5-20251001",
+      "verdict": "critical",
+      "tokens": {
+        "input": 260,
+        "output": 310
+      },
+      "latencyMs": 9156,
+      "result": {
+        "verdict": "critical",
+        "findings": [
+          {
+            "cwe": "95",
+            "severity": "critical",
+            "exploit": "GET /run?cmd=require('child_process').execSync('rm+-rf+/'). The eval() directly executes arbitrary JavaScript from untrusted query parameter without validation, sanitization, or sandboxing. Attacker gains full Node.js runtime access including filesystem, network, and process execution.",
+            "mitigation": "Remove eval() entirely. If dynamic code execution is required, use vm.runInNewContext() with strict context sandbox, or replace with safe JSON/data parsing. Validate and whitelist input. Use Content Security Policy headers."
+          },
+          {
+            "cwe": "94",
+            "severity": "critical",
+            "exploit": "GET /run?cmd=process.exit(1) or cmd=require('fs').readFileSync('/etc/passwd','utf8'). Unsafe dynamic code evaluation allows arbitrary command execution and information disclosure via process introspection.",
+            "mitigation": "Never pass user input to eval(), Function(), setTimeout() with string args, or similar code execution primitives. Use static analysis tools (eslint-plugin-no-eval) to prevent regression."
+          }
+        ],
+        "confidence": 0.99
+      }
+    },
+    {
+      "endpoint": "/api/audit",
+      "status": "PASS",
+      "wallMs": 9283,
+      "model": "claude-opus-4-5-20251101",
+      "verdict": "conditional",
+      "tokens": {
+        "input": 280,
+        "output": 81
+      },
+      "latencyMs": 8331,
+      "result": {
+        "verdict": "conditional",
+        "gates": {
+          "correctness": "fail",
+          "economics": "pass",
+          "safety": "pass",
+          "provenance": "n/a"
+        },
+        "conditions": [
+          "Add test coverage for all 5 paid endpoints in CI pipeline",
+          "Implement integration tests validating x402 payment flow with Gateway",
+          "Add unit tests for deposit handling and buyer authentication logic"
+        ],
+        "confidence": 0.85
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /**
- * POST /api/audit  —  PA·co Argus · $0.004 USDC per audit report.
+ * POST /api/audit  —  PA·co Argus · $0.004 USDC per audit. Opus 4.5.
  */
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -8,13 +8,15 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
+import { runProvider } from '@/lib/providers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const bodySchema = z.object({
   subject: z.string().min(3).max(500),
-  gates: z.array(z.string()).max(20).optional(),
+  artifact: z.string().min(10).max(3000).optional(),
+  gates: z.array(z.string().max(40)).max(10).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -34,17 +36,14 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { subject, gates } = parsedBody.data;
 
   const price = priceOf('audit');
   const seller = getWalletByCode(price.seller);
-  const gatesList = (gates && gates.length > 0 ? gates : ['zero-gaps', 'brand-rules', 'EO-016']).join(', ');
 
-  const result =
-    `[Argus · live-paid] Audit report for "${subject}" against quality gates: ${gatesList}. ` +
-    'Verdict: pass/kill/fix — with exhaustive checklist evidence inlined. ' +
-    `Settled on Arc testnet via Circle Gateway batched x402. ` +
-    `Tx: ${gate.receipt.transactionHash ?? '(pending)'}.`;
+  const outcome = await runProvider('audit', parsedBody.data, {
+    payer: gate.receipt.payer,
+    txId: gate.receipt.transactionHash,
+  });
 
   return NextResponse.json(
     {
@@ -60,9 +59,8 @@ export async function POST(req: NextRequest) {
         transactionHash: gate.receipt.transactionHash,
         txExplorer: gate.receipt.transactionHash ? txUrl(gate.receipt.transactionHash) : null,
       },
-      subject,
-      gates: gatesList,
-      result,
+      input: parsedBody.data,
+      result: outcome,
       at: new Date().toISOString(),
     },
     {
@@ -81,14 +79,9 @@ export async function GET() {
   return NextResponse.json({
     endpoint: '/api/audit',
     method: 'POST',
-    pricing: {
-      amount: price.price,
-      supervisionFee: price.supervisionFee,
-      currency: 'USDC',
-      network: 'arc-testnet (eip155:5042002)',
-    },
+    pricing: { amount: price.price, supervisionFee: price.supervisionFee, currency: 'USDC', network: 'arc-testnet (eip155:5042002)' },
     seller: { agent: price.seller, address: seller.address },
     description: price.description,
-    hint: 'POST { "subject": "what to audit", "gates": ["optional-list"] } to exercise.',
+    hint: 'POST { "subject": "...", "artifact": "...", "gates": ["correctness", ...] }. Output: {verdict, gates, conditions[], confidence}.',
   });
 }

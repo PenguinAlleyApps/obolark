@@ -1,0 +1,18 @@
+[
+  {
+    "endpoint": "research",
+    "reason": "invalid_output",
+    "at": "2026-04-19T22:33:39.845Z",
+    "detail": "[\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"claims\",\n      0,\n      \"source\"\n    ],\n    \"message\": \"Invalid input: expected string, received null\"\n  },\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"claims\",\n      1,\n      \"source\"\n    ],\n    \"message\": \"Invalid input: expected string, received null\"\n  }\n]",
+    "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+    "txId": "07948ce6-5966-4466-9c56-57ed58c7021d"
+  },
+  {
+    "endpoint": "security-scan",
+    "reason": "invalid_output",
+    "at": "2026-04-19T22:37:06.902Z",
+    "detail": "[\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"findings\",\n      0,\n      \"cwe\"\n    ],\n    \"message\": \"Invalid input: expected string, received number\"\n  },\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"findings\",\n      1,\n      \"cwe\"\n    ],\n    \"message\": \"Invalid input: expected string, received number\"\n  },\n  {\n    \"expected\": \"s",
+    "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+    "txId": "912180a4-6c16-4ccb-b344-1f36d21117c0"
+  }
+]

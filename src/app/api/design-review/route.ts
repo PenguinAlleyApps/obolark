@@ -8,14 +8,15 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
+import { runProvider } from '@/lib/providers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const bodySchema = z.object({
-  target: z.string().min(3).max(500),
-  context: z.string().max(1000).optional(),
-});
+const bodySchema = z.union([
+  z.object({ url: z.string().url().max(500), context: z.string().max(400).optional() }),
+  z.object({ description: z.string().min(10).max(600), context: z.string().max(400).optional() }),
+]);
 
 export async function POST(req: NextRequest) {
   const gate = await requirePayment('design-review', req);
@@ -34,18 +35,14 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { target, context } = parsedBody.data;
 
   const price = priceOf('design-review');
   const seller = getWalletByCode(price.seller);
 
-  const result =
-    `[Pixel · live-paid] Design review of "${target}"` +
-    (context ? ` (context: ${context.slice(0, 80)}…)` : '') + '. ' +
-    'Verdict: hierarchy, contrast, and whitespace to be analyzed against ' +
-    'EO-016 (no default Tailwind aesthetics) and PA·co brand always-light rule. ' +
-    `Settled on Arc testnet via Circle Gateway batched x402. ` +
-    `Tx: ${gate.receipt.transactionHash ?? '(pending)'}.`;
+  const outcome = await runProvider('design-review', parsedBody.data, {
+    payer: gate.receipt.payer,
+    txId: gate.receipt.transactionHash,
+  });
 
   return NextResponse.json(
     {
@@ -61,8 +58,8 @@ export async function POST(req: NextRequest) {
         transactionHash: gate.receipt.transactionHash,
         txExplorer: gate.receipt.transactionHash ? txUrl(gate.receipt.transactionHash) : null,
       },
-      target,
-      result,
+      input: parsedBody.data,
+      result: outcome,
       at: new Date().toISOString(),
     },
     {
@@ -81,14 +78,9 @@ export async function GET() {
   return NextResponse.json({
     endpoint: '/api/design-review',
     method: 'POST',
-    pricing: {
-      amount: price.price,
-      supervisionFee: price.supervisionFee,
-      currency: 'USDC',
-      network: 'arc-testnet (eip155:5042002)',
-    },
+    pricing: { amount: price.price, supervisionFee: price.supervisionFee, currency: 'USDC', network: 'arc-testnet (eip155:5042002)' },
     seller: { agent: price.seller, address: seller.address },
     description: price.description,
-    hint: 'POST { "target": "url or description", "context": "optional" } to exercise.',
+    hint: 'POST { "url": "https://..." } OR { "description": "..." } with optional { "context": "..." }. Output: {verdict, findings[], confidence}.',
   });
 }
