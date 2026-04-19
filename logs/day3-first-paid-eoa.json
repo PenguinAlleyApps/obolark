@@ -1,0 +1,54 @@
+{
+  "buyer": "BUYER-EOA",
+  "requirements": {
+    "scheme": "exact",
+    "network": "eip155:5042002",
+    "asset": "0x3600000000000000000000000000000000000000",
+    "amount": "3000",
+    "payTo": "0x40a63070254cf3a4844a29996cff6852553c5535",
+    "maxTimeoutSeconds": 345600,
+    "resource": "http://localhost:3000/api/research",
+    "description": "PA·co Radar — single research query (web search + synthesis)",
+    "mimeType": "application/json",
+    "extra": {
+      "name": "GatewayWalletBatched",
+      "version": "1",
+      "verifyingContract": "0x0077777d7EBA4688BDeF3E311b846F25870A19B9"
+    }
+  },
+  "payment": {
+    "x402Version": 2,
+    "payload": {
+      "authorization": {
+        "from": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+        "to": "0x40a63070254cF3A4844A29996CfF6852553C5535",
+        "value": "3000",
+        "validAfter": "1776635407",
+        "validBefore": "1776981607",
+        "nonce": "0x88295be744ba5c4de7479581ab7d7caf4bd2d2fbcef28c237ba0d8471d644934"
+      },
+      "signature": "0xe217db8f9a78d61c4822eb3acd92136421eb6fc32e67e4861b3001db5008174e71cf4378eac5b62b8d77bdda9f814fd0605d10b0864d4984819d4bd6d5fba7dc1c"
+    }
+  },
+  "response": {
+    "ok": true,
+    "agent": "RADAR",
+    "seller": {
+      "address": "0x40a63070254cf3a4844a29996cff6852553c5535",
+      "walletId": "b9b30c5a-76bf-5e20-9899-48324b908f02"
+    },
+    "paid": {
+      "scheme": "exact",
+      "network": "eip155:5042002",
+      "amount": "0.003",
+      "supervisionFee": "0.0005",
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "transactionHash": "52f7eb00-e195-496f-af38-b36b3f754633",
+      "txExplorer": "https://testnet.arcscan.app/tx/52f7eb00-e195-496f-af38-b36b3f754633"
+    },
+    "query": "what is the origin of the word obol?",
+    "result": "[Radar · Day-2 live-paid] Query: \"what is the origin of the word obol?\". Settled on Arc testnet via Circle Nanopayments x402 batched settlement. Tx: 52f7eb00-e195-496f-af38-b36b3f754633. Real research response (Claude + AISA fallback) ships Day-3.",
+    "at": "2026-04-19T22:00:08.911Z"
+  },
+  "at": "2026-04-19T22:00:08.912Z"
+}

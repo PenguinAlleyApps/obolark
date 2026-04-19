@@ -1,0 +1,50 @@
+[
+  {
+    "endpoint": "/api/design-review",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "5000",
+      "network": "eip155:5042002",
+      "transactionHash": "74a36487-600b-4b13-8e84-be94496635d2"
+    },
+    "result": "[Pixel · live-paid] Design review of \"https://obolark.local/demo\" (context: hero section…). Verdict: hierarchy, contrast, and whitespace to be analyzed against EO-016 (no default Tailwind aesthetics) and PA·co brand always-light rule. Settled on Arc testnet via Circle Gateway batched x402. Tx: 74a36487-600b-4b13-8e84-be94496635d2.",
+    "at": "2026-04-19T21:59:56.915Z"
+  },
+  {
+    "endpoint": "/api/qa",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "8000",
+      "network": "eip155:5042002",
+      "transactionHash": "d3fb5c77-545b-421b-84df-d7186efe3b3c"
+    },
+    "result": "[Sentinel · live-paid] QA pass on route \"https://obolark.local/checkout\". Checklist: golden path + 3 edge cases + regression against last known-good. Settled on Arc testnet via Circle Gateway batched x402. Tx: d3fb5c77-545b-421b-84df-d7186efe3b3c.",
+    "at": "2026-04-19T21:59:57.879Z"
+  },
+  {
+    "endpoint": "/api/security-scan",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "8000",
+      "network": "eip155:5042002",
+      "transactionHash": "53292a32-b950-4c8c-90d8-88011471104c"
+    },
+    "result": "[Phantom · live-paid] Security scan (shallow) of \"https://obolark.local\". Threat model: OWASP Top 10 + secret exposure + dependency drift vs CVE feed. Settled on Arc testnet via Circle Gateway batched x402. Tx: 53292a32-b950-4c8c-90d8-88011471104c.",
+    "at": "2026-04-19T21:59:58.866Z"
+  },
+  {
+    "endpoint": "/api/audit",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "4000",
+      "network": "eip155:5042002",
+      "transactionHash": "214c5b52-1f67-4323-8519-95a2c1ff4c85"
+    },
+    "result": "[Argus · live-paid] Audit report for \"Obolark MVP\" against quality gates: zero-gaps, EO-016. Verdict: pass/kill/fix — with exhaustive checklist evidence inlined. Settled on Arc testnet via Circle Gateway batched x402. Tx: 214c5b52-1f67-4323-8519-95a2c1ff4c85.",
+    "at": "2026-04-19T21:59:59.823Z"
+  }
+]

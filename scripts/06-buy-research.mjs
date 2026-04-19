@@ -43,7 +43,10 @@ function bigintSafeStringify(obj) {
   return JSON.stringify(obj, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
 }
 
-// Signer adapter (BatchEvmSigner interface via Circle MPC)
+// Signer adapter (BatchEvmSigner interface via Circle MPC).
+// Circle's signTypedData API REJECTS payloads missing `EIP712Domain` in the
+// types map (error "Invalid typed data in request"). So we must include it,
+// matching the 4-field EIP-712 domain shape.
 const circleSigner = {
   address: buyer.address,
   async signTypedData(params) {
@@ -63,6 +66,8 @@ const circleSigner = {
       message: params.message,
     });
     console.log(`[05]   · Circle MPC signing (${BUYER_CODE})`);
+    console.log(`[05]     domain:`, JSON.stringify(params.domain));
+    console.log(`[05]     message:`, bigintSafeStringify(params.message));
     const res = await circle.signTypedData({
       walletId: buyer.walletId,
       data,
@@ -70,6 +75,9 @@ const circleSigner = {
     });
     const sig = res.data?.signature;
     if (!sig) throw new Error('No signature returned by Circle');
+    // SCA wallets may return EIP-6492 / EIP-1271 wrapped sigs longer than 132 chars.
+    // Standard EOA ECDSA is 132 chars ("0x" + 130 hex = 65 bytes).
+    console.log(`[05]     sig: len=${sig.length} head=${sig.slice(0, 20)}… (65-byte ECDSA = 132 chars)`);
     return sig;
   },
 };

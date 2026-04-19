@@ -284,5 +284,18 @@
     "accountType": "SCA",
     "walletSetId": "7072bc99-f23e-59e3-9788-9c672083be4c",
     "createdAt": "2026-04-19T20:39:11Z"
+  },
+  {
+    "agent": "Obolark Buyer (EOA)",
+    "code": "BUYER-EOA",
+    "dept": "Demo",
+    "role": "EOA buyer for Circle Gateway x402 verify loop",
+    "walletId": "e932fc89-6919-529b-bad0-61a8e5327cb0",
+    "address": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+    "blockchain": "ARC-TESTNET",
+    "state": "LIVE",
+    "accountType": "EOA",
+    "walletSetId": "7072bc99-f23e-59e3-9788-9c672083be4c",
+    "createdAt": "2026-04-19T21:55:59Z"
   }
 ]

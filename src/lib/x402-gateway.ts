@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BatchFacilitatorClient } from '@circle-fin/x402-batching/server';
 import { ARC_CONTRACTS, ARC_CHAIN_ID, ARC_NETWORK } from './arc';
 import { priceOf, type EndpointKey } from './pricing';
-import { getWalletByCode, getTreasury } from './agents';
+import { getWalletByCode } from './agents';
 
 export const X402_VERSION = 2 as const;
 
@@ -31,12 +31,22 @@ export function getFacilitator(): BatchFacilitatorClient {
   return cachedFacilitator;
 }
 
-/** PAYMENT-REQUIRED body shape emitted on 402 responses. */
+/**
+ * PAYMENT-REQUIRED body shape emitted on 402 responses.
+ *
+ * Matches Circle's canonical Gateway batched schema exactly:
+ * `extra` carries ONLY {name, version, verifyingContract}. Non-canonical
+ * fields (supervision fee, treasury address) used to live here and caused
+ * Circle's verify to reject with `authorization_validity_too_short` —
+ * misleading label, strict-schema rejection underneath. Those values are
+ * now internal metadata and settle via direct A2A transfers, not via x402
+ * `extra`.
+ */
 export type PaymentRequirements = {
   scheme: 'exact';
   network: string;           // CAIP-2, e.g. 'eip155:5042002'
   asset: `0x${string}`;      // USDC address on Arc
-  amount: string;            // decimal USDC string — e.g. "0.003"
+  amount: string;            // base-unit USDC string — e.g. "3000"
   payTo: `0x${string}`;
   maxTimeoutSeconds: number;
   resource: string;
@@ -47,8 +57,6 @@ export type PaymentRequirements = {
     name: 'GatewayWalletBatched';
     version: '1';
     verifyingContract: typeof ARC_CONTRACTS.GatewayWallet;
-    supervisionFee: string;
-    treasuryAddress: `0x${string}`;
   };
 };
 
@@ -76,7 +84,6 @@ export function buildRequirements(
 ): PaymentRequirements {
   const price = priceOf(key);
   const seller = getWalletByCode(price.seller);
-  const treasury = getTreasury();
   return {
     scheme: 'exact',
     network: ARC_CAIP2,
@@ -91,8 +98,6 @@ export function buildRequirements(
       name: 'GatewayWalletBatched',
       version: '1',
       verifyingContract: ARC_CONTRACTS.GatewayWallet,
-      supervisionFee: price.supervisionFee,
-      treasuryAddress: treasury.address,
     },
   };
 }
