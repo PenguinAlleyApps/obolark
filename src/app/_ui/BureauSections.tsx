@@ -14,7 +14,7 @@
  *   V   · Reputation   — ERC-8004 crossing scores
  *   VI  · Archive      — full historical crossing record across all logs
  */
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
 import ReputationPanel from './ReputationPanel';
 import CrossButton from './CrossButton';
@@ -25,6 +25,13 @@ import { useOrchestrationFeed } from './useOrchestrationFeed';
 import EmberGlyph from './EmberGlyph';
 import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
 import OracleTab from './OracleTab';
+import {
+  AgentCeremonyOverlay,
+  AgentSigilDefs,
+  AGENT_REGISTRY,
+} from './AgentVFX';
+import { pickCurrentRun } from './orchestrations-types';
+import type { OrchestrationFeed } from './orchestrations-types';
 
 // Featherless bindings — 5 agents (4 declared + ORACLE-Whisper tracked via
 // Gemini Oracle tab). See ATTACK_FEATHERLESS_DEBATE.md § 1.2 for mapping.
@@ -152,14 +159,79 @@ export default function BureauSections({
     anchor: HTMLElement;
   } | null>(null);
 
+  // AgentVFX hire ceremony — fires on Tab IV card hire button + on Tab VII
+  // tick changes (see AutopilotCeremonyBridge below). One at a time.
+  const [ceremony, setCeremony] = useState<
+    | { agentCode: string; serviceLabel: string; scope: 'roster' | 'orch' }
+    | null
+  >(null);
+
   // IV · Agents roster container — the SVG overlay reads bounding rects
   // off this ref to pin edge-pulse paths to real card positions.
   const rosterRef = useRef<HTMLDivElement>(null);
 
   const show = (section: TabId) => tab === 'I' || tab === section;
 
+  // Service-label factory for the ceremony chip. Keeps copy consistent
+  // between the Tab IV hire click and the Tab VII autopilot trigger.
+  const serviceLabelFor = (code: string): string => {
+    const agent = agents.find((a) => a.code === code);
+    const endpoint = endpoints.find((e) => e.seller === code);
+    if (endpoint?.path) {
+      const frag = endpoint.path.replace(/^\//, '').replace(/[-_/]+/g, ' ');
+      return frag.toUpperCase();
+    }
+    if (agent?.role) return agent.role.toUpperCase();
+    if (agent?.dept) return `${agent.dept.toUpperCase()} · HIRE`;
+    return `${code} · HIRE`;
+  };
+
   return (
     <>
+      {/* Inline sigil defs — shared by every AgentVFX instance rendered
+          on this page (both Tab IV card overlays and Tab VII bridge). */}
+      <AgentSigilDefs />
+
+      {/* Tab IV hire-button chrome. Sharp 2px radius + ember stroke. */}
+      <style>{`
+        .agent-hire-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 8px;
+          margin-left: 2px;
+          background: transparent;
+          color: var(--ember);
+          border: 1px solid color-mix(in oklab, var(--ember) 55%, transparent);
+          border-radius: var(--radius-sharp);
+          font-family: var(--font-mono);
+          font-size: 9px;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background-color 160ms ease-out, color 160ms ease-out,
+            border-color 160ms ease-out, box-shadow 240ms ease-out;
+        }
+        .agent-hire-btn:hover,
+        .agent-hire-btn:focus-visible {
+          background: color-mix(in oklab, var(--ember) 14%, transparent);
+          color: var(--signal);
+          border-color: var(--signal);
+          box-shadow: 0 0 10px color-mix(in oklab, var(--ember) 45%, transparent);
+          outline: none;
+        }
+      `}</style>
+
+      {/* Tab VII autopilot ceremony — fires when the current run's seller
+          changes. Feeds the same ceremony overlay as Tab IV hire clicks. */}
+      <AutopilotCeremonyBridge
+        feed={orchFeed}
+        serviceLabelFor={serviceLabelFor}
+        onTick={(code, label) =>
+          setCeremony({ agentCode: code, serviceLabel: label, scope: 'orch' })
+        }
+      />
+
       {/* ── Section strip (tab nav) ───────────────────────────────────── */}
       <nav
         className="flex gap-5 flex-wrap"
@@ -218,16 +290,6 @@ export default function BureauSections({
         recentCalls={recentCalls}
         gatewayDeposit={null /* summarised on server-side via masthead chip; keep panel metric separate */}
       />
-
-      {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
-      {(tab === 'I' || tab === 'VII') && (
-        <OrchestrationsPanel
-          feed={orchFeed}
-          loaded={orchLoaded}
-          error={orchError}
-          arcscanBase={arcscanBase}
-        />
-      )}
 
       {/* ── II · Tollkeepers (endpoint catalog) ───────────────────────── */}
       {show('II') && (
@@ -343,6 +405,11 @@ export default function BureauSections({
                   {list.map((a) => {
                     const isSeller = sellerCodes.has(a.code);
                     const ledState = isSeller ? 'signal' : a.code === 'BUYER-EOA' ? 'ok' : 'idle';
+                    const hasCeremony = Boolean(AGENT_REGISTRY[a.code]);
+                    const cardCeremony =
+                      ceremony?.scope === 'roster' && ceremony.agentCode === a.code
+                        ? ceremony
+                        : null;
                     return (
                       <div
                         key={a.address}
@@ -379,6 +446,22 @@ export default function BureauSections({
                                 }
                               />
                             )}
+                            {hasCeremony && (
+                              <button
+                                type="button"
+                                className="agent-hire-btn"
+                                aria-label={`Hire ${a.codename ?? a.code} — trigger ceremony`}
+                                onClick={() =>
+                                  setCeremony({
+                                    agentCode: a.code,
+                                    serviceLabel: serviceLabelFor(a.code),
+                                    scope: 'roster',
+                                  })
+                                }
+                              >
+                                ◆ HIRE
+                              </button>
+                            )}
                             <span
                               className="font-mono uppercase"
                               style={{
@@ -390,6 +473,14 @@ export default function BureauSections({
                               {a.code}
                             </span>
                           </div>
+                          <AgentCeremonyOverlay
+                            active={cardCeremony}
+                            onClear={() =>
+                              setCeremony((c) =>
+                                c?.scope === 'roster' && c.agentCode === a.code ? null : c,
+                              )
+                            }
+                          />
                           {a.epithet && (
                             <span
                               style={{
@@ -459,6 +550,24 @@ export default function BureauSections({
           </div>
           <ArchiveTable archive={archive} arcscanBase={arcscanBase} />
         </section>
+      )}
+
+      {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
+      {(tab === 'I' || tab === 'VII') && (
+        <div style={{ position: 'relative' }}>
+          <OrchestrationsPanel
+            feed={orchFeed}
+            loaded={orchLoaded}
+            error={orchError}
+            arcscanBase={arcscanBase}
+          />
+          <AgentCeremonyOverlay
+            active={ceremony?.scope === 'orch' ? ceremony : null}
+            onClear={() =>
+              setCeremony((c) => (c?.scope === 'orch' ? null : c))
+            }
+          />
+        </div>
       )}
 
       {/* ── VIII · Oracle (Delphi · Gemini 3.1 Flash Live) ────────────── */}
@@ -662,4 +771,36 @@ function ArchiveTable({
       </div>
     </div>
   );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// AutopilotCeremonyBridge
+// — watches the orchestration feed for the current active run's seller code
+//   and fires an AgentVFX ceremony once per tick. De-dups by run id so we
+//   don't spam if the poll returns the same run twice.
+// ═════════════════════════════════════════════════════════════════════════════
+
+function AutopilotCeremonyBridge({
+  feed,
+  serviceLabelFor,
+  onTick,
+}: {
+  feed: OrchestrationFeed;
+  serviceLabelFor: (code: string) => string;
+  onTick: (code: string, label: string) => void;
+}) {
+  const lastRunIdRef = useRef<number | null>(null);
+  const current = pickCurrentRun(feed.runs);
+  const currentId = current?.id ?? null;
+  const currentSeller = current?.seller_code ?? null;
+
+  useEffect(() => {
+    if (currentId === null || currentSeller === null) return;
+    if (lastRunIdRef.current === currentId) return;
+    lastRunIdRef.current = currentId;
+    if (!AGENT_REGISTRY[currentSeller]) return;
+    onTick(currentSeller, serviceLabelFor(currentSeller));
+  }, [currentId, currentSeller, onTick, serviceLabelFor]);
+
+  return null;
 }
