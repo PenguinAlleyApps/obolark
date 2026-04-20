@@ -1,24 +1,31 @@
 /**
  * POST /api/cross  —  Interactive one-click crossing.
  *
- * Judge clicks `[ CROSS ]` in a Tollkeeper row. The route:
- *   1. Enforces rate limits + circuit breaker.
- *   2. Maps endpoint → seller code via PRICING, looks up seller SCA address.
- *   3. Executes a DIRECT USDC transfer (BUYER-EOA → seller SCA) via Circle
- *      MPC createTransaction — same code path as the battle-tested
- *      scripts/08-economy-driver.mjs (69 tx confirmed on Arc).
- *   4. Polls Circle for the onchain tx hash (up to ~10s).
- *   5. Fires a ReputationRegistry.giveFeedback tx from the same BUYER-EOA
- *      wallet (fire-and-forget; never blocks the 200).
- *   6. Appends a receipt to logs/day3-5-endpoints.json so /api/state picks
- *      it up on the next poll.
+ * Two body shapes (discriminated):
+ *
+ *   1. LEGACY — `{ endpoint: "/api/research" | ... }`
+ *      Judge clicks `[ CROSS ]` in a Tollkeeper row. Routes to the 5
+ *      monetized sellers via PRICING. Direct USDC transfer (BUYER-EOA →
+ *      seller SCA) + ReputationRegistry.giveFeedback. Ledger receipt
+ *      appended to logs/day3-5-endpoints.json.
+ *
+ *   2. HIRE — `{ mode: "hire", agentCode: "HERMES" | ..., prompt?: string }`
+ *      Per-agent CROSS / [ HIRE ] chip (Day-3 Spectacle). Any of the 20
+ *      hirable agents (5 existing sellers + 15 stubbed) can be invoked.
+ *      Looks up the agent in `agent-services.ts`, fires the same direct
+ *      transfer to that agent's wallet, returns a mythic ceremonial
+ *      payload for AgentVFX + records the hire in orchestration_runs
+ *      (`provider: 'cross-hire'`).
+ *
+ * Legacy behavior preserved; judges' existing Tab I button keeps working.
+ * Backward-compat rule: if `mode` is absent AND `endpoint` is present, we
+ * treat it as LEGACY. `mode: 'hire'` requires `agentCode`.
  *
  * Why direct-transfer instead of x402 verify+settle:
  *   Circle Gateway verify still rejects our signed authorizations with
  *   "authorization_validity_too_short" (docs in feedback_circle_gateway_x402_onboarding.md).
  *   Direct transfers go around the blocker and produce onchain txs judges
- *   can click on arcscan. The x402 scaffold remains live for the 402
- *   challenge demo — this route is the "happy-path click".
+ *   can click on arcscan.
  *
  * Security posture:
  *   · Same-origin check via `x-obolark-demo: 1` header (sent by the button
@@ -26,12 +33,14 @@
  *   · No wallet-connect. BUYER-EOA is a Circle MPC wallet; signatures never
  *     leave the server.
  *   · Rate limit + circuit breaker in rate-limit.ts.
+ *   · Hire mode uses the agent-services.ts whitelist — no arbitrary hire.
  */
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 import { getCircle } from '@/lib/circle';
 import { getWallets, getWalletByCode } from '@/lib/agents'; // getWalletByCode used for seller SCA
 import { PRICING, priceOf, type EndpointKey } from '@/lib/pricing';
@@ -45,13 +54,32 @@ import {
 import { toUsdcBaseUnits } from '@/lib/x402-gateway';
 import { ARC_CONTRACTS, ARC_NETWORK } from '@/lib/arc';
 import AGENT_IDS from '@/config/agent-ids.json';
+import { AGENTS, AGENT_INDEX_BY_CODE } from '@/agents/registry';
+import {
+  AGENT_SERVICES,
+  getAgentService,
+  HIRABLE_AGENT_CODES,
+  type AgentService,
+} from '@/lib/agent-services';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const bodySchema = z.object({
+// ── Body schemas ────────────────────────────────────────────────────────
+
+const legacyBody = z.object({
   endpoint: z.string().regex(/^\/api\/[a-z-]+$/),
+  mode: z.literal('legacy').optional(),
+  agentCode: z.undefined().optional(),
 });
+
+const hireBody = z.object({
+  mode: z.literal('hire'),
+  agentCode: z.string().min(2).max(24),
+  prompt: z.string().min(1).max(600).optional(),
+});
+
+const bodySchema = z.union([hireBody, legacyBody]);
 
 const LEDGER_PATH = path.resolve(process.cwd(), 'logs', 'day3-5-endpoints.json');
 
@@ -107,6 +135,62 @@ function appendLedger(entry: unknown): void {
   }
 }
 
+function getSupabaseService() {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.PA_SUPABASE_SERVICE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+/** Resolve an agent code OR codename to the canonical PA·co code. */
+function resolveAgentCode(input: string): string | null {
+  const upper = input.toUpperCase();
+  if (AGENT_INDEX_BY_CODE[upper] !== undefined && AGENT_SERVICES[upper]) return upper;
+  // Try by codename (HERMES → COMPASS, ORACLE → RADAR, etc.)
+  for (const code of HIRABLE_AGENT_CODES) {
+    if (AGENT_SERVICES[code].codename.toUpperCase() === upper) return code;
+  }
+  return null;
+}
+
+/** Fire-and-forget orchestration_runs insert. Never blocks 200. */
+function recordCrossHire(row: {
+  buyer_code: string;
+  seller_code: string;
+  seller_codename: string;
+  seller_endpoint: string;
+  price_usdc: string;
+  amount_base_units: string;
+  tx_hash: string | null;
+  prompt_to_seller: string;
+  seller_response: string;
+  duration_ms: number;
+}): void {
+  const sb = getSupabaseService();
+  if (!sb) return;
+  const buyerCodename = AGENTS.find((a) => a.code === row.buyer_code)?.codename ?? row.buyer_code;
+  const preview = row.seller_response.slice(0, 280);
+  void sb.from('orchestration_runs').insert({
+    buyer_code: row.buyer_code,
+    buyer_codename: buyerCodename,
+    seller_code: row.seller_code,
+    seller_codename: row.seller_codename,
+    seller_endpoint: row.seller_endpoint,
+    price_usdc: row.price_usdc,
+    amount_base_units: row.amount_base_units,
+    tx_hash: row.tx_hash,
+    feedback_tx_hash: null,
+    prompt_to_seller: row.prompt_to_seller,
+    seller_response: row.seller_response,
+    seller_response_preview: preview,
+    post_process_output: null,
+    status: row.tx_hash ? 'completed' : 'waiting_response',
+    tick_round: 0, // interactive hire, not part of orchestrator rotation
+    duration_ms: row.duration_ms,
+    provider: 'cross-hire',
+  }).then(() => {}, () => {});
+}
+
 export async function POST(req: NextRequest) {
   // 1. Demo-only header (cheap same-origin gate; no CSRF token for a GETless surface).
   if (req.headers.get('x-obolark-demo') !== '1') {
@@ -114,22 +198,18 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Body parse
-  let parsed;
+  let rawJson: unknown;
   try {
-    parsed = bodySchema.safeParse(await req.json());
+    rawJson = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 });
   }
+  const parsed = bodySchema.safeParse(rawJson);
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid body', issues: parsed.error.issues }, { status: 400 });
   }
-  const endpoint = parsed.data.endpoint;
-  const key = endpointToKey(endpoint);
-  if (!key) {
-    return NextResponse.json({ error: `unknown endpoint ${endpoint}` }, { status: 404 });
-  }
 
-  // 3. Rate limit (per IP)
+  // 3. Rate limit (per IP) — same quota for both modes.
   const ip = clientIp(req);
   const rl = checkRateLimit(ip);
   if (!rl.ok) {
@@ -139,9 +219,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Circuit breaker (BUYER-EOA deposit + direct balance).
-  //    BUYER-EOA is NOT part of the 22-agent registry used by
-  //    getWalletByCode, so we resolve it directly out of wallets.json.
+  // 4. Buyer wallet + circuit breaker (shared between modes).
   const buyer = getWallets().find((w) => w.code === 'BUYER-EOA');
   if (!buyer) {
     return NextResponse.json({ error: 'buyer wallet not provisioned' }, { status: 500 });
@@ -164,8 +242,26 @@ export async function POST(req: NextRequest) {
     // RPC hiccup — don't block the demo; we already rate-limited the caller.
   }
 
-  // 5. Idempotency — same (ip, endpoint, minute) collapses to one transfer.
-  const idKey = idempotencyKey(ip, endpoint);
+  // 5. Mode dispatch.
+  if ('mode' in parsed.data && parsed.data.mode === 'hire') {
+    return handleHire(parsed.data, { buyer, ip });
+  }
+  return handleLegacy(parsed.data as { endpoint: string }, { buyer, ip });
+}
+
+// ── Legacy mode (unchanged behavior) ────────────────────────────────────
+
+async function handleLegacy(
+  body: { endpoint: string },
+  ctx: { buyer: ReturnType<typeof getWallets>[number]; ip: string },
+) {
+  const { buyer, ip } = ctx;
+  const key = endpointToKey(body.endpoint);
+  if (!key) {
+    return NextResponse.json({ error: `unknown endpoint ${body.endpoint}` }, { status: 404 });
+  }
+
+  const idKey = idempotencyKey(ip, body.endpoint);
   const price = priceOf(key);
   const seller = getWalletByCode(price.seller);
   const amountBase = toUsdcBaseUnits(price.price);
@@ -173,7 +269,6 @@ export async function POST(req: NextRequest) {
   try {
     const result = await dedupe(idKey, async () => {
       const client = getCircle();
-      // Find USDC tokenId on the buyer wallet (cached-ish: Circle returns fast)
       const bal = await client.getWalletTokenBalance({ id: buyer.walletId });
       const usdc = (bal.data?.tokenBalances || []).find(
         (b) => (b.token?.symbol || '').toUpperCase() === 'USDC',
@@ -192,11 +287,6 @@ export async function POST(req: NextRequest) {
 
       const { hash, state } = await pollForTxHash(client, circleTxId);
 
-      // Fire-and-forget ERC-8004 reputation credit — buyer (agentId 23) gives
-      // the seller a score of 100 via ReputationRegistry.giveFeedback. We call
-      // Circle directly instead of via creditFeedback() because that helper
-      // resolves buyerCode through the 22-agent registry and would reject
-      // "BUYER-EOA". Never awaited — must not block the 200.
       if (hash) {
         void (async () => {
           try {
@@ -217,10 +307,9 @@ export async function POST(req: NextRequest) {
         })();
       }
 
-      // Append to ledger so /api/state surfaces this crossing.
       const transactionHash = hash ?? circleTxId;
       appendLedger({
-        endpoint,
+        endpoint: body.endpoint,
         receipt: {
           ok: true,
           payer: buyer.address,
@@ -247,14 +336,159 @@ export async function POST(req: NextRequest) {
     });
 
     if (!result.settled) {
-      // Tx submitted but not yet confirmed — we still return 200 with a
-      // still-mining flag; the client turns this into a friendlier toast.
       return NextResponse.json({ ...result, stillMining: true }, { status: 200 });
     }
     return NextResponse.json(result, { status: 200 });
   } catch (err) {
     return NextResponse.json(
       { error: 'cross failed', detail: (err as Error).message },
+      { status: 502 },
+    );
+  }
+}
+
+// ── Hire mode (per-agent CROSS, Day-3 Spectacle) ────────────────────────
+
+async function handleHire(
+  body: { mode: 'hire'; agentCode: string; prompt?: string },
+  ctx: { buyer: ReturnType<typeof getWallets>[number]; ip: string },
+) {
+  const { buyer, ip } = ctx;
+
+  // Whitelist — no arbitrary hire.
+  const canonicalCode = resolveAgentCode(body.agentCode);
+  if (!canonicalCode) {
+    return NextResponse.json(
+      { error: 'unknown agentCode', detail: `Not in AGENT_SERVICES whitelist: ${body.agentCode}` },
+      { status: 404 },
+    );
+  }
+  const svc: AgentService = getAgentService(canonicalCode)!;
+  const seller = (() => {
+    try {
+      return getWalletByCode(canonicalCode);
+    } catch {
+      return null;
+    }
+  })();
+  if (!seller) {
+    return NextResponse.json(
+      { error: 'agent wallet missing', agentCode: canonicalCode },
+      { status: 500 },
+    );
+  }
+
+  // Idempotency: same (ip, hire-code, minute) collapses.
+  const idKey = idempotencyKey(ip, `/api/cross#hire#${canonicalCode}`);
+  const prompt = body.prompt ?? `Default hire prompt for ${svc.codename} — ${svc.serviceName}.`;
+  const startedAt = Date.now();
+
+  try {
+    const result = await dedupe(idKey, async () => {
+      const client = getCircle();
+
+      // USDC tokenId on the buyer wallet.
+      const bal = await client.getWalletTokenBalance({ id: buyer.walletId });
+      const usdc = (bal.data?.tokenBalances || []).find(
+        (b) => (b.token?.symbol || '').toUpperCase() === 'USDC',
+      );
+      if (!usdc?.token?.id) throw new Error('BUYER-EOA has no USDC token entry');
+
+      // Primary payment — BUYER-EOA → agent SCA.
+      const tx = await client.createTransaction({
+        walletId: buyer.walletId,
+        tokenId: usdc.token.id,
+        destinationAddress: seller.address,
+        amount: [svc.priceUsdc],
+        fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+      });
+      const circleTxId = tx.data?.id;
+      if (!circleTxId) throw new Error('Circle createTransaction returned no id');
+
+      const { hash, state } = await pollForTxHash(client, circleTxId);
+
+      // Reputation credit — fire-and-forget; never await.
+      let feedbackTxId: string | null = null;
+      if (hash) {
+        try {
+          const ids = AGENT_IDS as unknown as Record<string, number>;
+          const clientId = ids['BUYER-EOA'];
+          const serverId = ids[canonicalCode];
+          if (clientId && serverId) {
+            const fb = await client.createContractExecutionTransaction({
+              walletId: buyer.walletId,
+              contractAddress: ARC_CONTRACTS.REPUTATION_REGISTRY,
+              abiFunctionSignature: 'giveFeedback(uint256,uint256,uint8)',
+              abiParameters: [clientId.toString(), serverId.toString(), '100'],
+              fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+            });
+            feedbackTxId = fb.data?.id ?? null;
+          }
+        } catch {
+          // swallow — failed credit must never block the 200.
+        }
+      }
+
+      // Ceremonial content (mythic stub). β/γ templates will swap this for
+      // a live Featherless call in a later PR; the wire shape is stable.
+      const content = svc.stubResponse(prompt);
+      const durationMs = Date.now() - startedAt;
+      const transactionHash = hash ?? circleTxId;
+
+      // Best-effort ledger + orchestration_runs insert.
+      appendLedger({
+        endpoint: svc.endpoint ?? `/api/cross#hire#${canonicalCode}`,
+        receipt: {
+          ok: true,
+          payer: buyer.address,
+          amount: svc.priceBaseUnits,
+          network: `eip155:5042002`,
+          transactionHash,
+        },
+        result: `[${canonicalCode} · hire] ${svc.serviceName}`,
+        at: new Date().toISOString(),
+      });
+      recordCrossHire({
+        buyer_code: 'BUYER-EOA',
+        seller_code: canonicalCode,
+        seller_codename: svc.codename,
+        seller_endpoint: svc.endpoint ?? `/api/cross#hire#${canonicalCode}`,
+        price_usdc: svc.priceUsdc,
+        amount_base_units: svc.priceBaseUnits,
+        tx_hash: hash,
+        prompt_to_seller: prompt,
+        seller_response: content,
+        duration_ms: durationMs,
+      });
+
+      return {
+        ok: true as const,
+        mode: 'hire' as const,
+        agentCode: canonicalCode,
+        codename: svc.codename,
+        template: svc.template,
+        service: svc.serviceName,
+        price: svc.priceUsdc,
+        amountBase: svc.priceBaseUnits,
+        tx_hash: transactionHash,
+        feedback_tx_hash: feedbackTxId,
+        circleTxId,
+        settled: Boolean(hash),
+        state,
+        sellerAddress: seller.address,
+        network: ARC_NETWORK,
+        content,
+        prompt,
+      };
+    });
+
+    if (!result.settled) {
+      return NextResponse.json({ ...result, stillMining: true }, { status: 200 });
+    }
+    return NextResponse.json(result, { status: 200 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: 'hire failed', detail: (err as Error).message, agentCode: canonicalCode },
       { status: 502 },
     );
   }
