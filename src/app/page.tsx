@@ -14,6 +14,7 @@
 import { headers } from 'next/headers';
 import LedgerTicker from './_ui/LedgerTicker';
 import ReputationPanel from './_ui/ReputationPanel';
+import CrossButton from './_ui/CrossButton';
 
 type Agent = {
   agent: string;
@@ -321,13 +322,15 @@ export default async function Home() {
               <th className="py-2 text-right">Base (USDC)</th>
               <th className="py-2 text-right">Supervision</th>
               <th className="py-2">Description</th>
+              <th className="py-2 text-right">Cross</th>
             </tr>
           </thead>
           <tbody>
             {endpoints.map((e) => {
               const sellerAgent = agents.find((a) => a.code === e.seller);
+              const codename = sellerAgent?.codename ?? e.seller;
               return (
-                <tr key={e.path} className="border-b border-dashed" style={{ borderColor: 'var(--grid-line)' }}>
+                <tr key={e.path} className="border-b border-dashed" style={{ borderColor: 'var(--grid-line)' }} tabIndex={-1}>
                   <td className="py-2">
                     <span className="font-bold">{e.path}</span>
                   </td>
@@ -343,7 +346,7 @@ export default async function Home() {
                           color: 'var(--ink)',
                         }}
                       >
-                        {sellerAgent?.codename ?? e.seller}
+                        {codename}
                       </span>
                       <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
                         · {e.seller}
@@ -353,6 +356,14 @@ export default async function Home() {
                   <td className="py-2 text-right" data-numeric>{e.price}</td>
                   <td className="py-2 text-right" data-numeric>{e.supervisionFee}</td>
                   <td className="py-2 text-[var(--muted)]">{e.description}</td>
+                  <td className="py-2 text-right" style={{ whiteSpace: 'nowrap' }}>
+                    <CrossButton
+                      endpoint={e.path}
+                      sellerCodename={codename}
+                      sellerCode={e.seller}
+                      price={e.price}
+                    />
+                  </td>
                 </tr>
               );
             })}

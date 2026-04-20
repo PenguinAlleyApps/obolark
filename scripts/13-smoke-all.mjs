@@ -161,6 +161,48 @@ async function main() {
     criticalFail = true;
   }
 
+  // ── 4c. Interactive /api/cross round-trip ────────────────────────────
+  //      Skipped when CIRCLE creds are absent (CI). Requires the dev server
+  //      to be running with a funded BUYER-EOA; verifies 200 + tx hash land
+  //      in the ledger via /api/state.recentCalls[0].
+  if (!process.env.CIRCLE_API_KEY || !process.env.CIRCLE_ENTITY_SECRET) {
+    checks.push({ name: '/api/cross smoke', status: 'WARN', detail: 'skipped (CIRCLE creds absent)' });
+  } else {
+    try {
+      const r = await fetch(`${APP_URL}/api/cross`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-obolark-demo': '1' },
+        body: JSON.stringify({ endpoint: '/api/research' }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (r.status !== 200) {
+        checks.push({ name: '/api/cross smoke', status: 'FAIL', detail: `HTTP ${r.status} · ${JSON.stringify(body).slice(0, 140)}` });
+        criticalFail = true;
+      } else if (body.sellerCode !== 'RADAR' || body.amount !== '3000') {
+        checks.push({ name: '/api/cross smoke', status: 'FAIL', detail: `unexpected body seller=${body.sellerCode} amount=${body.amount}` });
+        criticalFail = true;
+      } else if (!body.txHash) {
+        checks.push({ name: '/api/cross smoke', status: 'WARN', detail: 'no txHash (still mining?)' });
+      } else {
+        // Verify the settlement appears in /api/state.recentCalls[0].
+        // Small wait for the file write + state read cache to settle.
+        await new Promise((res) => setTimeout(res, 1500));
+        const sres = await fetch(`${APP_URL}/api/state`);
+        const sdata = await sres.json().catch(() => ({}));
+        const top = Array.isArray(sdata.recentCalls) ? sdata.recentCalls[0] : null;
+        const matches = top && top.endpoint === '/api/research' && top.receipt?.transactionHash === body.txHash;
+        checks.push({
+          name: '/api/cross smoke',
+          status: matches ? 'PASS' : 'WARN',
+          detail: `tx=${body.txHash.slice(0, 14)}… seller=${body.sellerCode} · ledgerTop=${matches ? 'match' : (top?.endpoint ?? 'empty')}`,
+        });
+      }
+    } catch (err) {
+      checks.push({ name: '/api/cross smoke', status: 'FAIL', detail: err.message });
+      criticalFail = true;
+    }
+  }
+
   // ── 5. Onchain tx census ─────────────────────────────────────────────
   const logDir = path.resolve('logs');
   let onchainCount = 0;

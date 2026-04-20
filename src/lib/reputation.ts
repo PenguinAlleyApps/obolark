@@ -61,7 +61,7 @@ function appendLog(row: Record<string, unknown>): void {
 }
 
 function agentIdOrNull(code: string): number | null {
-  const id = (AGENT_IDS as Record<string, number>)[code];
+  const id = (AGENT_IDS as unknown as Record<string, number>)[code];
   return typeof id === 'number' ? id : null;
 }
 
@@ -179,12 +179,12 @@ export async function getReputationSnapshot(): Promise<Record<string, SellerRepu
       const deploy = JSON.parse(fs.readFileSync(deployPath, 'utf-8'));
       fromBlock = BigInt(deploy.blockNumber);
     } catch {
-      fromBlock = latest > 9_000n ? latest - 9_000n : 0n;
+      fromBlock = latest > BigInt(9000) ? latest - BigInt(9000) : BigInt(0);
     }
 
-    const STEP = 9_000n;
+    const STEP = BigInt(9000);
     const logs: Awaited<ReturnType<typeof pub.getLogs>> = [];
-    for (let start = fromBlock; start <= latest; start += STEP + 1n) {
+    for (let start = fromBlock; start <= latest; start += STEP + BigInt(1)) {
       const end = start + STEP > latest ? latest : start + STEP;
       const chunk = await pub.getLogs({
         address: ARC_CONTRACTS.REPUTATION_REGISTRY,
@@ -197,14 +197,15 @@ export async function getReputationSnapshot(): Promise<Record<string, SellerRepu
 
     // Reverse map: agentId -> sellerCode
     const idToCode: Record<number, string> = {};
-    for (const [code, id] of Object.entries(AGENT_IDS as Record<string, number>)) {
+    for (const [code, id] of Object.entries(AGENT_IDS as unknown as Record<string, number>)) {
       if (code.startsWith('_')) continue;
       idToCode[id] = code;
     }
 
     for (const log of logs) {
-      const serverId = Number(log.args.serverAgentId);
-      const score = Number(log.args.score);
+      const args = (log as unknown as { args: { serverAgentId: bigint; score: number } }).args;
+      const serverId = Number(args.serverAgentId);
+      const score = Number(args.score);
       const code = idToCode[serverId];
       if (!code) continue;
       if (!out[code]) out[code] = { count: 0, avgScore: 0, lastTxHashes: [] };

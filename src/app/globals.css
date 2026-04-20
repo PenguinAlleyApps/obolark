@@ -421,3 +421,104 @@ pre,
   }
   .fx-ember { opacity: 0.6; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Interactive CROSS button — inline in each Tollkeeper row.
+   Pairs with _ui/CrossButton.tsx.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.stamp-button.cross-button {
+  position: relative;
+  padding: 5px 12px;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+}
+.stamp-button.cross-button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+/* Settling state: indeterminate 1px underline (no spinner per bureau aesthetic). */
+.stamp-button.cross-button[data-busy="true"] {
+  cursor: progress;
+  opacity: 0.85;
+}
+.stamp-button.cross-button[data-busy="true"]::after {
+  content: "";
+  position: absolute;
+  left: 6px; right: 6px; bottom: 2px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    currentColor 40%,
+    currentColor 60%,
+    transparent 100%);
+  animation: cross-underline 1100ms linear infinite;
+}
+@keyframes cross-underline {
+  0%   { transform: translateX(-40%); }
+  100% { transform: translateX( 40%); }
+}
+
+/* +1 ghost numeral floating up on success. 800ms rise + fade. */
+.cross-plus-one {
+  position: absolute;
+  pointer-events: none;
+  margin-left: 6px;
+  margin-top: -14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--signal);
+  opacity: 0;
+  animation: cross-plus-one 800ms ease-out forwards;
+  text-shadow: 0 0 6px var(--signal);
+}
+@keyframes cross-plus-one {
+  0%   { opacity: 0;    transform: translateY(0)    scale(0.92); }
+  15%  { opacity: 1; }
+  100% { opacity: 0;    transform: translateY(-24px) scale(1.05); }
+}
+
+/* Bottom-right toast stack — dismissable. */
+.cross-toasts {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 50;
+  pointer-events: none;
+}
+.cross-toast {
+  pointer-events: auto;
+  display: inline-block;
+  padding: 10px 14px;
+  background: var(--ink);
+  color: var(--bone);
+  border: 1px solid var(--grid-line);
+  border-radius: var(--radius-sharp);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  animation: cross-toast-in 220ms ease-out;
+  max-width: 320px;
+  text-align: left;
+}
+.cross-toast[data-tone="ok"]   { border-left: 3px solid var(--signal); }
+.cross-toast[data-tone="warn"] { border-left: 3px solid #F76B2B; }
+.cross-toast[data-tone="info"] { border-left: 3px solid var(--grid-line); }
+@keyframes cross-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp-button.cross-button[data-busy="true"]::after,
+  .cross-plus-one,
+  .cross-toast {
+    animation: none !important;
+  }
+}

@@ -23,7 +23,13 @@ export default function LedgerTicker({ initial }: { initial: Receipt[] }) {
       }
     };
     const id = setInterval(tick, 15000);
-    return () => clearInterval(id);
+    // Also refresh immediately when a CrossButton fires — no 15s delay.
+    const onSettled = () => { void tick(); };
+    window.addEventListener('obolark:settled', onSettled as EventListener);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('obolark:settled', onSettled as EventListener);
+    };
   }, []);
 
   if (rows.length === 0) {
