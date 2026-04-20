@@ -46,5 +46,41 @@
     },
     "result": "[Argus · live-paid] Audit report for \"Obolark MVP\" against quality gates: zero-gaps, EO-016. Verdict: pass/kill/fix — with exhaustive checklist evidence inlined. Settled on Arc testnet via Circle Gateway batched x402. Tx: 214c5b52-1f67-4323-8519-95a2c1ff4c85.",
     "at": "2026-04-19T21:59:59.823Z"
+  },
+  {
+    "endpoint": "/api/research",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "3000",
+      "network": "eip155:5042002",
+      "transactionHash": "0x765f129bbe886eaf8807694c243dab1f704bc68773d7ef23b9c96b68016eae71"
+    },
+    "result": "[RADAR · one-click CROSS] PA·co Radar — single research query (web search + synthesis)",
+    "at": "2026-04-20T09:32:22.911Z"
+  },
+  {
+    "endpoint": "/api/research",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "3000",
+      "network": "eip155:5042002",
+      "transactionHash": "0x77706514fd67ff651870a4d9828c9c7dfb9baa0a0b2303bd08a1b0a8a99740bf"
+    },
+    "result": "[RADAR · one-click CROSS] PA·co Radar — single research query (web search + synthesis)",
+    "at": "2026-04-20T09:32:45.339Z"
+  },
+  {
+    "endpoint": "/api/research",
+    "receipt": {
+      "ok": true,
+      "payer": "0xe16aeb8f1465ed3dc38656f2fd65fffa0c2cd297",
+      "amount": "3000",
+      "network": "eip155:5042002",
+      "transactionHash": "0x3676a76227b69ccd2e0ba6ee45d1b68d62d363d671301ef740a1c43bf270581d"
+    },
+    "result": "[RADAR · one-click CROSS] PA·co Radar — single research query (web search + synthesis)",
+    "at": "2026-04-20T09:33:18.257Z"
   }
 ]

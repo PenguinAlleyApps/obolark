@@ -92,6 +92,142 @@ export async function GET() {
   // Reputation snapshot — 10s in-process cache inside getReputationSnapshot()
   const reputation = await getReputationSnapshot().catch(() => ({}));
 
+  // Archive: full historical crossing record across all log files we ship.
+  // `recentCalls` still returns the tail 10 for the Live Ledger panel;
+  // Archive reads ALL JSONL/JSON logs and merges them with a stable
+  // chronological order so the VI · Archive tab shows 50+ tx since Day 0.
+  type ArchiveEntry = {
+    endpoint: string;
+    receipt: { payer: string; amount: string; network: string; transactionHash: string };
+    result?: string;
+    at: string;
+    source: string;
+  };
+  const archive: ArchiveEntry[] = [];
+  const pushEntry = (
+    e: Omit<ArchiveEntry, 'receipt' | 'source'> & {
+      source: string;
+      hash: string;
+      payer: string;
+      amount: string;
+    },
+  ) => {
+    if (!e.hash) return;
+    archive.push({
+      endpoint: e.endpoint,
+      receipt: {
+        payer: e.payer,
+        amount: e.amount,
+        network: 'arc-testnet',
+        transactionHash: e.hash,
+      },
+      result: e.result,
+      at: e.at,
+      source: e.source,
+    });
+  };
+
+  // ── logs/day0-tx-hashes.json — 22 treasury-fund transfers with real 0x hashes
+  try {
+    const raw = loadJson<Array<{ to: string; txHash: string; circleTxId?: string }>>(
+      'logs/day0-tx-hashes.json',
+      [],
+    );
+    for (const r of raw) {
+      pushEntry({
+        source: 'funding',
+        endpoint: `fund:${r.to}`,
+        hash: r.txHash,
+        payer: 'PAco',
+        amount: '10000000',
+        at: '2026-04-19T20:45:00Z',
+      });
+    }
+  } catch { /* tolerate */ }
+
+  // ── logs/day3-5-endpoints.json — paid x402-flow receipts
+  try {
+    const raw = loadJson<Array<{
+      endpoint: string;
+      receipt: { payer: string; amount: string; network: string; transactionHash: string };
+      at: string;
+      result?: string;
+    }>>('logs/day3-5-endpoints.json', []);
+    for (const r of raw) {
+      pushEntry({
+        source: 'endpoints',
+        endpoint: r.endpoint,
+        hash: r.receipt?.transactionHash ?? '',
+        payer: r.receipt?.payer ?? '',
+        amount: r.receipt?.amount ?? '',
+        at: r.at,
+        result: r.result,
+      });
+    }
+  } catch { /* tolerate */ }
+
+  // ── logs/day2-economy.json — A2A economy driver (Circle txIds, no hex hash)
+  try {
+    const raw = loadJson<Array<{
+      buyer: string; seller: string; amount: string; note: string; txId: string; ts: string;
+    }>>('logs/day2-economy.json', []);
+    for (const r of raw) {
+      pushEntry({
+        source: 'economy',
+        endpoint: `${r.buyer} → ${r.seller} · ${r.note}`,
+        hash: r.txId ?? '',
+        payer: r.buyer,
+        amount: String(Math.round(Number(r.amount) * 1_000_000)),
+        at: r.ts,
+      });
+    }
+  } catch { /* tolerate */ }
+
+  // ── logs/reputation-seed.json — 5 seeded feedback entries (ERC-8004)
+  try {
+    const raw = loadJson<{
+      at: string; registry: string;
+      results: Array<{ seller: string; serverId: number; txHash: string }>;
+    }>('logs/reputation-seed.json', { at: '', registry: '', results: [] });
+    for (const r of raw.results ?? []) {
+      pushEntry({
+        source: 'reputation',
+        endpoint: `giveFeedback → ${r.seller}`,
+        hash: r.txHash,
+        payer: 'BUYER-EOA',
+        amount: '100',
+        at: raw.at,
+      });
+    }
+  } catch { /* tolerate */ }
+
+  // ── logs/reputation-feedback.jsonl — runtime idempotent feedback log
+  try {
+    const full = path.resolve(process.cwd(), 'logs/reputation-feedback.jsonl');
+    if (fs.existsSync(full)) {
+      const lines = fs.readFileSync(full, 'utf-8').split('\n').filter(Boolean);
+      for (const line of lines) {
+        try {
+          const r = JSON.parse(line) as {
+            feedbackTxHash?: string; settlementId?: string; ts?: string;
+            buyer?: string; seller?: string;
+          };
+          pushEntry({
+            source: 'reputation',
+            endpoint: `feedback → ${r.seller ?? '?'}`,
+            hash: r.feedbackTxHash ?? '',
+            payer: r.buyer ?? 'BUYER-EOA',
+            amount: '100',
+            at: r.ts ?? '',
+          });
+        } catch { /* skip bad line */ }
+      }
+    }
+  } catch { /* tolerate */ }
+
+  // Chronological newest-first
+  archive.sort((a, b) => (new Date(b.at).getTime() || 0) - (new Date(a.at).getTime() || 0));
+
   return NextResponse.json({
     network: {
       name: 'Arc Testnet',
@@ -105,6 +241,7 @@ export async function GET() {
     endpoints,
     recentCalls: recentCalls.slice(-10).reverse(),
     reputation,
+    archive,
     generatedAt: new Date().toISOString(),
   });
 }

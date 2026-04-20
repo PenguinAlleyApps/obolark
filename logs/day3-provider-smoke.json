@@ -1,186 +1,39 @@
 {
-  "at": "2026-04-19T22:41:59.189Z",
-  "appUrl": "https://obolark.vercel.app",
-  "pass": 5,
+  "at": "2026-04-20T09:33:15.841Z",
+  "appUrl": "http://localhost:3000",
+  "pass": 0,
   "degraded": 0,
-  "fail": 0,
+  "fail": 5,
   "report": [
     {
       "endpoint": "/api/research",
-      "status": "PASS",
-      "wallMs": 5792,
-      "model": "claude-haiku-4-5-20251001",
-      "verdict": "unsupported",
-      "tokens": {
-        "input": 241,
-        "output": 134
-      },
-      "latencyMs": 4494,
-      "result": {
-        "verdict": "unsupported",
-        "claims": [
-          {
-            "statement": "Arc testnet chain ID specification",
-            "source": null,
-            "confidence": 0
-          },
-          {
-            "statement": "USDC decimals on Arc testnet",
-            "source": null,
-            "confidence": 0
-          }
-        ],
-        "summary": "No evidence available for Arc testnet chain ID or USDC decimals. Arc testnet details require official documentation or verified blockchain explorers."
-      }
+      "status": "FAIL_PAID",
+      "http": 402,
+      "body": "{\"error\":\"payment invalid\",\"reason\":\"authorization_validity_too_short\"}"
     },
     {
       "endpoint": "/api/design-review",
-      "status": "PASS",
-      "wallMs": 6742,
-      "model": "claude-haiku-4-5-20251001",
-      "verdict": "revise",
-      "tokens": {
-        "input": 269,
-        "output": 315
-      },
-      "latencyMs": 5796,
-      "result": {
-        "verdict": "revise",
-        "findings": [
-          {
-            "severity": "blocker",
-            "rule": "no default Tailwind indigo gradients",
-            "note": "Indigo gradient background violates brand constraint. Replace with PA·co always-light palette (off-white, soft grays, accent colors only)."
-          },
-          {
-            "severity": "major",
-            "rule": "hierarchy and contrast",
-            "note": "Two centered CTAs create ambiguity about primary action. Establish clear visual weight difference via size, color, or positioning (e.g., primary button prominent, secondary smaller/outline)."
-          },
-          {
-            "severity": "minor",
-            "rule": "border-radius adherence",
-            "note": "Confirm lucide icons and feature grid elements use sharp 2px max border-radius. Default lucide is circular; verify grid cards do not exceed 2px."
-          },
-          {
-            "severity": "minor",
-            "rule": "density and affordance",
-            "note": "Feature grid density unclear. Pre-launch SaaS hero typically benefits from 3–4 features max to avoid cognitive overload. Confirm spacing is intentional, not cramped."
-          }
-        ],
-        "confidence": 0.88
-      }
+      "status": "FAIL_PAID",
+      "http": 402,
+      "body": "{\"error\":\"payment invalid\",\"reason\":\"authorization_validity_too_short\"}"
     },
     {
       "endpoint": "/api/qa",
-      "status": "PASS",
-      "wallMs": 9519,
-      "model": "claude-haiku-4-5-20251001",
-      "verdict": "fail",
-      "tokens": {
-        "input": 250,
-        "output": 284
-      },
-      "latencyMs": 8523,
-      "result": {
-        "verdict": "fail",
-        "testCases": [
-          {
-            "name": "Admin-only endpoint rejects non-admin users",
-            "steps": [
-              "Authenticate as non-admin user",
-              "Attempt access to admin-protected endpoint",
-              "Assert response status"
-            ],
-            "expected": "403 Forbidden or 401 Unauthorized",
-            "priority": "P0"
-          },
-          {
-            "name": "Admin-only endpoint allows admin users",
-            "steps": [
-              "Authenticate as admin user",
-              "Access admin-protected endpoint",
-              "Assert successful response"
-            ],
-            "expected": "200 OK or equivalent success status",
-            "priority": "P0"
-          },
-          {
-            "name": "Unauthenticated user cannot access admin endpoint",
-            "steps": [
-              "Make request without authentication",
-              "Attempt access to admin-protected endpoint",
-              "Assert access denied"
-            ],
-            "expected": "401 Unauthorized",
-            "priority": "P1"
-          }
-        ],
-        "confidence": 0.95
-      }
+      "status": "FAIL_PAID",
+      "http": 402,
+      "body": "{\"error\":\"payment invalid\",\"reason\":\"authorization_validity_too_short\"}"
     },
     {
       "endpoint": "/api/security-scan",
-      "status": "PASS",
-      "wallMs": 10996,
-      "model": "claude-haiku-4-5-20251001",
-      "verdict": "critical",
-      "tokens": {
-        "input": 260,
-        "output": 427
-      },
-      "latencyMs": 10010,
-      "result": {
-        "verdict": "critical",
-        "findings": [
-          {
-            "cwe": "CWE-95",
-            "severity": "critical",
-            "exploit": "GET /run?cmd=require('child_process').execSync('rm -rf /') executes arbitrary system commands with full application privileges. No validation, sanitization, or authorization checks present.",
-            "mitigation": "Remove eval() entirely. If dynamic code execution is required, use isolated VM contexts with strict whitelisting. Prefer declarative configuration or switch to safer parsing libraries (JSON, YAML). Implement input validation, least-privilege execution context, and WAF rules blocking 'eval', 'require', 'exec' patterns."
-          },
-          {
-            "cwe": "CWE-94",
-            "severity": "critical",
-            "exploit": "GET /run?cmd=process.env logs all environment variables including API keys, database credentials, and secrets. Attacker gains full access to application secrets and upstream services.",
-            "mitigation": "Never expose eval to user input. Rotate all secrets immediately if this endpoint was deployed. Implement secret management (HashiCorp Vault, AWS Secrets Manager) and scan environment variables for sensitive data."
-          },
-          {
-            "cwe": "CWE-77",
-            "severity": "critical",
-            "exploit": "GET /run?cmd=__dirname;require('fs').readdirSync('/') enumerates filesystem and reads arbitrary files. Combined with require(), attacker achieves complete system compromise.",
-            "mitigation": "Use sandboxing (Docker with read-only root, AppArmor/SELinux). Run application with minimal OS-level privileges. No user input should ever reach code execution primitives."
-          }
-        ],
-        "confidence": 1
-      }
+      "status": "FAIL_PAID",
+      "http": 402,
+      "body": "{\"error\":\"payment invalid\",\"reason\":\"authorization_validity_too_short\"}"
     },
     {
       "endpoint": "/api/audit",
-      "status": "PASS",
-      "wallMs": 7562,
-      "model": "claude-opus-4-5-20251101",
-      "verdict": "conditional",
-      "tokens": {
-        "input": 280,
-        "output": 82
-      },
-      "latencyMs": 6520,
-      "result": {
-        "verdict": "conditional",
-        "gates": {
-          "correctness": "fail",
-          "economics": "pass",
-          "safety": "pass",
-          "provenance": "n/a"
-        },
-        "conditions": [
-          "Add test coverage for all 5 paid endpoints in CI pipeline",
-          "Implement integration tests validating x402 payment flow with Gateway",
-          "Add unit tests for deposit handling and buyer EOA authentication"
-        ],
-        "confidence": 0.85
-      }
+      "status": "FAIL_PAID",
+      "http": 402,
+      "body": "{\"error\":\"payment invalid\",\"reason\":\"authorization_validity_too_short\"}"
     }
   ]
 }

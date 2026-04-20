@@ -1,20 +1,18 @@
 /**
- * Obolark · Bureau Ledger — Front Page (v4.2 Night edition)
+ * Obolark · Bureau Ledger — Front Page (v4.3 tabbed edition)
  *
- * Server component. Pulls state from /api/state (same origin).
- * Fully static data on first paint, then auto-refresh every 15s in the
- * LedgerTicker client sub-component.
+ * Server component. Pulls state from /api/state (same origin) and hands it
+ * to the <BureauSections> client component which owns the nav-strip tabs
+ * and conditional panel rendering.
  *
- * v4.2 applies the Claude Design system output (2026-04-20):
- *   · Night mode is the default. Obsidian + ember palette, Cinzel mythic
- *     masthead, ember-glow wordmark, Vol/No folio stamp, 6-section nav strip.
- *   · Codename-first across the board. PA·co `code` is metadata underneath.
- *   · Rails + rules + hairlines; no shadow cards, no pills, no blur.
+ * v4.3 changes vs v4.2:
+ *   · Section nav strip is now CLICKABLE — tabs toggle panel visibility
+ *   · Correct order II → III → IV → V → VI (Archive is new)
+ *   · VI · Archive — full historical crossing record across all log files
+ *   · Spacing fix in Tollkeeper table (Supervision / Description)
  */
 import { headers } from 'next/headers';
-import LedgerTicker from './_ui/LedgerTicker';
-import ReputationPanel from './_ui/ReputationPanel';
-import CrossButton from './_ui/CrossButton';
+import BureauSections from './_ui/BureauSections';
 
 type Agent = {
   agent: string;
@@ -39,20 +37,32 @@ type Receipt = {
   result?: string;
   at: string;
 };
-type SellerReputation = {
-  count: number;
-  avgScore: number;
-  lastTxHashes: string[];
-};
+type SellerReputation = { count: number; avgScore: number; lastTxHashes: string[] };
+type ArchiveEntry = Receipt & { source: string };
+
 type StateResponse = {
-  network: { name: string; chainId: number; usdc: string; gatewayWallet: string; reputationRegistry?: string };
-  buyer: { code: string; address: string; accountType?: string; gatewayDeposit: string | null } | null;
+  network: {
+    name: string;
+    chainId: number;
+    usdc: string;
+    gatewayWallet: string;
+    reputationRegistry?: string;
+  };
+  buyer: {
+    code: string;
+    address: string;
+    accountType?: string;
+    gatewayDeposit: string | null;
+  } | null;
   agents: Agent[];
   endpoints: Endpoint[];
   recentCalls: Receipt[];
   reputation?: Record<string, SellerReputation>;
+  archive?: ArchiveEntry[];
   generatedAt: string;
 };
+
+const ARCSCAN_BASE = 'https://testnet.arcscan.app';
 
 async function getState(): Promise<StateResponse | null> {
   try {
@@ -67,32 +77,8 @@ async function getState(): Promise<StateResponse | null> {
   }
 }
 
-const DEPT_ORDER: Record<string, number> = {
-  Executive: 0,
-  Engineering: 1,
-  'Q&S': 2,
-  Intelligence: 3,
-  Growth: 4,
-  Audiovisual: 5,
-  Governance: 6,
-  Consulting: 7,
-  Operations: 8,
-  Demo: 99,
-};
-
-function groupByDept(agents: Agent[]): Array<[string, Agent[]]> {
-  const map = new Map<string, Agent[]>();
-  for (const a of agents) {
-    const dept = a.dept || 'Other';
-    if (!map.has(dept)) map.set(dept, []);
-    map.get(dept)!.push(a);
-  }
-  return [...map.entries()].sort(
-    ([a], [b]) => (DEPT_ORDER[a] ?? 50) - (DEPT_ORDER[b] ?? 50),
-  );
-}
-
 function truncAddr(a: string): string {
+  if (!a || a.length < 10) return a || '';
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
 
@@ -106,11 +92,7 @@ export default async function Home() {
     );
   }
 
-  const { network, buyer, agents, endpoints, recentCalls, reputation } = state;
-  const sellerCodes = new Set(endpoints.map((e) => e.seller));
-  const deptGroups = groupByDept(agents);
-  const scaCount = agents.filter((a) => a.accountType === 'SCA').length;
-  const eoaCount = agents.filter((a) => a.accountType === 'EOA').length;
+  const { network, buyer, agents, endpoints, recentCalls, reputation, archive } = state;
 
   return (
     <main className="flex flex-col min-h-screen bg-bone text-ink">
@@ -125,7 +107,6 @@ export default async function Home() {
           color: 'var(--brand-ink)',
         }}
       >
-        {/* hairline under the thick ink rule — newspaper folio */}
         <div
           aria-hidden
           style={{
@@ -138,7 +119,6 @@ export default async function Home() {
           }}
         />
 
-        {/* Top strip: filed line + Vol/No stamp */}
         <div
           className="flex items-center justify-between gap-4 flex-wrap"
           style={{
@@ -154,13 +134,13 @@ export default async function Home() {
         >
           <span className="flex items-center gap-3">
             <span className="status-led" data-state="signal" />
-            Bureau Ledger · Filed 2026 · {network.name}
+            Bureau Ledger &middot; Filed 2026 &middot; {network.name}
           </span>
           <span
             className="inline-flex items-center gap-3"
             style={{ fontSize: 9.5, letterSpacing: '0.28em' }}
           >
-            <span>Penguin Alley · PA·co</span>
+            <span>Penguin Alley &middot; PA&middot;co</span>
             <span
               style={{
                 border: '1px solid var(--brand-rule)',
@@ -169,12 +149,11 @@ export default async function Home() {
                 letterSpacing: '0.34em',
               }}
             >
-              Vol. I · No. 1
+              Vol. I &middot; No. 1
             </span>
           </span>
         </div>
 
-        {/* Title row: wordmark + network meta table */}
         <div
           className="grid gap-9 items-end"
           style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)' }}
@@ -229,38 +208,20 @@ export default async function Home() {
             <span>{truncAddr(network.usdc)}</span>
             <span className="meta-label">gateway</span>
             <span>{truncAddr(network.gatewayWallet)}</span>
+            {network.reputationRegistry && (
+              <>
+                <span className="meta-label">reputation</span>
+                <span>{truncAddr(network.reputationRegistry)}</span>
+              </>
+            )}
+            {buyer?.gatewayDeposit && (
+              <>
+                <span className="meta-label">deposit</span>
+                <span>{buyer.gatewayDeposit} USDC</span>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Section strip */}
-        <nav
-          className="flex gap-5 flex-wrap"
-          style={{
-            marginTop: 22,
-            paddingTop: 10,
-            borderTop: '1px solid var(--brand-rule)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            textTransform: 'uppercase',
-            letterSpacing: '0.22em',
-            color: 'var(--brand-muted)',
-          }}
-        >
-          <span
-            style={{
-              color: 'var(--brand-accent)',
-              borderBottom: '1px solid var(--brand-accent)',
-              paddingBottom: 4,
-            }}
-          >
-            [ I · Front Page ]
-          </span>
-          <span>[ II · Tollkeepers ]</span>
-          <span>[ III · Ledger ]</span>
-          <span>[ IV · Agents ]</span>
-          <a href="#reputation" style={{ color: 'inherit' }}>[ V · Reputation ]</a>
-          <span>[ VI · Archive ]</span>
-        </nav>
 
         <style>{`
           .meta-label {
@@ -272,223 +233,16 @@ export default async function Home() {
         `}</style>
       </header>
 
-      {/* ── Metrics row ─────────────────────────────────────────────── */}
-      <section className="panel grid grid-cols-2 md:grid-cols-4 gap-8">
-        <div className="metric-column">
-          <div className="label">Agents</div>
-          <div className="value">{agents.length}</div>
-          <div className="label mt-1" style={{ color: 'var(--muted)' }}>
-            {scaCount} SCA · {eoaCount} EOA
-          </div>
-        </div>
-        <div className="metric-column">
-          <div className="label">Endpoints</div>
-          <div className="value" data-role="signal">
-            {endpoints.length}
-          </div>
-          <div className="label mt-1" style={{ color: 'var(--muted)' }}>
-            monetized via x402
-          </div>
-        </div>
-        <div className="metric-column">
-          <div className="label">Settlements</div>
-          <div className="value">{recentCalls.length}</div>
-          <div className="label mt-1" style={{ color: 'var(--muted)' }}>
-            Circle Gateway · batched
-          </div>
-        </div>
-        <div className="metric-column">
-          <div className="label">Gateway Deposit</div>
-          <div className="value" data-role="signal">
-            {buyer?.gatewayDeposit ?? '--'}
-          </div>
-          <div className="label mt-1" style={{ color: 'var(--muted)' }}>
-            USDC · buyer-eoa
-          </div>
-        </div>
-      </section>
-
-      {/* ── Endpoint catalog · Tollkeepers ──────────────────────────── */}
-      <section className="panel">
-        <div className="panel-header">
-          <span>[ II · ENDPOINT CATALOG · TOLLS AT THE CROSSING ]</span>
-          <span>POST · requires PAYMENT-SIGNATURE</span>
-        </div>
-        <table className="w-full font-mono text-sm">
-          <thead>
-            <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] text-left">
-              <th className="py-2">Route</th>
-              <th className="py-2">Tollkeeper</th>
-              <th className="py-2 text-right">Base (USDC)</th>
-              <th className="py-2 text-right">Supervision</th>
-              <th className="py-2">Description</th>
-              <th className="py-2 text-right">Cross</th>
-            </tr>
-          </thead>
-          <tbody>
-            {endpoints.map((e) => {
-              const sellerAgent = agents.find((a) => a.code === e.seller);
-              const codename = sellerAgent?.codename ?? e.seller;
-              return (
-                <tr key={e.path} className="border-b border-dashed" style={{ borderColor: 'var(--grid-line)' }} tabIndex={-1}>
-                  <td className="py-2">
-                    <span className="font-bold">{e.path}</span>
-                  </td>
-                  <td className="py-2">
-                    <span className="inline-flex items-baseline gap-2">
-                      <span className="status-led" data-state="signal" />
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-mythic)',
-                          fontWeight: 700,
-                          fontSize: 14,
-                          letterSpacing: '0.02em',
-                          color: 'var(--ink)',
-                        }}
-                      >
-                        {codename}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                        · {e.seller}
-                      </span>
-                    </span>
-                  </td>
-                  <td className="py-2 text-right" data-numeric>{e.price}</td>
-                  <td className="py-2 text-right" data-numeric>{e.supervisionFee}</td>
-                  <td className="py-2 text-[var(--muted)]">{e.description}</td>
-                  <td className="py-2 text-right" style={{ whiteSpace: 'nowrap' }}>
-                    <CrossButton
-                      endpoint={e.path}
-                      sellerCodename={codename}
-                      sellerCode={e.seller}
-                      price={e.price}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
-
-      {/* ── Live ledger ─────────────────────────────────────────────── */}
-      <section className="panel">
-        <div className="panel-header">
-          <span>[ III · LIVE LEDGER · LAST 10 CROSSINGS ]</span>
-          <span>auto-refresh 15s</span>
-        </div>
-        <LedgerTicker initial={recentCalls} />
-      </section>
-
-      {/* ── Reputation · ERC-8004 FeedbackGiven ─────────────────────── */}
-      <section className="panel" id="reputation">
-        <div className="panel-header">
-          <span>[ V · REPUTATION · ERC-8004 CROSSING SCORES ]</span>
-          <span>auto-refresh 10s</span>
-        </div>
-        <ReputationPanel
-          initial={reputation ?? {}}
-          agents={agents}
-          arcscanBase="https://testnet.arcscan.app"
-          registryAddress={network.reputationRegistry ?? null}
-        />
-      </section>
-
-      {/* ── Agent roster · Departments ──────────────────────────────── */}
-      <section className="panel">
-        <div className="panel-header">
-          <span>[ IV · AGENT ROSTER · UNDERWORLD BUREAU ]</span>
-          <span>{agents.length} wallets on Circle MPC · Greek codenames v4.2</span>
-        </div>
-        <div className="flex flex-col gap-6">
-          {deptGroups.map(([dept, list]) => (
-            <div key={dept}>
-              <div
-                className="mb-2 pb-1 border-b"
-                style={{
-                  borderColor: 'var(--grid-line)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.22em',
-                  color: 'var(--muted)',
-                }}
-              >
-                · {dept}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                {list.map((a) => {
-                  const isSeller = sellerCodes.has(a.code);
-                  const ledState = isSeller ? 'signal' : a.code === 'BUYER-EOA' ? 'ok' : 'idle';
-                  return (
-                    <div
-                      key={a.address}
-                      className="flex items-start gap-3 py-2 border-b border-dashed"
-                      style={{ borderColor: 'var(--grid-line)' }}
-                    >
-                      <span className="status-led mt-[6px]" data-state={ledState} />
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mythic)',
-                              fontWeight: 700,
-                              fontSize: 15,
-                              letterSpacing: '0.02em',
-                              lineHeight: 1,
-                              color: 'var(--ink)',
-                            }}
-                          >
-                            {a.codename ?? a.code}
-                          </span>
-                          <span
-                            className="font-mono uppercase"
-                            style={{
-                              fontSize: 9,
-                              letterSpacing: '0.14em',
-                              color: 'var(--muted)',
-                            }}
-                          >
-                            {a.code}
-                          </span>
-                        </div>
-                        {a.epithet && (
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-display)',
-                              fontStyle: 'italic',
-                              fontSize: 11,
-                              color: 'var(--muted)',
-                              marginTop: 1,
-                            }}
-                          >
-                            {a.epithet}
-                          </span>
-                        )}
-                        <div className="flex items-center justify-between gap-2 mt-1">
-                          <span className="font-mono text-[11px] text-[var(--muted)] truncate">
-                            {truncAddr(a.address)}
-                          </span>
-                          <span
-                            className="font-mono uppercase"
-                            style={{
-                              fontSize: 9,
-                              letterSpacing: '0.12em',
-                              color: a.accountType === 'EOA' ? 'var(--moss)' : 'var(--pale-brass)',
-                            }}
-                          >
-                            {a.accountType ?? '?'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ── Tabbed Bureau sections ──────────────────────────────────── */}
+      <BureauSections
+        agents={agents}
+        endpoints={endpoints}
+        recentCalls={recentCalls}
+        reputation={reputation ?? {}}
+        archive={archive ?? []}
+        registryAddress={network.reputationRegistry ?? null}
+        arcscanBase={ARCSCAN_BASE}
+      />
 
       {/* ── Footer ──────────────────────────────────────────────────── */}
       <footer
@@ -500,7 +254,7 @@ export default async function Home() {
           borderTop: '1px solid var(--ink)',
         }}
       >
-        Obolark · Agentic Economy on Arc · submission Apr 26, 2026 · Penguin Alley × PA·co ·{' '}
+        Obolark &middot; Agentic Economy on Arc &middot; submission Apr 26, 2026 &middot; Penguin Alley × PA&middot;co &middot;{' '}
         <em style={{ fontStyle: 'italic' }}>Every call pays its passage.</em>
       </footer>
     </main>
