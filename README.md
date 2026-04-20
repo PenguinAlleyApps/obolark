@@ -25,32 +25,46 @@ This class of product cannot exist without this stack.
 
 ## Status — live
 
-- **Live dashboard:** [obolark.vercel.app](https://obolark.vercel.app)
+- **Live dashboard:** [obolark.vercel.app](https://obolark.vercel.app) — tabbed Bureau Ledger with interactive `[ CROSS ]` button in every Tollkeeper row (judges can fire real Arc testnet tx from the browser)
 - **Arc explorer:** [testnet.arcscan.app](https://testnet.arcscan.app)
-- **69 onchain transactions** validated via umbrella smoke ([`SMOKE-REPORT.md`](./SMOKE-REPORT.md))
-- **5 monetized endpoints** live, each backed by real Claude via AISA
+- **72+ onchain transactions** (growing as judges interact) — see [`SMOKE-REPORT.md`](./SMOKE-REPORT.md)
+- **5 monetized endpoints** live, each backed by real Claude via AISA (no mocks)
 - **23 wallets:** 22 SCA (Circle dev-controlled) + 1 buyer EOA
+- **ERC-8004 ReputationRegistry** deployed on Arc testnet at [`0x466b78ec4d8191f3d08a05b314cee24b961926b7`](https://testnet.arcscan.app/address/0x466b78ec4d8191f3d08a05b314cee24b961926b7) — every settled crossing auto-credits `giveFeedback`
 
 ## Architecture
 
 ```
 Buyer-EOA ──HTTP GET /api/research──▶  Radar service (Next.js)
               ◀── 402 Payment Required + PAYMENT-REQUIRED header ──
-              ── sign EIP-3009 @ $0.003 ──▶
+              ── sign EIP-712 via Circle MPC @ $0.003 ──▶
                         │
                         ▼
-                @circle-fin/x402-batching
-                (verify + settle via Circle Gateway)
+                @circle-fin/x402-batching client
+                (EIP-3009 transferWithAuthorization payload)
                         │
                         ▼
-                Arc testnet batched settlement + real tx hash
-                        │
-                        ▼
-                Radar → AISA → Claude Haiku 4.5 → structured verdict
-                        │
-                        ▼
-                Buyer-EOA ◀── 200 OK + X-PAYMENT-RESPONSE receipt ──
+              ┌──────────┴──────────┐
+              │                     │
+        Gateway /verify          Direct-transfer fallback
+        (currently blocked       (same EIP-3009 primitive,
+         by Circle bug — see     Circle MPC signs, Arc
+         CIRCLE_FEEDBACK §2.1)   settles in <1s)
+                                      │
+                                      ▼
+                        Arc testnet batched settlement + real tx hash
+                                      │
+                                      ▼
+                        ERC-8004 ReputationRegistry.giveFeedback(seller, +1)
+                                      │
+                                      ▼
+                        Radar → AISA → Claude Haiku 4.5 → structured verdict
+                                      │
+                                      ▼
+                        Buyer-EOA ◀── 200 OK + X-PAYMENT-RESPONSE receipt ──
 ```
+
+**Honest note on Circle Gateway `/verify`:** we ship the complete x402 buyer-side scaffold (EIP-712 signing via Circle MPC, Gateway deposit, 402 challenge, PAYMENT-SIGNATURE header transport, BatchFacilitator plumbing). Circle's facilitator currently rejects our signed authorization with `authorization_validity_too_short` across every window we tested (60s / 300s / 1800s / 345600s). Settlement proceeds via the same EIP-3009 primitive x402 rides on top of — direct `transferWithAuthorization` from BUYER-EOA to seller SCA, Circle-MPC-signed, Arc-settled. Full reproducer + root-cause analysis lives in [`CIRCLE_FEEDBACK.md §2.1`](../penguin-alley-paco-v2/modules/hackathons/agentic-economy-arc/CIRCLE_FEEDBACK.md) (submitted for the $500 Circle Product Feedback incentive).
 
 ## Monetized endpoints
 
@@ -71,10 +85,10 @@ Every request with no payment header returns `402 Payment Required` + base64 `PA
 | App | Next.js 16 · React 19 · TypeScript · Tailwind 4 |
 | Payments | `@circle-fin/x402-batching` + `@circle-fin/developer-controlled-wallets` |
 | Chain | `viem` · Arc testnet (chainId 5042002) · USDC `0x3600…0000` |
-| Contracts | Hardhat · Solidity 0.8.x · ERC-8004 from `ChaosChain/trustless-agents-erc-ri` (MIT+CC0) |
-| Logs | `pino` structured JSON |
+| Contracts | Solidity 0.8.34 compiled via `solc` npm package (no Hardhat/Foundry) · minimal ERC-8004 ReputationRegistry hand-written from the EIP-8004 spec (MIT, attribution in SPDX header) |
+| Logs | structured JSON |
 | Host | Vercel · Node runtime |
-| LLM | Claude Haiku 4.5 / Opus 4.5 via AISA.one (x402-gated) |
+| LLM | Claude Haiku 4.5 / Opus 4.7 via AISA.one |
 
 ## Getting started
 
@@ -89,17 +103,19 @@ npm run dev                         # http://localhost:3000
 First-run setup (idempotent):
 
 ```bash
-npx tsx scripts/00-register-entity-secret.ts    # generates + registers Entity Secret
-npx tsx scripts/01-create-wallets.ts            # creates 22 SCA wallets on Arc testnet
-npx tsx scripts/02-fund-wallets.ts              # distributes faucet USDC to all 22 agents
-npx tsx scripts/13-smoke-all.mjs                # umbrella smoke — 10 checks incl. tx count
+node scripts/00-register-entity-secret.mjs     # generates + registers Entity Secret
+node scripts/01-create-wallets.mjs             # creates 22 SCA wallets on Arc testnet
+node scripts/02-fund-wallets.mjs               # distributes faucet USDC to all 22 agents
+node scripts/15-deploy-reputation.mjs          # deploys ERC-8004 ReputationRegistry
+node scripts/16-seed-reputation.mjs            # seeds 5 initial feedback entries
+SMOKE_APP_URL=http://localhost:3000 node scripts/13-smoke-all.mjs   # umbrella smoke — 12 checks
 ```
 
 ## Hackathon submission artifacts
 
 - **Demo video:** linked in submission form
 - **Deployed app:** [obolark.vercel.app](https://obolark.vercel.app)
-- **Smoke report:** [`SMOKE-REPORT.md`](./SMOKE-REPORT.md) — 10/10 PASS · 69 onchain tx
+- **Smoke report:** [`SMOKE-REPORT.md`](./SMOKE-REPORT.md) — 10 PASS · 1 WARN · 1 FAIL against prod · 72+ onchain tx · reputation contract seeded · interactive `/api/cross` live. The 1 FAIL is Circle's `authorization_validity_too_short` on `/verify` (documented, filed for $500 Feedback incentive)
 - **Architecture + decisions:** in `docs/` + `modules/hackathons/agentic-economy-arc/` (see PA·co monorepo for internal refinement)
 
 ## Which Circle products we used
@@ -115,7 +131,7 @@ MIT — see [LICENSE](./LICENSE). Third-party notices in [THIRD_PARTY_NOTICES.md
 
 ## Related work
 
-- [`ChaosChain/trustless-agents-erc-ri`](https://github.com/ChaosChain/trustless-agents-erc-ri) — ERC-8004 Solidity reference (CC0) we copy from
+- [`EIP-8004 draft`](https://eips.ethereum.org/EIPS/eip-8004) — reputation/identity standard for autonomous agents. We hand-wrote a minimal `ReputationRegistry.sol` from the spec (MIT-licensed, SPDX-tagged) after the `ChaosChain/trustless-agents-erc-ref-impl` repo 404'd at deploy time.
 - [`vyperlang/vyper-agentic-payments`](https://github.com/vyperlang/vyper-agentic-payments) — hackathon's Vyper-native scaffold (MIT). Obolark is the Node/Solidity counterpart
 - [AISA.one](https://aisa.one) — external x402 seller our Radar agent calls for premium data
 
