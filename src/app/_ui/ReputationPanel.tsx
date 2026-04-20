@@ -94,7 +94,7 @@ export default function ReputationPanel({ initial, agents, arcscanBase, registry
 
       <div
         className="grid font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] py-2 border-b"
-        style={{ gridTemplateColumns: '180px 80px 100px 1fr', borderColor: 'var(--grid-line)' }}
+        style={{ gridTemplateColumns: '180px 80px 100px 1fr', columnGap: '20px', borderColor: 'var(--grid-line)' }}
       >
         <span>TOLLKEEPER</span>
         <span className="text-right">FEEDBACK</span>
@@ -106,7 +106,7 @@ export default function ReputationPanel({ initial, agents, arcscanBase, registry
         <div
           key={code}
           className="grid items-baseline py-2 border-b border-dashed"
-          style={{ gridTemplateColumns: '180px 80px 100px 1fr', borderColor: 'var(--grid-line)' }}
+          style={{ gridTemplateColumns: '180px 80px 100px 1fr', columnGap: '20px', borderColor: 'var(--grid-line)' }}
         >
           <div className="flex flex-col min-w-0">
             <span

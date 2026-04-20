@@ -1,0 +1,40 @@
+model	status	latency_ms	error_snippet
+gpt-5	200	4871	
+gpt-5-mini	200	2681	
+gpt-5.2	200	2700	
+gpt-5.2-chat-latest	401	3930	{"error":{"message":"No model channel available for this account  tid:1776723058381-7c8d0f3f-5ec7-4d64-97e3-74ce87063486","type":"401","param":"","code":null}}
+gpt-5.3-codex	200	3218	
+gpt-5.4	200	3417	
+gpt-4.1	200	2816	
+gpt-4.1-mini	200	2253	
+gpt-4o	200	1887	
+gpt-4o-mini	200	2679	
+gpt-oss-120b	503	1328	{"error":{"message":"所有令牌分组 openai 下对于模型 gpt-oss-120b 均无可用渠道，请更换分组尝试 (request id: 20260421061119472996376xc7XdcOx)","type":"rix_api_error","param":"","code":""}}
+claude-opus-4-7	200	22818	
+claude-opus-4-6	200	3903	
+claude-opus-4-5-20251101	200	5022	
+claude-opus-4-1-20250805	200	3548	
+claude-sonnet-4-6	200	3050	
+claude-sonnet-4-6-thinking	200	3331	
+claude-sonnet-4-5-20250929	200	3276	
+claude-sonnet-4-20250514	200	3785	
+claude-haiku-4-5-20251001	200	3102	
+gemini-3.1-pro-preview	200	3349	
+gemini-3-pro-preview	200	3099	
+gemini-3-flash-preview	200	11595	
+gemini-2.5-pro	200	3576	
+gemini-2.5-flash	200	2486	
+gemini-2.5-flash-lite	200	2433	
+deepseek-v3.2	200	1827	
+deepseek-v3.1	200	1479	
+deepseek-r1	200	5099	
+kimi-k2.5	200	2671	
+kimi-k2-thinking	200	4145	
+qwen3-max	200	3821	
+qwen3.6-plus	200	4212	
+qwen3-coder-plus	200	2290	
+glm-5	200	2116	
+MiniMax-M2.5	200	4152	
+seed-2-0-pro-260328	200	1891	
+seed-2-0-mini-260215	200	1356	
+seed-1-8-251228	200	3099	

@@ -1,0 +1,1 @@
+{"choices":[{"message":{"content":"OK","role":"assistant"},"finish_reason":"stop","index":0,"logprobs":null}],"object":"chat.completion","usage":{"prompt_tokens":10,"completion_tokens":1,"total_tokens":11,"prompt_tokens_details":{"cached_tokens":0}},"created":1776723185,"system_fingerprint":null,"model":"qwen3-max","id":"chatcmpl-d74f1e41-02d6-4b32-8b32-996c09f763b5"}
