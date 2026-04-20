@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono, Cinzel } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 
-// Direction B — Obolark Terminal
+// Bureau Ledger — Night default (v4.2)
 // Display · Space Grotesk 400/500/700 (SIL OFL)
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
@@ -18,12 +19,18 @@ const inter = Inter({
   display: 'swap',
 });
 // Mono · JetBrains Mono 400/500/700 (Apache 2.0)
-// Pixel's first choice was Monaspace Neon (also OFL) but it isn't on Google Fonts.
-// JetBrains Mono is Pixel's documented fallback in VISUAL_SIGNATURE.md.
 const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
   subsets: ['latin'],
   weight: ['400', '500', '700'],
+  display: 'swap',
+});
+// Mythic serif · Cinzel 700/900 (SIL OFL) — masthead + section titles only.
+// Additive to the core stack; Space Grotesk remains the primary display face.
+const cinzel = Cinzel({
+  variable: '--font-cinzel',
+  subsets: ['latin'],
+  weight: ['700', '900'],
   display: 'swap',
 });
 
@@ -43,12 +50,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
-      // Lock light mode — brand rule (EO-016 + brand always-light)
-      data-theme="light"
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} ${cinzel.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-bone text-ink font-sans">
+      <body className="min-h-full flex flex-col bg-bone text-ink font-sans fx-atmosphere fx-embers fx-smoke fx-flicker">
         {children}
+        <Script src="/ambient-fx.js" strategy="afterInteractive" />
       </body>
     </html>
   );

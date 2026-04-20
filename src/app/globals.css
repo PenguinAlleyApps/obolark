@@ -1,25 +1,33 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Obolark · Direction B — "Obolark Terminal"
-   Mission-control ops console, inverted for light mode.
-   Locked 2026-04-19 per VISUAL_SIGNATURE.md.
-   EO-016 compliant · brand always-light (no dark auto-flip).
-   ═══════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   Obolark · Bureau Ledger — Night-mode default (v4.2 Underworld Bureau)
+   Applied 2026-04-20 from Claude Design system output.
+   CEO override of EO-016 brand always-light for Obolark specifically:
+   the Hades / Underworld Bureau metaphor demands obsidian + ember as the
+   home state. Day/parchment mode remains opt-in via [data-theme="day"]
+   for high-light venues, print handoff, and accessibility fallback.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Cinzel mythic serif is loaded via next/font/google in layout.tsx.
+   The primary Space Grotesk / Inter / JetBrains Mono families also come
+   from next/font, so we do NOT re-import them here — next/font handles
+   subsetting + preload headers automatically. */
 
 :root {
-  /* ── Palette (7 roles + 1 secondary accent) ─────────────────────────── */
-  --bone:        #FAFAF7;    /* body background · warm bone white */
-  --bone-dark:   #E6E4DB;    /* secondary surface · card fills */
-  --grid-line:   #E6E5E0;    /* 8px grid · hairline rules · card edges */
-  --ink:         #0D0D0D;    /* primary text · display · chart ink */
-  --graphite:    #2F3A3E;    /* PA·co brand neutral · nav · status bar */
-  --muted:       #5A5A52;    /* secondary text · metric labels */
-  --signal:      #F5C518;    /* THE accent · active · settlement · CTA */
-  --signal-dark: #B8991F;    /* signal hover / pressed */
-  --oxide:       #C0392B;    /* error · failed tx · VOID */
-  --moss:        #3E5E47;    /* reputation positive · ok state */
-  --pale-brass:  #D9B87A;    /* cleared · passed · secondary accent */
+  /* ── Night (underworld) palette — default ──────────────────────────── */
+  --bone:          #0E0A08;   /* body background · obsidian field */
+  --bone-dark:     #17110D;   /* secondary surface · pitch */
+  --grid-line:     #2A1E16;   /* 8px grid · hairline rules · warm-black */
+  --ink:           #F3E7C8;   /* primary text · candlelit bone-ivory */
+  --graphite:      #1C1512;   /* PA·co brand neutral · nav · status bar */
+  --muted:         #B8A57E;   /* secondary text · ash (AA on obsidian) */
+  --signal:        #F5C518;   /* THE accent · obol gold */
+  --signal-dark:   #B8991F;   /* signal hover / pressed */
+  --oxide:         #E04A1E;   /* error · failed tx · hotter on black */
+  --moss:          #6E8A4A;   /* reputation positive · desaturated olive */
+  --pale-brass:    #C89038;   /* cleared · weathered brass */
+  --ember:         #F76B2B;   /* ember orange-red · dot · flame · hot-coal */
 
   /* ── Semantic roles (map palette to usage) ──────────────────────────── */
   --background:        var(--bone);
@@ -38,25 +46,70 @@
 
   /* ── Typography stack ───────────────────────────────────────────────── */
   --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-body:    var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-body:    var(--font-inter),         ui-sans-serif, system-ui, sans-serif;
   --font-mono:    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mythic:  var(--font-cinzel),         var(--font-space-grotesk), serif;
+
+  /* ── Brand surface tokens (night masthead) ─────────────────────────── */
+  --brand-bg:       #0B0705;
+  --brand-surface:  #140E09;
+  --brand-ink:      var(--ink);
+  --brand-muted:    var(--muted);
+  --brand-rule:     #3A2A1E;
+  --brand-dot:      var(--ember);
+  --brand-accent:   var(--signal);
+  --brand-ember:    var(--ember);
+  --brand-glow:     #F5C51833;
+  --brand-terminal: var(--ember);
 
   /* ── Layout primitives ──────────────────────────────────────────────── */
   --radius-sharp: 2px;         /* sharp 2px max · no pills */
   --ring-width: 2px;
   --baseline: 8px;             /* 8px grid rhythm */
 
+  /* Spacing scale */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
   /* ── Motion timings ─────────────────────────────────────────────────── */
-  --motion-pulse: 180ms;       /* signal pulse on settlement */
-  --motion-fade:  400ms;       /* fade to transparent after pulse */
-  --motion-edge:  320ms;       /* amber dot travel across graph edge */
+  --motion-pulse: 180ms;
+  --motion-fade:  400ms;
+  --motion-edge:  320ms;
+
+  /* ── Ambient FX tokens ─────────────────────────────────────────────── */
+  --fx-ember-count:     16;
+  --fx-ember-duration:  14s;
+  --fx-flicker-depth:   6%;
+  --fx-scanline-alpha:  0.035;
+  --fx-vignette-alpha:  0.55;
+
+  color-scheme: dark;
 }
 
-/* Brand rule: always-light. NO auto dark-flip. EO-016. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: only light;
-  }
+/* ══════════════════════════════════════════════════════════════════════════
+   Day mode (opt-in) — parchment fallback for high-light venues + print.
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-theme="day"] {
+  --bone:        #FAFAF7;
+  --bone-dark:   #E6E4DB;
+  --grid-line:   #E6E5E0;
+  --ink:         #0D0D0D;
+  --graphite:    #2F3A3E;
+  --muted:       #5A5A52;
+  --signal:      #F5C518;
+  --signal-dark: #B8991F;
+  --oxide:       #C0392B;
+  --moss:        #3E5E47;
+  --pale-brass:  #D9B87A;
+  --ember:       #D95520;
+
+  --brand-bg:       var(--bone);
+  --brand-surface:  var(--bone-dark);
+  --brand-rule:     var(--ink);
+  --brand-glow:     transparent;
+  --brand-terminal: var(--ink);
+
+  color-scheme: light;
 }
 
 /* ─── Tailwind v4 @theme tokens (exposed as utilities) ───────────────── */
@@ -72,6 +125,7 @@
   --color-oxide:        var(--oxide);
   --color-moss:         var(--moss);
   --color-pale-brass:   var(--pale-brass);
+  --color-ember:        var(--ember);
 
   --color-background:   var(--background);
   --color-foreground:   var(--foreground);
@@ -81,16 +135,19 @@
   --font-display:  var(--font-display);
   --font-sans:     var(--font-body);
   --font-mono:     var(--font-mono);
+  --font-mythic:   var(--font-mythic);
 
   --radius-sharp:  var(--radius-sharp);
 }
 
 /* ─── Base ──────────────────────────────────────────────────────────── */
 html {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  background: var(--bone);
+  color: var(--ink);
 }
 
 body {
@@ -140,6 +197,7 @@ pre,
   background: var(--moss);
   box-shadow: 0 0 6px var(--moss);
   animation: led-blink 2s ease-in-out infinite;
+  display: inline-block; flex: none;
 }
 .status-led[data-state="idle"]  { background: var(--muted);  box-shadow: none; animation: none; }
 .status-led[data-state="error"] { background: var(--oxide);  box-shadow: 0 0 6px var(--oxide); }
@@ -149,7 +207,8 @@ pre,
   background: var(--surface);
   border-top: 2px solid var(--ink);
   border-bottom: 1px solid var(--grid-line);
-  padding: calc(var(--baseline) * 3) calc(var(--baseline) * 3);
+  padding: calc(var(--baseline) * 3) calc(var(--baseline) * 4);
+  position: relative;
 }
 
 .panel-header {
@@ -160,7 +219,7 @@ pre,
   font-family: var(--font-mono);
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
@@ -172,19 +231,20 @@ pre,
   font-family: var(--font-mono);
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 .metric-column .value {
   font-family: var(--font-mono);
-  font-size: 36px;
+  font-size: 40px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: -0.02em;
   margin-top: 4px;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
-.metric-column .value[data-role="signal"] { color: var(--signal-dark); }
+.metric-column .value[data-role="signal"] { color: var(--signal); }
 .metric-column .value[data-role="alert"]  { color: var(--oxide); }
 
 .ledger-row {
@@ -209,7 +269,7 @@ pre,
   font-family: var(--font-mono);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   cursor: pointer;
   transition: background-color 180ms ease-out;
 }
@@ -217,9 +277,9 @@ pre,
 .stamp-button:active { transform: translateY(1px); }
 .stamp-button[data-accent="signal"] {
   background: var(--signal);
-  color: var(--ink);
+  color: #0D0D0D;
 }
-.stamp-button[data-accent="signal"]:hover { background: var(--signal-dark); color: var(--bone); }
+.stamp-button[data-accent="signal"]:hover { background: var(--signal-dark); }
 
 /* ─── Ticker strip ─────────────────────────────────────────────────── */
 .ticker {
@@ -235,5 +295,129 @@ pre,
 }
 .ticker:hover > .ticker-track { animation-play-state: paused; }
 
-/* ─── Guardrails (EO-016 enforcement) ──────────────────────────────── */
-/* Block default indigo/purple: these colors should not appear anywhere in markup. */
+/* ══════════════════════════════════════════════════════════════════════════
+   Ambient Underworld FX Layer — optional atmosphere for night mode.
+   Activated by adding .fx-atmosphere .fx-embers .fx-smoke .fx-flicker to <body>.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.fx-atmosphere {
+  position: relative;
+  isolation: isolate;
+}
+.fx-atmosphere > * { position: relative; z-index: 1; }
+
+/* Vignette (corner darken) */
+.fx-atmosphere::before,
+.fx-vignette::before {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    radial-gradient(ellipse 110% 80% at 50% 50%,
+      transparent 40%,
+      rgba(0,0,0, calc(var(--fx-vignette-alpha) * 0.6)) 75%,
+      rgba(0,0,0, var(--fx-vignette-alpha)) 100%);
+  mix-blend-mode: multiply;
+}
+
+/* Paper-grain scanlines */
+.fx-atmosphere::after,
+.fx-scanlines::after {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: 3;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,220,150, var(--fx-scanline-alpha)) 0px,
+      rgba(255,220,150, var(--fx-scanline-alpha)) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* Ember particles */
+.fx-ember-field {
+  position: fixed; inset: 0; pointer-events: none; z-index: 4;
+  overflow: hidden;
+}
+.fx-ember {
+  position: absolute;
+  bottom: -20px;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ember) 0%, #F76B2B 45%, transparent 70%);
+  box-shadow: 0 0 6px var(--ember), 0 0 14px #F76B2B88;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: ember-rise var(--dur, 14s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  left: var(--x, 50%);
+}
+.fx-ember.small { width: 2px; height: 2px; opacity: 0.7; }
+.fx-ember.large { width: 4px; height: 4px; }
+
+@keyframes ember-rise {
+  0%   { transform: translate3d(0, 0, 0)            scale(0.6); opacity: 0; }
+  8%   { opacity: 0.95; }
+  40%  { transform: translate3d(8px, -35vh, 0)      scale(1);   opacity: 0.8; }
+  70%  { transform: translate3d(-4px, -68vh, 0)     scale(0.9); opacity: 0.5; }
+  100% { transform: translate3d(12px, -110vh, 0)    scale(0.3); opacity: 0; }
+}
+
+/* Oil-lamp flicker on signal LEDs (night only) */
+.fx-flicker .status-led[data-state="signal"],
+.fx-atmosphere .status-led[data-state="signal"] {
+  animation: led-blink 2s ease-in-out infinite, lamp-flicker 3.1s ease-in-out infinite;
+}
+@keyframes lamp-flicker {
+  0%,  100% { filter: brightness(1)    drop-shadow(0 0 6px var(--signal)); }
+  17%       { filter: brightness(1.08) drop-shadow(0 0 9px var(--signal)); }
+  34%       { filter: brightness(0.94) drop-shadow(0 0 5px var(--signal)); }
+  51%       { filter: brightness(1.04) drop-shadow(0 0 8px var(--signal)); }
+  68%       { filter: brightness(0.96) drop-shadow(0 0 6px var(--signal)); }
+  85%       { filter: brightness(1.02) drop-shadow(0 0 7px var(--signal)); }
+}
+
+/* Smoke drift (edge plume) */
+.fx-smoke::before {
+  content: "";
+  position: fixed; left: -10%; right: -10%; bottom: -20%;
+  height: 60vh; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(ellipse 40% 60% at 20% 100%, #2A1E1644 0%, transparent 60%),
+    radial-gradient(ellipse 30% 50% at 70% 100%, #3A1E0833 0%, transparent 65%),
+    radial-gradient(ellipse 25% 40% at 40% 100%, #1A0D0433 0%, transparent 70%);
+  mix-blend-mode: screen;
+  animation: smoke-drift 24s ease-in-out infinite alternate;
+}
+@keyframes smoke-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(-30px, -10px, 0) scale(1.05); }
+}
+
+/* Day mode: disable all FX */
+[data-theme="day"] .fx-atmosphere::before,
+[data-theme="day"] .fx-atmosphere::after,
+[data-theme="day"] .fx-ember-field,
+[data-theme="day"] .fx-vignette::before,
+[data-theme="day"] .fx-scanlines::after,
+[data-theme="day"] .fx-smoke::before {
+  display: none !important;
+}
+[data-theme="day"] .fx-flicker .status-led[data-state="signal"],
+[data-theme="day"] .fx-atmosphere .status-led[data-state="signal"] {
+  animation: led-blink 2s ease-in-out infinite !important;
+  filter: none !important;
+}
+
+/* Reduced motion: freeze */
+@media (prefers-reduced-motion: reduce) {
+  .fx-ember,
+  .fx-smoke::before,
+  .fx-flicker .status-led[data-state="signal"],
+  .fx-atmosphere .status-led[data-state="signal"] {
+    animation: none !important;
+  }
+  .fx-ember { opacity: 0.6; }
+}

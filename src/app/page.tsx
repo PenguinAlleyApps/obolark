@@ -1,19 +1,15 @@
 /**
- * Obolark · Direction B — "Obolark Terminal" dashboard (v4.2 · Bureau edition)
+ * Obolark · Bureau Ledger — Front Page (v4.2 Night edition)
  *
- * Server component. Pulls state from /api/state (own route, same origin).
+ * Server component. Pulls state from /api/state (same origin).
  * Fully static data on first paint, then auto-refresh every 15s in the
  * LedgerTicker client sub-component.
  *
- * v4.2 polish (Claude Design principles):
- *   · Masthead treats the page as an editorial front page of an "Underworld
- *     Bureau ledger" — display typography up-top, mono metadata columns below.
- *   · Agent matrix is now codename-first: HADES / THANATOS / CERBERUS read as
- *     characters; the original PA·co code is the dim secondary label.
- *   · Department groupings replace the 4-col grid so the reader can scan the
- *     org the way a real bureau board would present it.
- *   · Endpoint catalog uses editorial row rules + rail LEDs; seller shown as
- *     codename + code so ops can cross-reference.
+ * v4.2 applies the Claude Design system output (2026-04-20):
+ *   · Night mode is the default. Obsidian + ember palette, Cinzel mythic
+ *     masthead, ember-glow wordmark, Vol/No folio stamp, 6-section nav strip.
+ *   · Codename-first across the board. PA·co `code` is metadata underneath.
+ *   · Rails + rules + hairlines; no shadow cards, no pills, no blur.
  */
 import { headers } from 'next/headers';
 import LedgerTicker from './_ui/LedgerTicker';
@@ -28,8 +24,19 @@ type Agent = {
   codename?: string;
   epithet?: string;
 };
-type Endpoint = { path: string; seller: string; price: string; supervisionFee: string; description: string };
-type Receipt = { endpoint: string; receipt: { payer: string; amount: string; network: string; transactionHash: string }; result?: string; at: string };
+type Endpoint = {
+  path: string;
+  seller: string;
+  price: string;
+  supervisionFee: string;
+  description: string;
+};
+type Receipt = {
+  endpoint: string;
+  receipt: { payer: string; amount: string; network: string; transactionHash: string };
+  result?: string;
+  at: string;
+};
 type StateResponse = {
   network: { name: string; chainId: number; usdc: string; gatewayWallet: string };
   buyer: { code: string; address: string; accountType?: string; gatewayDeposit: string | null } | null;
@@ -77,6 +84,10 @@ function groupByDept(agents: Agent[]): Array<[string, Agent[]]> {
   );
 }
 
+function truncAddr(a: string): string {
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
 export default async function Home() {
   const state = await getState();
   if (!state) {
@@ -95,40 +106,162 @@ export default async function Home() {
 
   return (
     <main className="flex flex-col min-h-screen bg-bone text-ink">
-      {/* ── Masthead ─────────────────────────────────────────────────── */}
-      <header className="panel" style={{ borderTop: '3px solid var(--ink)', borderBottom: '1px solid var(--ink)' }}>
-        <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3">
-              <div className="status-led" data-state="signal" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
-                Bureau Ledger · Vol. I · No. 1
-              </span>
-            </div>
-            <h1 className="font-display text-[44px] leading-none font-bold tracking-tight">OBOLARK</h1>
-            <span className="font-display text-[13px] italic text-[var(--muted)]">
-              The agent economy, priced per crossing.
+      {/* ── Masthead · Bureau Ledger front page ─────────────────────── */}
+      <header
+        className="relative"
+        style={{
+          background: 'var(--brand-bg)',
+          borderTop: '4px solid var(--brand-rule)',
+          borderBottom: '1px solid var(--brand-rule)',
+          padding: '22px 32px 18px',
+          color: 'var(--brand-ink)',
+        }}
+      >
+        {/* hairline under the thick ink rule — newspaper folio */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 6,
+            borderTop: '1px solid var(--brand-rule)',
+            opacity: 0.55,
+          }}
+        />
+
+        {/* Top strip: filed line + Vol/No stamp */}
+        <div
+          className="flex items-center justify-between gap-4 flex-wrap"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.22em',
+            color: 'var(--brand-muted)',
+            paddingBottom: 16,
+            borderBottom: '1px solid var(--brand-rule)',
+            marginBottom: 18,
+          }}
+        >
+          <span className="flex items-center gap-3">
+            <span className="status-led" data-state="signal" />
+            Bureau Ledger · Filed 2026 · {network.name}
+          </span>
+          <span
+            className="inline-flex items-center gap-3"
+            style={{ fontSize: 9.5, letterSpacing: '0.28em' }}
+          >
+            <span>Penguin Alley · PA·co</span>
+            <span
+              style={{
+                border: '1px solid var(--brand-rule)',
+                padding: '4px 8px',
+                color: 'var(--brand-ink)',
+                letterSpacing: '0.34em',
+              }}
+            >
+              Vol. I · No. 1
             </span>
+          </span>
+        </div>
+
+        {/* Title row: wordmark + network meta table */}
+        <div
+          className="grid gap-9 items-end"
+          style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)' }}
+        >
+          <div className="min-w-0">
+            <h1
+              className="m-0"
+              style={{
+                fontFamily: 'var(--font-mythic)',
+                fontWeight: 900,
+                fontSize: 'clamp(56px, 10vw, 128px)',
+                lineHeight: 0.88,
+                letterSpacing: '0.015em',
+                color: 'var(--brand-accent)',
+                whiteSpace: 'nowrap',
+                textShadow: '0 0 40px var(--brand-glow), 0 0 12px var(--brand-glow)',
+              }}
+            >
+              OBOLARK
+              <span style={{ color: 'var(--brand-dot)' }}>.</span>
+            </h1>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 16,
+                color: 'var(--brand-muted)',
+                marginTop: 10,
+                letterSpacing: '0.005em',
+              }}
+            >
+              The agent economy, priced per crossing.
+            </div>
           </div>
-          <div className="flex flex-col gap-1 font-mono text-[11px] text-right">
-            <div className="flex gap-4 justify-end">
-              <span className="text-[var(--muted)]">NETWORK</span>
-              <span className="font-bold">{network.name}</span>
-            </div>
-            <div className="flex gap-4 justify-end">
-              <span className="text-[var(--muted)]">CHAIN_ID</span>
-              <span>{network.chainId}</span>
-            </div>
-            <div className="flex gap-4 justify-end">
-              <span className="text-[var(--muted)]">USDC</span>
-              <span>{network.usdc.slice(0, 10)}…</span>
-            </div>
-            <div className="flex gap-4 justify-end">
-              <span className="text-[var(--muted)]">GATEWAY</span>
-              <span>{network.gatewayWallet.slice(0, 10)}…</span>
-            </div>
+          <div
+            style={{
+              borderLeft: '1px solid var(--brand-rule)',
+              paddingLeft: 20,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr',
+              gap: '6px 18px',
+              alignContent: 'end',
+            }}
+          >
+            <span className="meta-label">network</span>
+            <span>{network.name}</span>
+            <span className="meta-label">chain_id</span>
+            <span>{network.chainId}</span>
+            <span className="meta-label">usdc</span>
+            <span>{truncAddr(network.usdc)}</span>
+            <span className="meta-label">gateway</span>
+            <span>{truncAddr(network.gatewayWallet)}</span>
           </div>
         </div>
+
+        {/* Section strip */}
+        <nav
+          className="flex gap-5 flex-wrap"
+          style={{
+            marginTop: 22,
+            paddingTop: 10,
+            borderTop: '1px solid var(--brand-rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.22em',
+            color: 'var(--brand-muted)',
+          }}
+        >
+          <span
+            style={{
+              color: 'var(--brand-accent)',
+              borderBottom: '1px solid var(--brand-accent)',
+              paddingBottom: 4,
+            }}
+          >
+            [ I · Front Page ]
+          </span>
+          <span>[ II · Tollkeepers ]</span>
+          <span>[ III · Ledger ]</span>
+          <span>[ IV · Agents ]</span>
+          <span>[ V · Reputation ]</span>
+          <span>[ VI · Archive ]</span>
+        </nav>
+
+        <style>{`
+          .meta-label {
+            color: var(--brand-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 9.5px;
+          }
+        `}</style>
       </header>
 
       {/* ── Metrics row ─────────────────────────────────────────────── */}
@@ -167,15 +300,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Endpoint catalog ────────────────────────────────────────── */}
+      {/* ── Endpoint catalog · Tollkeepers ──────────────────────────── */}
       <section className="panel">
         <div className="panel-header">
-          <span>[ ENDPOINT CATALOG · TOLLS AT THE CROSSING ]</span>
+          <span>[ II · ENDPOINT CATALOG · TOLLS AT THE CROSSING ]</span>
           <span>POST · requires PAYMENT-SIGNATURE</span>
         </div>
         <table className="w-full font-mono text-sm">
           <thead>
-            <tr className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] text-left">
+            <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] text-left">
               <th className="py-2">Route</th>
               <th className="py-2">Tollkeeper</th>
               <th className="py-2 text-right">Base (USDC)</th>
@@ -194,7 +327,15 @@ export default async function Home() {
                   <td className="py-2">
                     <span className="inline-flex items-baseline gap-2">
                       <span className="status-led" data-state="signal" />
-                      <span className="font-display text-[13px] font-bold tracking-wide">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mythic)',
+                          fontWeight: 700,
+                          fontSize: 14,
+                          letterSpacing: '0.02em',
+                          color: 'var(--ink)',
+                        }}
+                      >
                         {sellerAgent?.codename ?? e.seller}
                       </span>
                       <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
@@ -212,16 +353,35 @@ export default async function Home() {
         </table>
       </section>
 
+      {/* ── Live ledger ─────────────────────────────────────────────── */}
+      <section className="panel">
+        <div className="panel-header">
+          <span>[ III · LIVE LEDGER · LAST 10 CROSSINGS ]</span>
+          <span>auto-refresh 15s</span>
+        </div>
+        <LedgerTicker initial={recentCalls} />
+      </section>
+
       {/* ── Agent roster · Departments ──────────────────────────────── */}
       <section className="panel">
         <div className="panel-header">
-          <span>[ AGENT ROSTER · UNDERWORLD BUREAU ]</span>
+          <span>[ IV · AGENT ROSTER · UNDERWORLD BUREAU ]</span>
           <span>{agents.length} wallets on Circle MPC · Greek codenames v4.2</span>
         </div>
         <div className="flex flex-col gap-6">
           {deptGroups.map(([dept, list]) => (
             <div key={dept}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)] mb-2 pb-1 border-b" style={{ borderColor: 'var(--grid-line)' }}>
+              <div
+                className="mb-2 pb-1 border-b"
+                style={{
+                  borderColor: 'var(--grid-line)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.22em',
+                  color: 'var(--muted)',
+                }}
+              >
                 · {dept}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -237,25 +397,53 @@ export default async function Home() {
                       <span className="status-led mt-[6px]" data-state={ledState} />
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="font-display text-[15px] font-bold tracking-wide leading-none">
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mythic)',
+                              fontWeight: 700,
+                              fontSize: 15,
+                              letterSpacing: '0.02em',
+                              lineHeight: 1,
+                              color: 'var(--ink)',
+                            }}
+                          >
                             {a.codename ?? a.code}
                           </span>
-                          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                          <span
+                            className="font-mono uppercase"
+                            style={{
+                              fontSize: 9,
+                              letterSpacing: '0.14em',
+                              color: 'var(--muted)',
+                            }}
+                          >
                             {a.code}
                           </span>
                         </div>
                         {a.epithet && (
-                          <span className="font-display text-[11px] italic text-[var(--muted)] mt-[1px]">
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-display)',
+                              fontStyle: 'italic',
+                              fontSize: 11,
+                              color: 'var(--muted)',
+                              marginTop: 1,
+                            }}
+                          >
                             {a.epithet}
                           </span>
                         )}
                         <div className="flex items-center justify-between gap-2 mt-1">
                           <span className="font-mono text-[11px] text-[var(--muted)] truncate">
-                            {a.address.slice(0, 10)}…{a.address.slice(-4)}
+                            {truncAddr(a.address)}
                           </span>
                           <span
-                            className="font-mono text-[9px] uppercase tracking-[0.12em]"
-                            style={{ color: a.accountType === 'EOA' ? 'var(--moss)' : 'var(--graphite)' }}
+                            className="font-mono uppercase"
+                            style={{
+                              fontSize: 9,
+                              letterSpacing: '0.12em',
+                              color: a.accountType === 'EOA' ? 'var(--moss)' : 'var(--pale-brass)',
+                            }}
                           >
                             {a.accountType ?? '?'}
                           </span>
@@ -270,19 +458,18 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Live ledger ─────────────────────────────────────────────── */}
-      <section className="panel">
-        <div className="panel-header">
-          <span>[ LIVE LEDGER · LAST 10 CROSSINGS ]</span>
-          <span>auto-refresh 15s</span>
-        </div>
-        <LedgerTicker initial={recentCalls} />
-      </section>
-
       {/* ── Footer ──────────────────────────────────────────────────── */}
-      <footer className="px-8 py-6 text-[11px] font-mono text-[var(--muted)] border-t" style={{ borderColor: 'var(--ink)' }}>
-        Obolark · Agentic Economy on Arc · submission Apr 26, 2026 · Penguin Alley × PA·co ·
-        <span className="italic"> Every call pays its passage.</span>
+      <footer
+        className="px-8 py-6"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          color: 'var(--muted)',
+          borderTop: '1px solid var(--ink)',
+        }}
+      >
+        Obolark · Agentic Economy on Arc · submission Apr 26, 2026 · Penguin Alley × PA·co ·{' '}
+        <em style={{ fontStyle: 'italic' }}>Every call pays its passage.</em>
       </footer>
     </main>
   );
