@@ -22,6 +22,26 @@ import OrchestrationsPanel from './OrchestrationsPanel';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
 import AgentRosterOverlay from './AgentRosterOverlay';
 import { useOrchestrationFeed } from './useOrchestrationFeed';
+import EmberGlyph from './EmberGlyph';
+import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
+import OracleTab from './OracleTab';
+
+// Featherless bindings — 5 agents (4 declared + ORACLE-Whisper tracked via
+// Gemini Oracle tab). See ATTACK_FEATHERLESS_DEBATE.md § 1.2 for mapping.
+const FEATHERLESS_BINDINGS: Record<string, FeatherlessBinding> = {
+  RADAR:    { model: 'DeepSeek-V3.2',     params: '685B', license: 'MIT' },
+  PIXEL:    { model: 'Kimi-K2-Instruct',  params: '1T',   license: 'Modified MIT' },
+  SENTINEL: { model: 'Meta-Llama-3.1-8B', params: '8B',   license: 'Llama 3.1' },
+  PHANTOM:  { model: 'Qwen3-8B',          params: '8B',   license: 'Apache 2.0' },
+};
+
+function emberInitialFor(code: string): string {
+  const b = FEATHERLESS_BINDINGS[code];
+  if (!b) return '·';
+  // First alphabetic char of model
+  const m = b.model.match(/[A-Za-z]/);
+  return m ? m[0].toUpperCase() : '·';
+}
 
 type Agent = {
   agent: string;
@@ -94,15 +114,16 @@ function truncHash(h: string): string {
   return `${h.slice(0, 10)}…${h.slice(-6)}`;
 }
 
-type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII';
+type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII';
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'I',   label: 'I · Front Page' },
-  { id: 'II',  label: 'II · Tollkeepers' },
-  { id: 'III', label: 'III · Ledger' },
-  { id: 'IV',  label: 'IV · Agents' },
-  { id: 'V',   label: 'V · Reputation' },
-  { id: 'VI',  label: 'VI · Archive' },
-  { id: 'VII', label: 'VII · Orchestrations' },
+  { id: 'I',    label: 'I · Front Page' },
+  { id: 'II',   label: 'II · Tollkeepers' },
+  { id: 'III',  label: 'III · Ledger' },
+  { id: 'IV',   label: 'IV · Agents' },
+  { id: 'V',    label: 'V · Reputation' },
+  { id: 'VI',   label: 'VI · Archive' },
+  { id: 'VII',  label: 'VII · Orchestrations' },
+  { id: 'VIII', label: 'VIII · Oracle' },
 ];
 
 export default function BureauSections({
@@ -123,6 +144,13 @@ export default function BureauSections({
   // and the IV · Agents overlay (so we don't triple the fetch).
   const { feed: orchFeed, loaded: orchLoaded, error: orchError } =
     useOrchestrationFeed();
+
+  // Featherless Model Card unfurl — IV · Agents ember-glyph popover state.
+  const [unfurl, setUnfurl] = useState<{
+    code: string;
+    codename: string;
+    anchor: HTMLElement;
+  } | null>(null);
 
   // IV · Agents roster container — the SVG overlay reads bounding rects
   // off this ref to pin edge-pulse paths to real card positions.
@@ -337,6 +365,20 @@ export default function BureauSections({
                             >
                               {a.codename ?? a.code}
                             </span>
+                            {FEATHERLESS_BINDINGS[a.code] && (
+                              <EmberGlyph
+                                initial={emberInitialFor(a.code)}
+                                ariaLabel={`Open Featherless model card for ${a.codename ?? a.code} · ${FEATHERLESS_BINDINGS[a.code].model}`}
+                                active={unfurl?.code === a.code}
+                                onActivate={(anchor) =>
+                                  setUnfurl({
+                                    code: a.code,
+                                    codename: a.codename ?? a.code,
+                                    anchor,
+                                  })
+                                }
+                              />
+                            )}
                             <span
                               className="font-mono uppercase"
                               style={{
@@ -417,6 +459,22 @@ export default function BureauSections({
           </div>
           <ArchiveTable archive={archive} arcscanBase={arcscanBase} />
         </section>
+      )}
+
+      {/* ── VIII · Oracle (Delphi · Gemini 3.1 Flash Live) ────────────── */}
+      {tab === 'VIII' && <OracleTab arcscanBase={arcscanBase} />}
+
+      {/* ── Featherless Model Card Unfurl (portal-style popover) ──────── */}
+      {unfurl && FEATHERLESS_BINDINGS[unfurl.code] && (
+        <ModelCardUnfurl
+          agentCode={unfurl.code}
+          agentCodename={unfurl.codename}
+          binding={FEATHERLESS_BINDINGS[unfurl.code]}
+          anchor={unfurl.anchor}
+          feed={orchFeed}
+          arcscanBase={arcscanBase}
+          onClose={() => setUnfurl(null)}
+        />
       )}
     </>
   );
