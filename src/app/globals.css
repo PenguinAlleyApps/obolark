@@ -190,6 +190,14 @@ pre,
   50%      { opacity: 0.45; }
 }
 
+/* diegetic motion only — edge pulse path + label fade for VII overlay */
+@keyframes obolark-edge-fade {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ─── Primitives (shadcn-free) ─────────────────────────────────────── */
 .status-led {
   width: 6px; height: 6px;

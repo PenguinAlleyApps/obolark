@@ -14,10 +14,14 @@
  *   V   · Reputation   — ERC-8004 crossing scores
  *   VI  · Archive      — full historical crossing record across all logs
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
 import ReputationPanel from './ReputationPanel';
 import CrossButton from './CrossButton';
+import OrchestrationsPanel from './OrchestrationsPanel';
+import OrchestrationsMarquee from './OrchestrationsMarquee';
+import AgentRosterOverlay from './AgentRosterOverlay';
+import { useOrchestrationFeed } from './useOrchestrationFeed';
 
 type Agent = {
   agent: string;
@@ -90,7 +94,7 @@ function truncHash(h: string): string {
   return `${h.slice(0, 10)}…${h.slice(-6)}`;
 }
 
-type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI';
+type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII';
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'I',   label: 'I · Front Page' },
   { id: 'II',  label: 'II · Tollkeepers' },
@@ -98,6 +102,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'IV',  label: 'IV · Agents' },
   { id: 'V',   label: 'V · Reputation' },
   { id: 'VI',  label: 'VI · Archive' },
+  { id: 'VII', label: 'VII · Orchestrations' },
 ];
 
 export default function BureauSections({
@@ -113,6 +118,15 @@ export default function BureauSections({
 
   const sellerCodes = useMemo(() => new Set(endpoints.map((e) => e.seller)), [endpoints]);
   const deptGroups = useMemo(() => groupByDept(agents), [agents]);
+
+  // Orchestrations feed — one polling source shared by marquee, VII panel,
+  // and the IV · Agents overlay (so we don't triple the fetch).
+  const { feed: orchFeed, loaded: orchLoaded, error: orchError } =
+    useOrchestrationFeed();
+
+  // IV · Agents roster container — the SVG overlay reads bounding rects
+  // off this ref to pin edge-pulse paths to real card positions.
+  const rosterRef = useRef<HTMLDivElement>(null);
 
   const show = (section: TabId) => tab === 'I' || tab === section;
 
@@ -166,6 +180,9 @@ export default function BureauSections({
         })}
       </nav>
 
+      {/* ── Marquee strip (Front Page only) ──────────────────────────── */}
+      {tab === 'I' && <OrchestrationsMarquee feed={orchFeed} />}
+
       {/* ── Metrics row (always visible — summary) ────────────────────── */}
       <MetricsRow
         agents={agents}
@@ -173,6 +190,16 @@ export default function BureauSections({
         recentCalls={recentCalls}
         gatewayDeposit={null /* summarised on server-side via masthead chip; keep panel metric separate */}
       />
+
+      {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
+      {(tab === 'I' || tab === 'VII') && (
+        <OrchestrationsPanel
+          feed={orchFeed}
+          loaded={orchLoaded}
+          error={orchError}
+          arcscanBase={arcscanBase}
+        />
+      )}
 
       {/* ── II · Tollkeepers (endpoint catalog) ───────────────────────── */}
       {show('II') && (
@@ -262,12 +289,13 @@ export default function BureauSections({
 
       {/* ── IV · Agent roster ─────────────────────────────────────────── */}
       {show('IV') && (
-        <section className="panel">
+        <section className="panel" style={{ position: 'relative' }}>
           <div className="panel-header">
             <span>[ IV · AGENT ROSTER · UNDERWORLD BUREAU ]</span>
             <span>{agents.length} wallets on Circle MPC · Greek codenames v4.2</span>
           </div>
-          <div className="flex flex-col gap-6">
+          <div ref={rosterRef} className="flex flex-col gap-6" style={{ position: 'relative' }}>
+            <AgentRosterOverlay containerRef={rosterRef} />
             {deptGroups.map(([dept, list]) => (
               <div key={dept}>
                 <div
@@ -291,7 +319,8 @@ export default function BureauSections({
                       <div
                         key={a.address}
                         className="flex items-start gap-3 py-2 border-b border-dashed"
-                        style={{ borderColor: 'var(--grid-line)' }}
+                        data-agent-code={a.code}
+                        style={{ borderColor: 'var(--grid-line)', position: 'relative' }}
                       >
                         <span className="status-led mt-[6px]" data-state={ledState} />
                         <div className="flex flex-col min-w-0 flex-1">
