@@ -52,9 +52,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} ${cinzel.variable} h-full antialiased`}
     >
+      <head>
+        {/* Claude Design · Obolark Design System v1 ambient atmosphere.
+            CSS tokens are duplicated into globals.css (canonical); this <link>
+            keeps the design-system bundle reachable for standalone preview
+            pages + confirms the public/design-system/ path. */}
+        <link rel="stylesheet" href="/design-system/ambient-fx.css" />
+      </head>
       <body className="min-h-full flex flex-col bg-bone text-ink font-sans fx-atmosphere fx-embers fx-smoke fx-flicker">
         {children}
-        <Script src="/ambient-fx.js" strategy="afterInteractive" />
+        {/* Design-system ember-field generator. Day-mode safe (self-disables). */}
+        <Script src="/design-system/ambient-fx.js" strategy="afterInteractive" />
       </body>
     </html>
   );
