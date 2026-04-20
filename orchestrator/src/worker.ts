@@ -32,6 +32,7 @@ import { getCircle, getUsdcTokenId } from './circle.js';
 import { walletByCode, loadWallets } from './wallets.js';
 import { BRIEFS, getBuyer, getSeller, buyerCodes } from './briefs.js';
 import { aisaChat } from './aisa.js';
+import { featherlessChat, shouldFallback } from './featherless.js';
 
 // ── Constants ──────────────────────────────────────────────────────────
 const TICK_INTERVAL_MS = Number(process.env.TICK_INTERVAL_MS ?? 60_000);
@@ -42,6 +43,52 @@ const MAX_OUTPUT_TOKENS = BRIEFS._meta.max_output_tokens ?? 200;
 // Task spec recommended 5s but Haiku@200tok is measured at 7-12s end-to-end.
 // Keep 15s default (1 retry budget); override via AISA_TIMEOUT_MS.
 const AISA_TIMEOUT_MS = Number(process.env.AISA_TIMEOUT_MS ?? 15000);
+// Featherless fallback model (Radar/DeepSeek by default per
+// ATTACK_FEATHERLESS_DEBATE §Synthesis). Overridable via
+// FEATHERLESS_MODEL_DEFAULT. Timeout 20s — slightly longer than AISA
+// because Featherless cold-starts on hackathon-tier concurrency.
+const FEATHERLESS_MODEL = process.env.FEATHERLESS_MODEL_DEFAULT ?? 'deepseek-ai/DeepSeek-V3.2';
+const FEATHERLESS_TIMEOUT_MS = Number(process.env.FEATHERLESS_TIMEOUT_MS ?? 20000);
+
+// ── AISA → Featherless fallback wrapper ────────────────────────────────
+type ChatOutcome = {
+  content: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  provider: 'aisa' | 'featherless';
+};
+
+async function chatWithFallback(opts: {
+  aisaModel: string;
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  maxTokens: number;
+}): Promise<ChatOutcome> {
+  try {
+    const r = await aisaChat({
+      model: opts.aisaModel,
+      messages: opts.messages,
+      maxTokens: opts.maxTokens,
+      timeoutMs: AISA_TIMEOUT_MS,
+    });
+    return { ...r, provider: 'aisa' };
+  } catch (err) {
+    const e = err as Error;
+    if (!shouldFallback(e)) throw e;
+    log('warn', 'aisa_fallback_triggered', {
+      aisa_err: e.message.slice(0, 200),
+      falling_back_to: 'featherless',
+      featherless_model: FEATHERLESS_MODEL,
+    });
+    const r = await featherlessChat({
+      model: FEATHERLESS_MODEL,
+      messages: opts.messages,
+      maxTokens: opts.maxTokens,
+      timeoutMs: FEATHERLESS_TIMEOUT_MS,
+    });
+    return { ...r, provider: 'featherless' };
+  }
+}
 
 // Arc chain constants (stripped from src/lib/arc.ts — keep worker standalone)
 const ARC_RPC = 'https://rpc.testnet.arc.network';
@@ -285,6 +332,9 @@ async function tick(): Promise<void> {
   let postProcessOutput: string | null = null;
   let tokensIn = 0;
   let tokensOut = 0;
+  // Track which provider served the call — AISA primary, Featherless fallback.
+  // If both calls fell back, we log "featherless" (any fallback counts).
+  let providerUsed: 'aisa' | 'featherless' = 'aisa';
 
   try {
     // 1. Insert pending run
@@ -326,19 +376,19 @@ async function tick(): Promise<void> {
       updated_at: new Date().toISOString(),
     }).eq('id', runId);
 
-    // 4. Seller's Claude call
-    const sellerResp = await aisaChat({
-      model: MODEL_SELLER,
+    // 4. Seller's Claude call — AISA first, Featherless on timeout/5xx
+    const sellerResp = await chatWithFallback({
+      aisaModel: MODEL_SELLER,
       messages: [
         { role: 'system', content: seller.system_role },
         { role: 'user', content: buyer.prompt_to_seller },
       ],
       maxTokens: MAX_OUTPUT_TOKENS,
-      timeoutMs: AISA_TIMEOUT_MS,
     });
     sellerResponse = sellerResp.content.trim();
     tokensIn += sellerResp.tokensIn;
     tokensOut += sellerResp.tokensOut;
+    if (sellerResp.provider === 'featherless') providerUsed = 'featherless';
     const sellerPreview = sellerResponse.slice(0, 280);
 
     await sb.from('orchestration_runs').update({
@@ -348,19 +398,19 @@ async function tick(): Promise<void> {
       updated_at: new Date().toISOString(),
     }).eq('id', runId);
 
-    // 5. Post-process (buyer's brief, Haiku)
-    const ppResp = await aisaChat({
-      model: MODEL_POSTPROCESS,
+    // 5. Post-process (buyer's brief) — AISA first, Featherless fallback
+    const ppResp = await chatWithFallback({
+      aisaModel: MODEL_POSTPROCESS,
       messages: [
         { role: 'system', content: `You are ${buyer.codename} (${buyer.epithet}), ${buyer.role}. Respond with ONLY the requested output, no preamble.` },
         { role: 'user', content: `${buyer.post_process}\n\nInput from ${seller.codename}:\n${sellerResponse}` },
       ],
       maxTokens: MAX_OUTPUT_TOKENS,
-      timeoutMs: AISA_TIMEOUT_MS,
     });
     postProcessOutput = ppResp.content.trim();
     tokensIn += ppResp.tokensIn;
     tokensOut += ppResp.tokensOut;
+    if (ppResp.provider === 'featherless') providerUsed = 'featherless';
 
     // 6. Feedback (ERC-8004)
     feedbackTxId = await giveFeedback(buyerCode, sellerCode);
@@ -423,11 +473,12 @@ async function tick(): Promise<void> {
       updated_at: new Date().toISOString(),
     }).eq('id', 1);
 
-    log('info', 'tick_ok', {
+    log('info', 'tick_completed', {
       tick_round: tickRound,
       buyer: buyerCode,
       seller: sellerCode,
       status: 'completed',
+      provider: providerUsed,
       tx_hash: txId,
       feedback_tx: feedbackTxId,
       duration_ms: durationMs,
@@ -440,6 +491,7 @@ async function tick(): Promise<void> {
       tick_round: tickRound,
       buyer: buyerCode,
       seller: sellerCode,
+      provider: providerUsed,
       reason,
     });
     if (runId != null) {
