@@ -16,6 +16,7 @@ import path from 'node:path';
 import { createPublicClient, http, parseAbi } from 'viem';
 import { ARC_CONTRACTS, ARC_RPC } from '@/lib/arc';
 import { PRICING } from '@/lib/pricing';
+import { AGENTS } from '@/agents/registry';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,8 @@ type WalletRecord = {
   role: string;
   address: string;
   accountType?: string;
+  codename?: string;
+  epithet?: string;
 };
 
 const GATEWAY_ABI = parseAbi([
@@ -45,7 +48,14 @@ function loadJson<T>(relPath: string, fallback: T): T {
 }
 
 export async function GET() {
-  const wallets = loadJson<WalletRecord[]>('wallets.json', []);
+  const rawWallets = loadJson<WalletRecord[]>('wallets.json', []);
+  // Merge Greek codename + epithet from registry (display layer).
+  // `code` is the stable join key; BUYER-EOA is not in AGENTS, so it passes through untouched.
+  const codenameByCode = new Map(AGENTS.map((a) => [a.code.toUpperCase(), { codename: a.codename, epithet: a.epithet }]));
+  const wallets: WalletRecord[] = rawWallets.map((w) => {
+    const hit = codenameByCode.get(w.code.toUpperCase());
+    return hit ? { ...w, codename: hit.codename, epithet: hit.epithet } : w;
+  });
   const recentCalls = loadJson<Array<{
     endpoint: string;
     receipt: { payer: string; amount: string; network: string; transactionHash: string };
