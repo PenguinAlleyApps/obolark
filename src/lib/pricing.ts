@@ -13,7 +13,13 @@ export type EndpointKey =
   | 'design-review'
   | 'qa'
   | 'security-scan'
-  | 'audit';
+  | 'audit'
+  // Partner-track seller endpoints (Gemini / Featherless / AISA-data).
+  // Out of the runProvider() dispatch path — each has its own client
+  // + structured output, but still 402-gated via x402-gateway.
+  | 'gemini-oracle'
+  | 'featherless-route'
+  | 'aisa-data';
 
 export type EndpointPricing = {
   /** Seller agent code — receives the primary payment */
@@ -63,6 +69,36 @@ export const PRICING: Record<EndpointKey, EndpointPricing> = {
     supervisionFee: '0.0005',
     description: 'PA·co Argus — audit report against PA·co quality gates',
     maxTimeoutSeconds: 60,
+  },
+  // ── Partner-track sellers ─────────────────────────────────────────────
+  'gemini-oracle': {
+    // PA·co treasury acts as narrator wallet — "The Oracle" divinations
+    // settle to the house until ORACLE-001 MPC wallet ships.
+    seller: 'PAco',
+    price: '0.001',
+    supervisionFee: '0.0001',
+    description: 'The Oracle — Gemini narrated divination of Bureau activity (grounded w/ Google Search)',
+    maxTimeoutSeconds: 45,
+  },
+  'featherless-route': {
+    // Featherless Open-Weight Civic Service — per-agent model router.
+    // Seller is PAco because router multiplexes N agents → N models;
+    // no single agent owns the seat.
+    seller: 'PAco',
+    price: '0.002',
+    supervisionFee: '0.0002',
+    description: 'Open-Weight Civic Service — agent-keyed Featherless model router (DeepSeek / Kimi / Llama / Qwen)',
+    maxTimeoutSeconds: 45,
+  },
+  'aisa-data': {
+    // AISA data-endpoint wrapper (distinct from chat). Seller is AISA
+    // attribution = Radar; AISA is an infrastructure partner, not an
+    // agent, so payment routes to PA·co treasury for accounting.
+    seller: 'PAco',
+    price: '0.002',
+    supervisionFee: '0.0002',
+    description: 'AISA data query — structured data lookup (user_info, balances, etc.)',
+    maxTimeoutSeconds: 30,
   },
 };
 
