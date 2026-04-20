@@ -13,6 +13,7 @@
  */
 import { headers } from 'next/headers';
 import LedgerTicker from './_ui/LedgerTicker';
+import ReputationPanel from './_ui/ReputationPanel';
 
 type Agent = {
   agent: string;
@@ -37,12 +38,18 @@ type Receipt = {
   result?: string;
   at: string;
 };
+type SellerReputation = {
+  count: number;
+  avgScore: number;
+  lastTxHashes: string[];
+};
 type StateResponse = {
-  network: { name: string; chainId: number; usdc: string; gatewayWallet: string };
+  network: { name: string; chainId: number; usdc: string; gatewayWallet: string; reputationRegistry?: string };
   buyer: { code: string; address: string; accountType?: string; gatewayDeposit: string | null } | null;
   agents: Agent[];
   endpoints: Endpoint[];
   recentCalls: Receipt[];
+  reputation?: Record<string, SellerReputation>;
   generatedAt: string;
 };
 
@@ -98,7 +105,7 @@ export default async function Home() {
     );
   }
 
-  const { network, buyer, agents, endpoints, recentCalls } = state;
+  const { network, buyer, agents, endpoints, recentCalls, reputation } = state;
   const sellerCodes = new Set(endpoints.map((e) => e.seller));
   const deptGroups = groupByDept(agents);
   const scaCount = agents.filter((a) => a.accountType === 'SCA').length;
@@ -250,7 +257,7 @@ export default async function Home() {
           <span>[ II · Tollkeepers ]</span>
           <span>[ III · Ledger ]</span>
           <span>[ IV · Agents ]</span>
-          <span>[ V · Reputation ]</span>
+          <a href="#reputation" style={{ color: 'inherit' }}>[ V · Reputation ]</a>
           <span>[ VI · Archive ]</span>
         </nav>
 
@@ -360,6 +367,20 @@ export default async function Home() {
           <span>auto-refresh 15s</span>
         </div>
         <LedgerTicker initial={recentCalls} />
+      </section>
+
+      {/* ── Reputation · ERC-8004 FeedbackGiven ─────────────────────── */}
+      <section className="panel" id="reputation">
+        <div className="panel-header">
+          <span>[ V · REPUTATION · ERC-8004 CROSSING SCORES ]</span>
+          <span>auto-refresh 10s</span>
+        </div>
+        <ReputationPanel
+          initial={reputation ?? {}}
+          agents={agents}
+          arcscanBase="https://testnet.arcscan.app"
+          registryAddress={network.reputationRegistry ?? null}
+        />
       </section>
 
       {/* ── Agent roster · Departments ──────────────────────────────── */}

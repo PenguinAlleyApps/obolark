@@ -130,6 +130,37 @@ async function main() {
     }
   }
 
+  // ── 4b. Reputation registry deployed + seeded ─────────────────────────
+  try {
+    const deployPath = path.resolve('logs', 'reputation-deploy.json');
+    const seedPath = path.resolve('logs', 'reputation-seed.json');
+    if (!fs.existsSync(deployPath)) {
+      checks.push({ name: 'reputation contract deployed', status: 'FAIL', detail: 'logs/reputation-deploy.json missing' });
+      criticalFail = true;
+    } else {
+      const deploy = JSON.parse(fs.readFileSync(deployPath, 'utf-8'));
+      // cross-check with /api/state reputation field
+      const res = await fetch(`${APP_URL}/api/state`);
+      let repOk = false, repDetail = 'unknown';
+      if (res.ok) {
+        const data = await res.json();
+        const registryAddr = data?.network?.reputationRegistry;
+        const repCount = data?.reputation ? Object.keys(data.reputation).length : 0;
+        const seededOk = fs.existsSync(seedPath);
+        repOk = registryAddr?.toLowerCase() === deploy.address?.toLowerCase() && (repCount >= 5 || seededOk);
+        repDetail = `addr=${registryAddr?.slice(0,10)}… sellers_with_rep=${repCount} seed_log=${seededOk ? 'yes' : 'no'}`;
+      }
+      checks.push({
+        name: 'reputation contract deployed + seeded',
+        status: repOk ? 'PASS' : 'WARN',
+        detail: `${deploy.address} · ${repDetail}`,
+      });
+    }
+  } catch (err) {
+    checks.push({ name: 'reputation contract deployed + seeded', status: 'FAIL', detail: err.message });
+    criticalFail = true;
+  }
+
   // ── 5. Onchain tx census ─────────────────────────────────────────────
   const logDir = path.resolve('logs');
   let onchainCount = 0;

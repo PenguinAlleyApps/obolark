@@ -20,6 +20,7 @@ export const ARC_CONTRACTS = {
   Multicall3:     '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
   GatewayWallet:  '0x0077777d7EBA4688BDeF3E311b846F25870A19B9' as const,
   GatewayMinter:  '0x0022222ABE238Cc2C7Bb1f21003F0a260052475B' as const,
+  REPUTATION_REGISTRY: '0x466b78ec4d8191f3d08a05b314cee24b961926b7' as const,
 } as const;
 
 export const ARC_NETWORK = 'arc-testnet' as const;

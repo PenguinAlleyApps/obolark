@@ -17,6 +17,7 @@ import { createPublicClient, http, parseAbi } from 'viem';
 import { ARC_CONTRACTS, ARC_RPC } from '@/lib/arc';
 import { PRICING } from '@/lib/pricing';
 import { AGENTS } from '@/agents/registry';
+import { getReputationSnapshot } from '@/lib/reputation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -88,17 +89,22 @@ export async function GET() {
     description: p.description,
   }));
 
+  // Reputation snapshot — 10s in-process cache inside getReputationSnapshot()
+  const reputation = await getReputationSnapshot().catch(() => ({}));
+
   return NextResponse.json({
     network: {
       name: 'Arc Testnet',
       chainId: 5042002,
       usdc: ARC_CONTRACTS.USDC,
       gatewayWallet: ARC_CONTRACTS.GatewayWallet,
+      reputationRegistry: ARC_CONTRACTS.REPUTATION_REGISTRY,
     },
     buyer: buyer ? { code: buyer.code, address: buyer.address, accountType: buyer.accountType, gatewayDeposit } : null,
     agents: wallets,
     endpoints,
     recentCalls: recentCalls.slice(-10).reverse(),
+    reputation,
     generatedAt: new Date().toISOString(),
   });
 }

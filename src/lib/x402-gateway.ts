@@ -11,6 +11,7 @@ import { BatchFacilitatorClient } from '@circle-fin/x402-batching/server';
 import { ARC_CONTRACTS, ARC_CHAIN_ID, ARC_NETWORK } from './arc';
 import { priceOf, type EndpointKey } from './pricing';
 import { getWalletByCode } from './agents';
+import { creditFeedback, buyerCodeFromAddress } from './reputation';
 
 export const X402_VERSION = 2 as const;
 
@@ -240,6 +241,21 @@ export async function requirePayment(
     network: settleRes.network ?? requirements.network,
     transactionHash: settleRes.transaction,
   };
+
+  // ─── Fire-and-forget reputation credit ────────────────────────────────
+  // ERC-8004: the buyer credits the seller with a score of 100 after
+  // every successful x402 crossing. MUST NOT block the 200 response —
+  // creditFeedback() swallows all errors internally.
+  const price = priceOf(key);
+  const sellerCode = price.seller;
+  const buyerCode = buyerCodeFromAddress(receipt.payer);
+  if (buyerCode) {
+    void creditFeedback(buyerCode, sellerCode, {
+      score: 100,
+      settlementTx: receipt.transactionHash,
+    });
+  }
+
   return { kind: 'settled', receipt, requirements };
 }
 
