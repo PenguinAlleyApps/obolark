@@ -1,0 +1,192 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Canned workflow briefs per Obolark agent. Each buyer hires a seller for a specific task; the orchestrator (Railway worker) picks one tick at a time, fires the x402 direct-transfer, captures the seller's real Claude response + produces the buyer's own post-process output. All outputs written to Supabase agent_inbox. Max output tokens per response: 200.",
+    "max_output_tokens": 200,
+    "tick_cadence_seconds": 60,
+    "hourly_tick_ceiling": 40,
+    "hourly_usdc_ceiling": 0.05,
+    "deposit_floor_usdc": 0.1
+  },
+  "sellers": {
+    "RADAR": {
+      "codename": "ORACLE",
+      "endpoint": "/api/research",
+      "price_usdc": "0.003",
+      "accepts_prompt": true,
+      "system_role": "Pythia of Delphi — produces a single 3-bullet research brief in the style of a forensic analyst. Output MUST be 3 bullets max, under 180 chars per bullet, fact-first."
+    },
+    "PIXEL": {
+      "codename": "DAEDALUS",
+      "endpoint": "/api/design-review",
+      "price_usdc": "0.005",
+      "accepts_prompt": true,
+      "system_role": "Master Craftsman — design critique of a URL or asset. Output = exactly 3 observations + 1 concrete fix. Reference grid / contrast / hierarchy. Under 200 tokens total."
+    },
+    "SENTINEL": {
+      "codename": "CERBERUS",
+      "endpoint": "/api/qa",
+      "price_usdc": "0.008",
+      "accepts_prompt": true,
+      "system_role": "Three-Headed Guardian — QA pass verdict PASS/WARN/FAIL on a given route or diff. Return verdict + 2 reasons + 1 reproduction step."
+    },
+    "PHANTOM": {
+      "codename": "THANATOS",
+      "endpoint": "/api/security-scan",
+      "price_usdc": "0.008",
+      "accepts_prompt": true,
+      "system_role": "Silent Intruder — security scan of code or URL. Return top-3 findings ordered by severity, each with CWE id if applicable and 1-line mitigation."
+    },
+    "ARGUS": {
+      "codename": "ARGUS",
+      "endpoint": "/api/audit",
+      "price_usdc": "0.004",
+      "accepts_prompt": true,
+      "system_role": "Hundred-Eyed Watcher — audit report against PA·co quality gates (EO-016 aesthetics, EO-104 infra, EO-006 triple-write, EO-005 spending). PASS/WARN/FAIL per gate, 1 line each, 4 gates max."
+    }
+  },
+  "buyers": {
+    "GUARDIAN": {
+      "codename": "AEGIS",
+      "epithet": "Athena's Ward",
+      "role": "Runtime budget guardrail",
+      "hires": "ARGUS",
+      "prompt_to_seller": "Audit whether spending 0.05 USDC/hour on 40 orchestration ticks is within EO-005. Return PASS/WARN/FAIL on each of EO-005, EO-016, EO-104, EO-006.",
+      "post_process": "Given ARGUS's audit, produce a 1-sentence runtime budget decision: APPROVE, DEFER, or HALT with the single strongest reason."
+    },
+    "COMPASS": {
+      "codename": "HERMES",
+      "epithet": "Guide of Paths",
+      "role": "Strategist — weekly moves for PA·co",
+      "hires": "RADAR",
+      "prompt_to_seller": "Research: what are the 3 strongest moves for a multi-agent AI OS company in the sub-cent USDC micropayments space in 2026 Q2?",
+      "post_process": "Given ORACLE's research, produce a 3-line strategy memo: Move 1, Move 2, Move 3 — each under 100 chars, each starting with a verb."
+    },
+    "ECHO": {
+      "codename": "IRIS",
+      "epithet": "Rainbow Messenger",
+      "role": "Marketer — content briefs",
+      "hires": "PIXEL",
+      "prompt_to_seller": "Design critique of the Obolark Bureau Ledger dashboard at obolark.vercel.app — scan hierarchy + Tollkeeper row rhythm + chip spacing.",
+      "post_process": "Given DAEDALUS's critique, produce a content brief: 1 hook (<80 chars), 1 CTA (<40 chars), 3 channel variations (twitter/linkedin/youtube, <60 chars each)."
+    },
+    "HUNTER": {
+      "codename": "ARTEMIS",
+      "epithet": "Huntress of the Moon",
+      "role": "Sales — outbound pitches",
+      "hires": "COMPASS",
+      "prompt_to_seller": "Strategy brief: 3 moves a stablecoin-native agent economy company should make to win enterprise pilots in 2026.",
+      "post_process": "Given HERMES's memo, produce a 3-sentence sales pitch + 3 target personas (role / company size / pain)."
+    },
+    "LENS": {
+      "codename": "APOLLO",
+      "epithet": "Patron of the Muses",
+      "role": "Creative director — mood + references",
+      "hires": "FRAME",
+      "prompt_to_seller": "Design a 6-beat shot list for a 30-second product hero film about an A2A USDC economy on Arc, Hades-inspired Bureau Ledger aesthetic.",
+      "post_process": "Given URANIA's shot list, produce 1-sentence mood + 3 reference frames by name (e.g., 'Supergiant Hades key art', 'Social Network title cards')."
+    },
+    "FRAME": {
+      "codename": "URANIA",
+      "epithet": "Muse of the Celestial Frame",
+      "role": "DP — shot list + director's brief",
+      "hires": "REEL",
+      "prompt_to_seller": "Edit notes on a 30-second product hero film: pacing, cuts, music-sync opportunities.",
+      "post_process": "Given CALLIOPE's notes, produce a 6-beat director's brief: each beat = t_start / shot_type / intent / 1-line note."
+    },
+    "REEL": {
+      "codename": "CALLIOPE",
+      "epithet": "Muse of Epic Cuts",
+      "role": "Editor — cut + pacing",
+      "hires": "SENTINEL",
+      "prompt_to_seller": "QA verdict on the Obolark final cut at obolark.vercel.app — check pacing, music sync, subtitle timing.",
+      "post_process": "Given CERBERUS's verdict, produce 3 cuts made + 1 pacing note — each under 80 chars, edit-room voice."
+    },
+    "LEDGER": {
+      "codename": "PLUTUS",
+      "epithet": "Keeper of Wealth",
+      "role": "Finance — runway + burn",
+      "hires": "ARGUS",
+      "prompt_to_seller": "Audit PA·co runtime spending against EO-005 (zero spending authority without CEO approval) and EO-104 (infrastructure ambition).",
+      "post_process": "Given ARGUS's audit, produce a financial check: runway in weeks (integer) + burn rate (USD/week) + 1 call (accelerate / hold / conserve)."
+    },
+    "SHIELD": {
+      "codename": "THEMIS",
+      "epithet": "Divine Order",
+      "role": "Legal — risk review",
+      "hires": "LEDGER",
+      "prompt_to_seller": "Finance check on PA·co's current spending pattern across the trading module, GPU tools upgrade, and hackathon module.",
+      "post_process": "Given PLUTUS's check, produce a 1-line legal risk + 1-line mitigation."
+    },
+    "HARBOR": {
+      "codename": "POSEIDON",
+      "epithet": "Lord of Open Waters",
+      "role": "Open source — license + attribution",
+      "hires": "SHIELD",
+      "prompt_to_seller": "Legal memo on using ChaosChain/trustless-agents-erc-ri as a reference implementation for ERC-8004 in Obolark (MIT + CC0).",
+      "post_process": "Given THEMIS's memo, produce an OSS decision: license pick (MIT/Apache 2.0/CC0) + whether attribution in THIRD_PARTY_NOTICES is required (yes/no)."
+    },
+    "DISCOVERY": {
+      "codename": "PROTEUS",
+      "epithet": "Shape-Shifter",
+      "role": "Client onboarding — adapts to prospect",
+      "hires": "HUNTER",
+      "prompt_to_seller": "Sales pitch + 3 target personas for a consulting firm running 5-role ops (3 buyers + 2 sellers) on a private Obolark fork.",
+      "post_process": "Given ARTEMIS's pitch, produce a 3-step onboarding plan: (1) discovery call / (2) custom roster / (3) go-live smoke."
+    },
+    "FOREMAN": {
+      "codename": "HEPHAESTUS",
+      "epithet": "Smith of the Forge",
+      "role": "Client builds — scope + estimate",
+      "hires": "ATLAS",
+      "prompt_to_seller": "Code review on the Obolark orchestrator.ts module (Railway worker, Supabase inbox). Surface complexity + security + maintainability risks.",
+      "post_process": "Given ATLAS's review, produce a build plan: scope (in 1 sentence) + time estimate (hours) + top-2 risks."
+    },
+    "SCOUT": {
+      "codename": "HESTIA",
+      "epithet": "Hearth of the Warehouse",
+      "role": "Tools — adopt / defer",
+      "hires": "RADAR",
+      "prompt_to_seller": "Research: is Stable Audio Open 1.0 production-ready for commercial AI video scoring at PA·co scale (10+ videos/month)?",
+      "post_process": "Given ORACLE's research, produce a tool decision: ADOPT / DEFER / REJECT + 1-sentence rationale."
+    },
+    "WATCHMAN": {
+      "codename": "HELIOS",
+      "epithet": "All-Seeing Sun",
+      "role": "Hackathons — pick events",
+      "hires": "RADAR",
+      "prompt_to_seller": "Research: top-3 AI agent hackathons with prize pool ≥$10k starting between 2026-05-01 and 2026-06-30.",
+      "post_process": "Given ORACLE's research, produce a 3-pick ranked list: event / deadline / prize / 1-line fit for PA·co."
+    },
+    "PIONEER": {
+      "codename": "PROMETHEUS",
+      "epithet": "Bringer of Fire",
+      "role": "Open source AI — contributions",
+      "hires": "HARBOR",
+      "prompt_to_seller": "OSS decision on contributing the Obolark orchestrator as a standalone npm package (MIT).",
+      "post_process": "Given POSEIDON's decision, produce a contribution plan: target repo + PR idea + time-to-merge estimate (days)."
+    }
+  },
+  "_scheduling": {
+    "algorithm": "round_robin",
+    "priority_weights": {
+      "AEGIS": 2,
+      "HERMES": 2,
+      "IRIS": 1.5,
+      "ARTEMIS": 1.5,
+      "APOLLO": 1,
+      "URANIA": 1,
+      "CALLIOPE": 1,
+      "PLUTUS": 1.5,
+      "THEMIS": 1.2,
+      "POSEIDON": 1,
+      "PROTEUS": 1,
+      "HEPHAESTUS": 1,
+      "HESTIA": 1,
+      "HELIOS": 1.2,
+      "PROMETHEUS": 1
+    },
+    "skip_if_seller_busy_ms": 30000,
+    "skip_if_deposit_below_usdc": 0.1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "obolark-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Railway worker: runs Obolark A2A orchestration tick loop + daily audit cron.",
+  "main": "dist/worker.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/worker.js",
+    "start:audit": "node dist/audit-cron.js",
+    "dev": "tsx src/worker.ts",
+    "dev:audit": "tsx src/audit-cron.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@circle-fin/developer-controlled-wallets": "^10.3.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^17.4.2",
+    "viem": "^2.48.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
