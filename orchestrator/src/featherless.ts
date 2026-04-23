@@ -91,7 +91,12 @@ export function shouldFallback(err: Error): boolean {
   const httpMatch = m.match(/AISA HTTP (\d{3})/);
   if (httpMatch) {
     const status = Number(httpMatch[1]);
-    return status >= 500 && status < 600;
+    // 5xx → upstream provider failure, fallback can fix
+    if (status >= 500 && status < 600) return true;
+    // 429 → rate limit on AISA, fallback to Featherless bypasses
+    if (status === 429) return true;
+    // 403 + quota-exhausted substring → AISA credit-exhausted, fallback unblocks
+    if (status === 403 && /pre-deduction failed|quota|insufficient/i.test(m)) return true;
   }
   return false;
 }
