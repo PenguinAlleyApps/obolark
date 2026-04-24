@@ -25,7 +25,7 @@ import OrchestrationsMarquee from './OrchestrationsMarquee';
 import { useOrchestrationFeed } from './useOrchestrationFeed';
 import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
 import TabIVAgents from './tabs/TabIVAgents';
-import OracleTab from './OracleTab';
+import TabVIIIOracle from './tabs/TabVIIIOracle';
 import {
   AgentCeremonyOverlay,
   AgentSigilDefs,
@@ -293,7 +293,7 @@ export default function BureauSections({
       )}
 
       {/* ── VIII · Oracle (Delphi · Gemini 3.1 Flash Live) ────────────── */}
-      {tab === 'VIII' && <OracleTab arcscanBase={arcscanBase} />}
+      {tab === 'VIII' && <TabVIIIOracle arcscanBase={arcscanBase} />}
 
       {/* ── Featherless Model Card Unfurl (portal-style popover) ──────── */}
       {unfurl && FEATHERLESS_BINDINGS[unfurl.code] && (
