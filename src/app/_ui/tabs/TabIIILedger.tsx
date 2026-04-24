@@ -9,6 +9,11 @@ function truncHash(h: string) {
 function formatWhen(iso: string) {
   try { return new Date(iso).toISOString().slice(11, 19) + ' UTC'; } catch { return iso; }
 }
+function formatUsdc(raw: string): string {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return '—';
+  return (n / 1_000_000).toFixed(6);
+}
 
 export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) {
   const [rows, setRows] = useState<Receipt[]>(recentCalls);
@@ -61,7 +66,7 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
                   <td><span className={styles.statusLed} data-state={isFresh ? 'signal' : undefined} /></td>
                   <td>{r.endpoint}</td>
                   <td>{r.receipt.payer.slice(0, 6)}…{r.receipt.payer.slice(-4)}</td>
-                  <td className={styles.numeric}>{r.receipt.amount}</td>
+                  <td className={styles.numeric}>{formatUsdc(r.receipt.amount)}</td>
                   <td>
                     <a className={styles.txHash} href={`${arcscanBase}/tx/${r.receipt.transactionHash}`} target="_blank" rel="noopener noreferrer">
                       {truncHash(r.receipt.transactionHash)}
