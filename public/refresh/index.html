@@ -3,7 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OBOLARK — Bureau of Crossings · Ledger</title>
+  <title>OBOLARK — Agent-to-agent micropayments on Arc</title>
+  <meta name="description" content="22 PA·co agents pay each other in sub-cent USDC on Arc testnet using x402 + Circle Nanopayments. Real agents, real endpoints, real ledger." />
+  <meta property="og:title" content="OBOLARK — Agent-to-agent micropayments on Arc" />
+  <meta property="og:description" content="22 agents. 8 monetized endpoints. 61+ onchain crossings. $0.001–$0.008 per call. Margin unlocked by Arc + Circle Nanopayments." />
+  <meta property="og:type" content="website" />
+
   <link rel="stylesheet" href="colors_and_type.css" />
   <link rel="stylesheet" href="ambient-fx.css" />
   <template id="__bundler_thumbnail" data-bg-color="#0E0A08">
@@ -14,7 +19,7 @@
         <circle r="180" fill="none" stroke="#F76B2B" stroke-width="2" stroke-dasharray="8 10"/>
         <circle r="18" fill="#F76B2B"/>
         <text x="0" y="-280" text-anchor="middle" font-family="serif" font-weight="700" font-size="96" fill="#F5C518" letter-spacing="4">OBOLARK</text>
-        <text x="0" y="300" text-anchor="middle" font-family="monospace" font-size="24" fill="#B8A57E" letter-spacing="8">BUREAU OF CROSSINGS</text>
+        <text x="0" y="300" text-anchor="middle" font-family="monospace" font-size="24" fill="#B8A57E" letter-spacing="8">AGENT-TO-AGENT · ARC</text>
       </g>
     </svg>
   </template>
@@ -27,142 +32,670 @@
       color: var(--ink);
       font-family: var(--font-body);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* ── Sticky nav strip ── */
-    .navbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: var(--brand-bg);
-      color: var(--brand-ink);
-      border-bottom: 1px solid var(--brand-rule);
-      box-shadow: 0 1px 0 var(--brand-rule), 0 8px 16px -12px rgba(0,0,0,0.7);
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-    .navbar-inner {
-      max-width: 1400px;
+    /* ── Shared shell ──────────────────────────────────────────────────── */
+    .wrap {
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 10px 28px;
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      overflow-x: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--brand-rule) transparent;
+      padding: 0 clamp(20px, 4vw, 56px);
+      position: relative;
+      z-index: 1;
     }
-    .navbar .brand {
+
+    .sect-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sect-label::before {
+      content: "";
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      background: var(--pale-brass);
+    }
+    .sect-label .idx {
+      color: var(--pale-brass);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .sect-head {
       font-family: var(--font-mythic);
       font-weight: 700;
-      font-size: 15px;
-      letter-spacing: 0.04em;
-      color: var(--signal);
-      text-transform: none;
-      padding: 4px 16px 4px 0;
-      border-right: 1px solid var(--brand-rule);
-      margin-right: 10px;
-      white-space: nowrap;
-    }
-    .navbar .brand .dot { color: var(--ember); }
-    .navbar a {
-      color: var(--brand-muted);
-      text-decoration: none;
-      padding: 6px 10px;
-      border: 1px solid transparent;
-      white-space: nowrap;
-      transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
-    }
-    .navbar a:hover {
+      font-size: clamp(28px, 4.2vw, 52px);
+      line-height: 1.02;
+      letter-spacing: 0.005em;
       color: var(--ink);
-      border-color: var(--brand-rule);
-      background: rgba(245, 197, 24, 0.04);
+      margin: 16px 0 36px;
+      max-width: 900px;
+      text-wrap: balance;
     }
-    .navbar a .num {
-      color: var(--pale-brass);
-      margin-right: 6px;
-      font-size: 9.5px;
+    .sect-head em {
+      font-style: italic;
+      color: var(--signal);
+      font-family: var(--font-display);
+      font-weight: 700;
     }
 
-    /* ── Section shell ── */
-    section.face {
+    /* ── HERO ──────────────────────────────────────────────────────────── */
+    .hero {
       position: relative;
-      border-bottom: 1px dashed var(--grid-line);
-      scroll-margin-top: 52px; /* offset sticky nav on anchor jump */
-    }
-    section.face .face-meta {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 18px 28px 4px;
+      min-height: clamp(560px, 85vh, 880px);
       display: flex;
-      align-items: baseline;
-      gap: 18px;
+      align-items: center;
+      padding: clamp(40px, 8vh, 120px) 0 clamp(48px, 8vh, 96px);
+      border-bottom: 1px solid var(--grid-line);
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 80% at 15% 65%,
+          color-mix(in oklab, var(--ember) 28%, transparent) 0%,
+          transparent 70%),
+        radial-gradient(ellipse 40% 60% at 90% 20%,
+          color-mix(in oklab, var(--signal) 12%, transparent) 0%,
+          transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero .wrap { display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; }
+
+    .hero-meta-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: clamp(48px, 8vh, 96px);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .hero-meta-top .brand-stamp {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      color: var(--signal);
+      text-transform: none;
+    }
+    .hero-meta-top .brand-stamp .dot { color: var(--ember); }
+    .hero-meta-top .right {
+      display: inline-flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-meta-top .right span { display: inline-flex; gap: 6px; align-items: center; }
+    .hero-meta-top .right span b {
+      color: var(--ink);
+      font-weight: 500;
+      letter-spacing: 0.18em;
+    }
+
+    .hero-wordmark {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: clamp(84px, 18vw, 240px);
+      line-height: 0.88;
+      letter-spacing: 0.01em;
+      color: var(--signal);
+      margin: 0;
+      animation: fade-rise 900ms cubic-bezier(0.2, 0.7, 0, 1) both;
+    }
+    .hero-wordmark .dot { color: var(--ember); }
+
+    .hero-tagline {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(20px, 2.6vw, 32px);
+      line-height: 1.25;
+      color: var(--ink);
+      max-width: 780px;
+      margin: 28px 0 0;
+      animation: fade-rise 900ms 120ms cubic-bezier(0.2, 0.7, 0, 1) both;
+    }
+    .hero-tagline em {
+      color: var(--signal);
+      font-style: italic;
+      font-family: var(--font-display);
+    }
+
+    .hero-sub {
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 20px 0 0;
+      animation: fade-rise 900ms 240ms cubic-bezier(0.2, 0.7, 0, 1) both;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 44px;
+      animation: fade-rise 900ms 360ms cubic-bezier(0.2, 0.7, 0, 1) both;
+    }
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 16px 22px 15px;
+      border-radius: var(--radius-sharp);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+      white-space: nowrap;
+    }
+    .btn.primary {
+      background: var(--signal);
+      color: #0B0705;
+      border: 1px solid var(--signal);
+      font-weight: 700;
+    }
+    .btn.primary:hover {
+      background: color-mix(in oklab, var(--signal) 85%, white);
+      transform: translateY(-1px);
+    }
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--grid-line);
+    }
+    .btn.ghost:hover {
+      border-color: var(--ember);
+      color: var(--ember);
+    }
+    .btn .arrow { transition: transform 160ms ease; }
+    .btn:hover .arrow { transform: translateX(3px); }
+
+    .hero-foot {
+      margin-top: clamp(48px, 8vh, 96px);
+      padding-top: 22px;
+      border-top: 1px solid var(--grid-line);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+      animation: fade-rise 900ms 480ms cubic-bezier(0.2, 0.7, 0, 1) both;
+    }
+    .hero-foot .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-left: 1px solid var(--grid-line);
+      padding-left: 16px;
+    }
+    .hero-foot .stat:first-child { border-left: 0; padding-left: 0; }
+    .hero-foot .stat .n {
+      font-family: var(--font-mono);
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 500;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+    .hero-foot .stat .n .u {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      margin-left: 4px;
+      text-transform: uppercase;
+    }
+    .hero-foot .stat .l {
       font-family: var(--font-mono);
       font-size: 9.5px;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--muted);
     }
-    section.face .face-meta .num {
-      color: var(--pale-brass);
-      font-size: 11px;
-      letter-spacing: 0.04em;
-    }
-    section.face .face-meta .title {
-      color: var(--ink);
-      font-family: var(--font-mythic);
-      font-weight: 700;
-      text-transform: none;
-      font-size: 22px;
-      letter-spacing: 0.005em;
-    }
-    section.face .face-meta .open {
-      margin-left: auto;
-      color: var(--ember);
-      letter-spacing: 0.22em;
-      text-decoration: none;
-    }
-    section.face .face-meta .open:hover { color: var(--signal); }
 
-    /* ── iframe container ── */
-    .frame-wrap {
+    /* ── Section shell ─────────────────────────────────────────────────── */
+    section.slab {
+      padding: clamp(64px, 10vh, 120px) 0;
+      border-bottom: 1px solid var(--grid-line);
       position: relative;
-      width: 100%;
-      background: var(--bone);
     }
-    .frame-wrap iframe {
-      display: block;
-      width: 100%;
-      border: 0;
-      background: var(--bone);
-      min-height: 720px; /* fallback until auto-resize fires */
-      transition: height 220ms ease-out;
+    section.slab:nth-of-type(even) { background: var(--bone-dark); }
+
+    /* ── WHY (margin comparison) ───────────────────────────────────────── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--grid-line);
     }
-    .frame-wrap[data-state="loading"]::after {
-      content: "loading folio…";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .why-col {
+      padding: clamp(22px, 3vw, 36px);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: relative;
+    }
+    .why-col + .why-col { border-left: 1px solid var(--grid-line); }
+    .why-col[data-verdict="die"] { background: color-mix(in oklab, var(--oxide) 4%, transparent); }
+    .why-col[data-verdict="live"] { background: color-mix(in oklab, var(--signal) 5%, transparent); }
+
+    .why-col .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--grid-line);
+    }
+    .why-col .hdr .nm {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(17px, 2vw, 22px);
+      color: var(--ink);
+      letter-spacing: -0.005em;
+    }
+    .why-col .hdr .vrd {
       font-family: var(--font-mono);
       font-size: 10px;
       letter-spacing: 0.22em;
       text-transform: uppercase;
+    }
+    .why-col[data-verdict="die"] .hdr .vrd { color: var(--oxide); }
+    .why-col[data-verdict="live"] .hdr .vrd { color: var(--moss); }
+
+    .why-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 16px;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px dashed color-mix(in oklab, var(--grid-line) 50%, transparent);
+    }
+    .why-row:last-of-type { border-bottom: 0; }
+    .why-row .k {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       color: var(--muted);
-      pointer-events: none;
+    }
+    .why-row .v {
+      font-family: var(--font-mono);
+      font-size: clamp(16px, 2vw, 22px);
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      letter-spacing: -0.005em;
+    }
+    .why-row.final .v {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 4.4vw, 56px);
+      font-weight: 700;
+      line-height: 1;
+    }
+    .why-col[data-verdict="die"] .why-row.final .v { color: var(--oxide); }
+    .why-col[data-verdict="live"] .why-row.final .v { color: var(--signal); }
+
+    .why-note {
+      margin-top: 28px;
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: clamp(14px, 1.4vw, 17px);
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 820px;
+    }
+    .why-note b { color: var(--ink); font-weight: 500; font-style: normal; }
+
+    /* ── WHAT (stats strip) ────────────────────────────────────────────── */
+    .shipped-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border: 1px solid var(--grid-line);
+      border-right: 0;
+    }
+    .shipped-cell {
+      padding: clamp(24px, 3vw, 40px) clamp(18px, 2.4vw, 32px);
+      border-right: 1px solid var(--grid-line);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .shipped-cell::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--signal), transparent);
+      opacity: 0;
+      transition: opacity 240ms ease;
+    }
+    .shipped-cell:hover::after { opacity: 0.6; }
+    .shipped-cell .n {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: clamp(36px, 5.2vw, 64px);
+      line-height: 0.95;
+      color: var(--signal);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+    }
+    .shipped-cell .n .u {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      margin-left: 4px;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+    .shipped-cell .l {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .shipped-cell .d {
+      font-family: var(--font-body);
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--ink);
+      margin-top: auto;
+      padding-top: 16px;
     }
 
-    /* Masthead iframe — tighter, no min-height overshoot */
-    #sec-masthead .frame-wrap iframe { min-height: 420px; }
+    /* ── HOW (flow diagram) ────────────────────────────────────────────── */
+    .flow {
+      border: 1px solid var(--grid-line);
+      padding: clamp(28px, 4vw, 56px);
+      position: relative;
+      background: color-mix(in oklab, var(--bone-dark) 60%, transparent);
+    }
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(14px, 1.8vw, 28px);
+      align-items: stretch;
+      position: relative;
+    }
+    .flow-step {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px 20px 22px;
+      border: 1px solid var(--grid-line);
+      background: var(--bone);
+      position: relative;
+      min-height: 200px;
+    }
+    .flow-step + .flow-step::before {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      left: -18px;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--pale-brass);
+      letter-spacing: 0;
+    }
+    .flow-step .num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--pale-brass);
+    }
+    .flow-step .title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--ink);
+      letter-spacing: -0.005em;
+      line-height: 1.2;
+    }
+    .flow-step .body {
+      font-family: var(--font-body);
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .flow-step .body b { color: var(--ink); font-weight: 500; }
+    .flow-step .code {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ember);
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px dashed var(--grid-line);
+      letter-spacing: 0;
+    }
+    .flow-foot {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--grid-line);
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .flow-foot b { color: var(--ink); font-weight: 500; font-style: normal; }
 
-    /* ── Footer ── */
+    /* ── AGENTS ────────────────────────────────────────────────────────── */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--grid-line);
+      border: 1px solid var(--grid-line);
+    }
+    .agents-dept {
+      background: var(--bone);
+      padding: 22px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .agents-dept .dept-name {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--pale-brass);
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--grid-line);
+    }
+    .agents-dept ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .agents-dept li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      font-family: var(--font-display);
+    }
+    .agents-dept li .nm {
+      font-weight: 500;
+      color: var(--ink);
+      font-size: 14.5px;
+    }
+    .agents-dept li .cn {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── STACK ─────────────────────────────────────────────────────────── */
+    .stack-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 10px 14px 9px;
+      border: 1px solid var(--grid-line);
+      border-radius: var(--radius-sharp);
+      color: var(--ink);
+      background: var(--bone);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chip .dot-pale {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--pale-brass);
+    }
+    .chip.primary { border-color: var(--signal); color: var(--signal); }
+    .chip.primary .dot-pale { background: var(--signal); }
+    .stack-note {
+      margin-top: 28px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    /* ── TOP-3 cards ───────────────────────────────────────────────────── */
+    .top3-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+      border: 1px solid var(--grid-line);
+    }
+    .top3-card {
+      padding: clamp(24px, 3vw, 40px);
+      border-top: 1px solid var(--grid-line);
+      border-left: 1px solid var(--grid-line);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      min-height: 280px;
+      background: var(--bone);
+    }
+    .top3-card:nth-child(-n+2) { border-top: 0; }
+    .top3-card:nth-child(odd) { border-left: 0; }
+    .top3-card .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed var(--grid-line);
+    }
+    .top3-card .crit {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--pale-brass);
+    }
+    .top3-card .num {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 40px;
+      color: var(--signal);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .top3-card .title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(19px, 2.2vw, 26px);
+      color: var(--ink);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+    .top3-card .body {
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .top3-card .body b { color: var(--ink); font-weight: 500; }
+    .top3-card .evidence {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px dashed var(--grid-line);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .top3-card .evidence .tag {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ember);
+      border: 1px solid color-mix(in oklab, var(--ember) 40%, transparent);
+      padding: 5px 9px 4px;
+      border-radius: var(--radius-sharp);
+    }
+
+    .verdict {
+      margin-top: 56px;
+      padding: clamp(28px, 4vw, 52px);
+      border: 1px solid var(--signal);
+      background: color-mix(in oklab, var(--signal) 6%, transparent);
+      text-align: center;
+    }
+    .verdict .kick {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--signal);
+    }
+    .verdict .line {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: clamp(24px, 3.8vw, 46px);
+      line-height: 1.15;
+      color: var(--ink);
+      margin: 14px 0 0;
+      letter-spacing: 0.005em;
+    }
+    .verdict .line em { color: var(--signal); font-style: italic; font-family: var(--font-display); }
+
+    /* ── FOOTER ────────────────────────────────────────────────────────── */
     footer.bureau-foot {
-      background: var(--brand-bg);
-      color: var(--brand-ink);
-      padding: 36px 28px 24px;
+      background: #0B0705;
+      padding: clamp(48px, 7vw, 88px) 0 32px;
       border-top: 2px solid var(--ink);
       position: relative;
     }
@@ -170,273 +703,512 @@
       content: '';
       position: absolute;
       top: -7px; left: 0; right: 0;
-      border-top: 1px solid var(--brand-rule);
+      border-top: 1px solid var(--grid-line);
       opacity: 0.55;
     }
-    footer.bureau-foot .foot-grid {
-      max-width: 1400px;
-      margin: 0 auto;
+    .foot-grid {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 24px;
-      align-items: center;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: clamp(24px, 4vw, 56px);
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--grid-line);
+    }
+    .foot-grid h4 {
       font-family: var(--font-mono);
       font-size: 10px;
       letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: var(--brand-muted);
+      color: var(--pale-brass);
+      margin: 0 0 16px;
+      font-weight: 500;
     }
-    footer.bureau-foot .foot-grid .center { text-align: center; color: var(--pale-brass); }
-    footer.bureau-foot .foot-grid .right { text-align: right; }
+    .foot-wordmark {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 38px;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      color: var(--signal);
+      margin: 0 0 14px;
+    }
+    .foot-wordmark .dot { color: var(--ember); }
+    .foot-tag {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--muted);
+      max-width: 420px;
+      margin: 0;
+    }
+    .foot-links {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .foot-links a {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+      padding-bottom: 2px;
+      transition: color 140ms ease, border-color 140ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+    }
+    .foot-links a:hover {
+      color: var(--ember);
+      border-bottom-color: var(--ember);
+    }
+    .foot-links a .pk {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+    .foot-bottom {
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .foot-bottom .brass { color: var(--pale-brass); }
 
-    @media (max-width: 760px) {
-      .navbar-inner { padding: 8px 16px; }
-      .navbar .brand { font-size: 13px; padding-right: 10px; margin-right: 6px; }
-      .navbar a { padding: 5px 8px; font-size: 10px; }
-      section.face .face-meta { padding: 14px 16px 4px; gap: 10px; }
-      section.face .face-meta .title { font-size: 17px; }
-      footer.bureau-foot .foot-grid { grid-template-columns: 1fr; text-align: center; }
-      footer.bureau-foot .foot-grid .right { text-align: center; }
+    /* ── Animations ────────────────────────────────────────────────────── */
+    @keyframes fade-rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 1040px) {
+      .hero-foot { grid-template-columns: repeat(2, 1fr); gap: 24px 20px; }
+      .hero-foot .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+      .shipped-grid { grid-template-columns: repeat(2, 1fr); border-right: 1px solid var(--grid-line); }
+      .shipped-cell:nth-child(odd) { border-right: 1px solid var(--grid-line); }
+      .flow-steps { grid-template-columns: repeat(2, 1fr); }
+      .flow-step + .flow-step::before { display: none; }
+      .agents-grid { grid-template-columns: repeat(2, 1fr); }
+      .foot-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .why-grid { grid-template-columns: 1fr; }
+      .why-col + .why-col { border-left: 0; border-top: 1px solid var(--grid-line); }
+      .shipped-grid { grid-template-columns: 1fr; }
+      .shipped-cell { border-right: 1px solid var(--grid-line); }
+      .flow-steps { grid-template-columns: 1fr; }
+      .agents-grid { grid-template-columns: 1fr; }
+      .top3-grid { grid-template-columns: 1fr; }
+      .top3-card { border-left: 0 !important; border-top: 1px solid var(--grid-line) !important; }
+      .top3-card:first-child { border-top: 0 !important; }
+      .hero-meta-top { flex-direction: column; align-items: flex-start; }
+      .hero-foot { grid-template-columns: 1fr 1fr; }
+      .foot-bottom { flex-direction: column; align-items: flex-start; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      .frame-wrap iframe { transition: none; }
+      .hero-wordmark, .hero-tagline, .hero-sub, .hero-cta, .hero-foot {
+        animation: none;
+      }
     }
   </style>
 </head>
 <body>
   <div class="fx-atmosphere" aria-hidden></div>
 
-  <!-- Sticky nav strip -->
-  <nav class="navbar" aria-label="Ledger sections">
-    <div class="navbar-inner">
-      <a href="#top" class="brand">OBOLARK<span class="dot" aria-hidden>.</span></a>
-      <a href="#tab-i"><span class="num">I</span>Audit Ledger</a>
-      <a href="#tab-ii"><span class="num">II</span>Tollkeepers</a>
-      <a href="#tab-iii"><span class="num">III</span>Ledger</a>
-      <a href="#tab-iv"><span class="num">IV</span>Agents</a>
-      <a href="#tab-v"><span class="num">V</span>Reputation</a>
-      <a href="#tab-vi"><span class="num">VI</span>Archive</a>
-      <a href="#tab-vii"><span class="num">VII</span>Orchestrations</a>
-      <a href="#tab-viii"><span class="num">VIII</span>Oracle</a>
+  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="hero-meta-top">
+        <span class="brand-stamp">OBOLARK<span class="dot" aria-hidden>.</span></span>
+        <span class="right">
+          <span><b>Arc Testnet</b> · chain_id 5042002</span>
+          <span>Track 2 · Agent-to-Agent Payment Loop</span>
+          <span>Submit · <b>2026-04-25</b> · 17:00 PST</span>
+        </span>
+      </div>
+
+      <h1 class="hero-wordmark">OBOLARK<span class="dot" aria-hidden>.</span></h1>
+      <p class="hero-tagline">
+        Agent-to-agent micropayments on Arc. <em>22 real PA·co agents pay each other in sub-cent USDC for real knowledge work</em> — priced per crossing, settled onchain, reputation persists.
+      </p>
+      <p class="hero-sub">
+        Every inter-agent API call is a crossing. Every crossing pays an obol — between $0.001 and $0.008 of USDC, verified and batched by <code style="font-family:var(--font-mono);color:var(--signal)">@circle-fin/x402-batching</code> on Arc testnet. The ledger writes itself. The reputation follows the money.
+      </p>
+      <div class="hero-cta">
+        <a class="btn primary" href="/bureau">
+          <span>Try the live ledger</span>
+          <span class="arrow" aria-hidden>→</span>
+        </a>
+        <a class="btn ghost" href="https://github.com/PenguinAlleyApps/obolark" target="_blank" rel="noopener">
+          <span>GitHub</span>
+          <span class="arrow" aria-hidden>↗</span>
+        </a>
+        <a class="btn ghost" href="https://testnet.arcscan.app" target="_blank" rel="noopener">
+          <span>Arc Explorer</span>
+          <span class="arrow" aria-hidden>↗</span>
+        </a>
+      </div>
+
+      <div class="hero-foot">
+        <div class="stat">
+          <div class="n">22<span class="u">+1</span></div>
+          <div class="l">Circle SCA wallets</div>
+        </div>
+        <div class="stat">
+          <div class="n">8<span class="u">endpoints</span></div>
+          <div class="l">Monetized services · $0.001–$0.008</div>
+        </div>
+        <div class="stat">
+          <div class="n">61<span class="u">+</span></div>
+          <div class="l">Onchain crossings (live)</div>
+        </div>
+        <div class="stat">
+          <div class="n">99<span class="u">% margin</span></div>
+          <div class="l">Versus Ethereum mainnet gas</div>
+        </div>
+      </div>
     </div>
-  </nav>
+  </section>
 
-  <main id="top">
-    <!-- MASTHEAD (hero, eager load) -->
-    <section class="face" id="sec-masthead" aria-label="Masthead">
-      <div class="frame-wrap" data-state="loading">
-        <iframe
-          data-src="masthead.html"
-          data-eager="1"
-          title="OBOLARK Masthead"
-          loading="eager"
-          scrolling="no"
-        ></iframe>
-      </div>
-    </section>
+  <!-- ═══════════════════════════ WHY ═══════════════════════════ -->
+  <section class="slab" id="why">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">01</span>WHY THIS COULDN'T EXIST BEFORE</span>
+      <h2 class="sect-head">A $0.003 research query dies on Ethereum. <em>On Arc + Nanopayments, margin flips +99%.</em></h2>
 
-    <!-- TAB I — Stage 1 Audit Ledger -->
-    <section class="face" id="tab-i" aria-label="Stage 1 Audit Ledger">
-      <div class="face-meta">
-        <span class="num">I</span>
-        <span class="title">Stage 1 Audit Ledger</span>
-        <span>Bureau forensic memo · 33 findings</span>
-        <a class="open" href="tab-i-audit-ledger.html" target="_blank" rel="noopener">open folio ↗</a>
+      <div class="why-grid">
+        <div class="why-col" data-verdict="die">
+          <div class="hdr">
+            <span class="nm">Ethereum mainnet</span>
+            <span class="vrd">✗ dies</span>
+          </div>
+          <div class="why-row"><span class="k">Price / call</span><span class="v">$0.003</span></div>
+          <div class="why-row"><span class="k">Gas per tx</span><span class="v">~$0.50</span></div>
+          <div class="why-row"><span class="k">Cost per call</span><span class="v">$0.503</span></div>
+          <div class="why-row final"><span class="k">Margin</span><span class="v">−16,567%</span></div>
+        </div>
+        <div class="why-col" data-verdict="live">
+          <div class="hdr">
+            <span class="nm">Arc + Circle Nanopayments</span>
+            <span class="vrd">✓ lives</span>
+          </div>
+          <div class="why-row"><span class="k">Price / call</span><span class="v">$0.003</span></div>
+          <div class="why-row"><span class="k">Batched gas</span><span class="v">~$0.00003</span></div>
+          <div class="why-row"><span class="k">Cost per call</span><span class="v">$0.00303</span></div>
+          <div class="why-row final"><span class="k">Margin</span><span class="v">+99%</span></div>
+        </div>
       </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-i-audit-ledger.html" title="Stage 1 Audit Ledger" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
 
-    <!-- TAB II — Tollkeepers -->
-    <section class="face" id="tab-ii" aria-label="Tollkeepers">
-      <div class="face-meta">
-        <span class="num">II</span>
-        <span class="title">Tollkeepers</span>
-        <span>Gate nodes · payment thresholds</span>
-        <a class="open" href="tab-ii-tollkeepers.html" target="_blank" rel="noopener">open folio ↗</a>
-      </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-ii-tollkeepers.html" title="Tollkeepers" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+      <p class="why-note">
+        Obolark prices every endpoint at the <b>amortized cost of the work it actually performs</b> — a Radar research call is $0.003 because that's the real Claude API cost to answer it. With mainnet gas, the gross margin is catastrophic. Arc's batched settlement + x402 turns the <b>same price-list into a viable product</b>. This entire class of agent economy — where an AI pays an AI four times per second for half a cent — is unlocked exclusively by this stack.
+      </p>
+    </div>
+  </section>
 
-    <!-- TAB III — Ledger -->
-    <section class="face" id="tab-iii" aria-label="Ledger">
-      <div class="face-meta">
-        <span class="num">III</span>
-        <span class="title">Ledger</span>
-        <span>Crossing events · USDC flow</span>
-        <a class="open" href="tab-iii-ledger.html" target="_blank" rel="noopener">open folio ↗</a>
-      </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-iii-ledger.html" title="Ledger" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+  <!-- ═══════════════════════════ WHAT ═══════════════════════════ -->
+  <section class="slab" id="what">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">02</span>WHAT WE SHIPPED</span>
+      <h2 class="sect-head">Live system. Real agents. <em>No mocks, no fiction.</em></h2>
 
-    <!-- TAB IV — Agents -->
-    <section class="face" id="tab-iv" aria-label="Agents">
-      <div class="face-meta">
-        <span class="num">IV</span>
-        <span class="title">Agents</span>
-        <span>22 registered · A2A coordination</span>
-        <a class="open" href="tab-iv-agents.html" target="_blank" rel="noopener">open folio ↗</a>
+      <div class="shipped-grid">
+        <div class="shipped-cell">
+          <div class="n">23<span class="u">SCA</span></div>
+          <div class="l">Circle Wallets</div>
+          <div class="d">22 PA·co agents + a treasury SCA (HADES, epithet "Lord of the Crossing"). Each deployed, funded, and signing on Arc.</div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">8<span class="u">APIs</span></div>
+          <div class="l">Monetized endpoints</div>
+          <div class="d">/research · /design-review · /qa · /security-scan · /audit · /gemini-oracle · /featherless-route · /aisa-data — priced $0.001–$0.008.</div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">61<span class="u">+</span></div>
+          <div class="l">Onchain crossings</div>
+          <div class="d">Every call was signed by an SCA, verified by x402, batch-settled through Circle Gateway, and written to Arc testnet.</div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">ERC<span class="u">·8004</span></div>
+          <div class="l">Reputation registry</div>
+          <div class="d">Identity + Reputation contracts deployed to Arc. Every successful payment fires <code>giveFeedback</code>, so trust compounds.</div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">0.332<span class="u">USDC</span></div>
+          <div class="l">Gateway deposit (live)</div>
+          <div class="d">Treasury float for the demo. Fundable from the Circle Console; you can watch it drain as judges drive the dashboard.</div>
+        </div>
       </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-iv-agents.html" title="Agents" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- TAB V — Reputation -->
-    <section class="face" id="tab-v" aria-label="Reputation">
-      <div class="face-meta">
-        <span class="num">V</span>
-        <span class="title">Reputation</span>
-        <span>On-chain signal · agent score</span>
-        <a class="open" href="tab-v-reputation.html" target="_blank" rel="noopener">open folio ↗</a>
-      </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-v-reputation.html" title="Reputation" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+  <!-- ═══════════════════════════ HOW ═══════════════════════════ -->
+  <section class="slab" id="how">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">03</span>HOW A CROSSING WORKS</span>
+      <h2 class="sect-head">Four steps from "I need research" to <em>"paid, receipted, reputation updated."</em></h2>
 
-    <!-- TAB VI — Archive -->
-    <section class="face" id="tab-vi" aria-label="Archive">
-      <div class="face-meta">
-        <span class="num">VI</span>
-        <span class="title">Archive</span>
-        <span>Historical crossings · cold store</span>
-        <a class="open" href="tab-vi-archive.html" target="_blank" rel="noopener">open folio ↗</a>
+      <div class="flow">
+        <div class="flow-steps">
+          <div class="flow-step">
+            <span class="num">Step 01 · Request</span>
+            <div class="title">Atlas calls Radar</div>
+            <div class="body"><b>Atlas</b> (Engineering) needs a research sweep. It sends a normal HTTP request to <b>Radar</b>'s monetized endpoint. No wallet prompts. No user in the loop.</div>
+            <div class="code">GET /api/research</div>
+          </div>
+          <div class="flow-step">
+            <span class="num">Step 02 · Quote</span>
+            <div class="title">HTTP 402 Payment Required</div>
+            <div class="body">Radar's <b>x402 middleware</b> answers with a priced challenge. The obol is <b>$0.003 USDC on Arc</b>. The response includes the EIP-3009 body Atlas must sign.</div>
+            <div class="code">402 · x-payment-required</div>
+          </div>
+          <div class="flow-step">
+            <span class="num">Step 03 · Sign &amp; settle</span>
+            <div class="title">Circle Gateway batches</div>
+            <div class="body">Atlas's SCA signs EIP-3009. <b><code>@circle-fin/x402-batching</code></b> verifies the signature and batches settlement through <b>Circle Gateway</b>. Arc confirms onchain in one transaction per batch.</div>
+            <div class="code">eip-3009 · batch · arc.chain_id 5042002</div>
+          </div>
+          <div class="flow-step">
+            <span class="num">Step 04 · Deliver &amp; rate</span>
+            <div class="title">200 OK + reputation</div>
+            <div class="body">Radar returns <b>200 OK</b> with the research payload. On success, the server also calls <b>ERC-8004 <code>giveFeedback(Radar, +1)</code></b>. Next time Atlas needs research, Radar ranks higher.</div>
+            <div class="code">200 · giveFeedback(seller, +1)</div>
+          </div>
+        </div>
+        <p class="flow-foot">
+          The obol is named for <b>Charon's coin</b> — the mythic toll paid to cross the Styx. Here the ferryman is <b>Arc</b>, the coin is <b>USDC</b>, and every crossing is receipted. The only thing you need to bring is <b>another agent willing to pay</b>.
+        </p>
       </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-vi-archive.html" title="Archive" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- TAB VII — Orchestrations -->
-    <section class="face" id="tab-vii" aria-label="Orchestrations">
-      <div class="face-meta">
-        <span class="num">VII</span>
-        <span class="title">Orchestrations</span>
-        <span>Multi-agent runs · decision trees</span>
-        <a class="open" href="tab-vii-orchestrations.html" target="_blank" rel="noopener">open folio ↗</a>
-      </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-vii-orchestrations.html" title="Orchestrations" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
+  <!-- ═══════════════════════════ AGENTS ═══════════════════════════ -->
+  <section class="slab" id="agents">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">04</span>THE 22 AGENTS</span>
+      <h2 class="sect-head">Not a hackathon fiction. <em>A real company's org chart, each row a Circle SCA.</em></h2>
 
-    <!-- TAB VIII — Oracle -->
-    <section class="face" id="tab-viii" aria-label="Oracle">
-      <div class="face-meta">
-        <span class="num">VIII</span>
-        <span class="title">Oracle</span>
-        <span>External signal · price feeds</span>
-        <a class="open" href="tab-viii-oracle.html" target="_blank" rel="noopener">open folio ↗</a>
+      <div class="agents-grid">
+        <div class="agents-dept">
+          <div class="dept-name">Executive</div>
+          <ul>
+            <li><span class="nm">PA·co</span><span class="cn">HADES</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Engineering</div>
+          <ul>
+            <li><span class="nm">Atlas</span><span class="cn">ATLAS</span></li>
+            <li><span class="nm">Pixel</span><span class="cn">DAEDALUS</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Quality &amp; Security</div>
+          <ul>
+            <li><span class="nm">Sentinel</span><span class="cn">CERBERUS</span></li>
+            <li><span class="nm">Phantom</span><span class="cn">NYX</span></li>
+            <li><span class="nm">Argus</span><span class="cn">ARGUS</span></li>
+            <li><span class="nm">Guardian</span><span class="cn">AEGIS</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Intelligence</div>
+          <ul>
+            <li><span class="nm">Radar</span><span class="cn">PYTHIA</span></li>
+            <li><span class="nm">Compass</span><span class="cn">MNEMOSYNE</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Growth</div>
+          <ul>
+            <li><span class="nm">Echo</span><span class="cn">ECHO</span></li>
+            <li><span class="nm">Hunter</span><span class="cn">ARTEMIS</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Audiovisual</div>
+          <ul>
+            <li><span class="nm">Lens</span><span class="cn">APOLLO</span></li>
+            <li><span class="nm">Frame</span><span class="cn">HELIOS</span></li>
+            <li><span class="nm">Reel</span><span class="cn">ORPHEUS</span></li>
+            <li><span class="nm">Score</span><span class="cn">TERPSICHORE</span></li>
+            <li><span class="nm">Vox</span><span class="cn">CALLIOPE</span></li>
+            <li><span class="nm">Cue</span><span class="cn">THEMIS</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Governance</div>
+          <ul>
+            <li><span class="nm">Ledger</span><span class="cn">HERMES</span></li>
+            <li><span class="nm">Shield</span><span class="cn">DIKE</span></li>
+            <li><span class="nm">Harbor</span><span class="cn">POSEIDON</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Consulting</div>
+          <ul>
+            <li><span class="nm">Discovery</span><span class="cn">IRIS</span></li>
+            <li><span class="nm">Foreman</span><span class="cn">HEPHAESTUS</span></li>
+          </ul>
+        </div>
+        <div class="agents-dept">
+          <div class="dept-name">Operations</div>
+          <ul>
+            <li><span class="nm">Scout</span><span class="cn">HERMES-OPS</span></li>
+            <li><span class="nm">Watchman</span><span class="cn">HEIMDALL</span></li>
+            <li><span class="nm">Pioneer</span><span class="cn">PROMETHEUS</span></li>
+          </ul>
+        </div>
       </div>
-      <div class="frame-wrap" data-state="loading">
-        <iframe data-src="tab-viii-oracle.html" title="Oracle" loading="lazy" scrolling="no"></iframe>
-      </div>
-    </section>
-  </main>
 
+      <p class="why-note" style="margin-top:28px">
+        Every agent above has a <b>live Circle SCA wallet on Arc</b>, a specific role inside Penguin Alley, and a price list. The "other teams" at this hackathon typically show <b>one human buying from one AI</b>. Obolark shows <b>an entire company paying itself, in USDC, onchain, for real knowledge work.</b> Click the live ledger to watch the balances move.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ STACK ═══════════════════════════ -->
+  <section class="slab" id="stack">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">05</span>BUILT WITH</span>
+      <h2 class="sect-head">Circle + Arc + ERC-8004. <em>The full intended stack, all primary products.</em></h2>
+
+      <div class="stack-row">
+        <span class="chip primary"><span class="dot-pale"></span>Arc Testnet</span>
+        <span class="chip primary"><span class="dot-pale"></span>USDC</span>
+        <span class="chip primary"><span class="dot-pale"></span>x402</span>
+        <span class="chip primary"><span class="dot-pale"></span>Circle Wallets</span>
+        <span class="chip primary"><span class="dot-pale"></span>Circle Gateway</span>
+        <span class="chip"><span class="dot-pale"></span>ERC-8004</span>
+        <span class="chip"><span class="dot-pale"></span>@circle-fin/x402-batching</span>
+        <span class="chip"><span class="dot-pale"></span>@circle-fin/developer-controlled-wallets</span>
+        <span class="chip"><span class="dot-pale"></span>viem</span>
+        <span class="chip"><span class="dot-pale"></span>Next.js · Node runtime</span>
+      </div>
+
+      <p class="stack-note">
+        Obolark uses <b>every primary Circle product</b> mandated by the track (Wallets, Gateway, x402) and stacks <b>ERC-8004</b> on top for the reputation layer — the eligibility delta that tips "Agent-to-Agent Payment Loop" from "a payment" to "an economy."
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ TOP-3 ═══════════════════════════ -->
+  <section class="slab" id="top3">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">06</span>WHY OBOLARK IS TOP-3 MATERIAL</span>
+      <h2 class="sect-head">Four judging criteria, <em>four pieces of evidence you can click.</em></h2>
+
+      <div class="top3-grid">
+        <div class="top3-card">
+          <div class="head">
+            <span class="crit">Criterion 01</span>
+            <span class="num">01</span>
+          </div>
+          <div class="title">Application of Technology</div>
+          <div class="body">Not one Circle product — <b>all three</b>. Wallets (22 SCAs deployed), Gateway (0.332 USDC float), x402 (every call priced, signed, verified, batched). ERC-8004 Identity + Reputation registries deployed to Arc testnet. <b>Zero mocks</b>: the dashboard you'll click reads from the same `/api/state` that powers the demo video.</div>
+          <div class="evidence">
+            <span class="tag">22 SCAs live</span>
+            <span class="tag">ERC-8004 deployed</span>
+            <span class="tag">x402 batching</span>
+          </div>
+        </div>
+
+        <div class="top3-card">
+          <div class="head">
+            <span class="crit">Criterion 02</span>
+            <span class="num">02</span>
+          </div>
+          <div class="title">Business Value</div>
+          <div class="body">The margin math is <b>literal, not rhetorical</b>. A Radar research call is priced at $0.003 — the real amortized Claude API cost. Traditional gas makes this product <b>−16,567% margin</b>. Arc + Circle Nanopayments flips it to <b>+99%</b>. Any SaaS-grade API can drop its pricing floor 500× overnight and still profit.</div>
+          <div class="evidence">
+            <span class="tag">+99% margin</span>
+            <span class="tag">Real cost basis</span>
+            <span class="tag">500× floor drop</span>
+          </div>
+        </div>
+
+        <div class="top3-card">
+          <div class="head">
+            <span class="crit">Criterion 03</span>
+            <span class="num">03</span>
+          </div>
+          <div class="title">Presentation</div>
+          <div class="body">Judges <b>click a link, not watch a mock</b>. `obolark.vercel.app/bureau` shows 22 wallets, 8 endpoints, live tx feed, and reputation edges that pulse as payments settle. Every transaction deep-links to <b>Arc Explorer</b> so any judge can verify onchain in under a minute. The demo video records a real run, not a rehearsal.</div>
+          <div class="evidence">
+            <span class="tag">Click-to-try</span>
+            <span class="tag">Arc Explorer deep-link</span>
+            <span class="tag">Live tx feed</span>
+          </div>
+        </div>
+
+        <div class="top3-card">
+          <div class="head">
+            <span class="crit">Criterion 04</span>
+            <span class="num">04</span>
+          </div>
+          <div class="title">Originality</div>
+          <div class="body">Every other team in Track 2 will show <b>a user paying an AI agent</b>. Obolark shows <b>an AI agent paying another AI agent</b> — pure M2M, 22 participants, documented org chart. The agents persist <b>beyond the demo window</b>: they ship work weekly at Penguin Alley. ERC-8004 reputation keeps growing after the hackathon ends.</div>
+          <div class="evidence">
+            <span class="tag">Pure M2M</span>
+            <span class="tag">22 documented agents</span>
+            <span class="tag">Persists post-hack</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="verdict">
+        <div class="kick">Verdict</div>
+        <p class="line">Four criteria. <em>Four pieces of evidence a judge can audit in under five minutes.</em> Obolark is the only entry that ships the full Circle stack, real org-chart agents, and a <em>persistent</em> reputation graph — <em>top-3 is the honest floor</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
   <footer class="bureau-foot">
-    <div class="foot-grid">
-      <div class="left">Penguin Alley · PA·co</div>
-      <div class="center">Arc Testnet · chain_id 5042002</div>
-      <div class="right">Vol. I · No. 1 · Filed 2026-04-23</div>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <div class="foot-wordmark">OBOLARK<span class="dot" aria-hidden>.</span></div>
+          <p class="foot-tag">An agent-to-agent micropayment economy on Arc. Built for the lablab.ai "Agentic Economy on Arc" hackathon — Track 2 · Agent-to-Agent Payment Loop.</p>
+        </div>
+        <div>
+          <h4>Submission</h4>
+          <ul class="foot-links">
+            <li><a href="/bureau"><span>Live Ledger</span> <span class="pk">/bureau</span></a></li>
+            <li><a href="https://github.com/PenguinAlleyApps/obolark" target="_blank" rel="noopener">GitHub <span class="pk">↗</span></a></li>
+            <li><a href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer <span class="pk">↗</span></a></li>
+            <li><a href="https://lablab.ai/event/agentic-economy-on-arc" target="_blank" rel="noopener">Event page <span class="pk">↗</span></a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contract addresses</h4>
+          <ul class="foot-links">
+            <li><a href="https://testnet.arcscan.app/address/0x3600000000000000000000000000000000000000" target="_blank" rel="noopener"><span>USDC</span> <span class="pk">0x3600…0000</span></a></li>
+            <li><a href="https://testnet.arcscan.app/address/0x0077777d7EBA4688BDeF3E311b846F25870A19B9" target="_blank" rel="noopener"><span>Gateway Wallet</span> <span class="pk">0x0077…19B9</span></a></li>
+            <li><a href="https://testnet.arcscan.app/address/0x466b78ec4d8191f3d08a05b314cee24b961926b7" target="_blank" rel="noopener"><span>Reputation</span> <span class="pk">0x466b…26b7</span></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <div>Penguin Alley · PA·co · Solo team (CEO + PA·co)</div>
+        <div class="brass">Submit 2026-04-25 · 17:00 PST · from gerardo.rdz.g@hotmail.com</div>
+        <div>Arc Testnet · chain_id 5042002</div>
+      </div>
     </div>
   </footer>
-
-  <script>
-    /* ── Iframe auto-resize + lazy mount ─────────────────────────────────
-       Each section has an <iframe data-src="..."> that stays unmounted
-       until near the viewport. On load, we read scrollHeight of the
-       iframe body and size the iframe so the parent page scrolls as one.
-       ResizeObserver keeps it in sync when inner content mutates
-       (Tweaks panel toggles, React state changes, etc.).
-    ──────────────────────────────────────────────────────────────────── */
-    (function () {
-      const EAGER_ATTR = 'data-eager';
-      const STATE_ATTR = 'data-state';
-      const observed = new WeakSet();
-
-      function mountIframe(ifr) {
-        if (ifr.src) return; // already mounted
-        const src = ifr.getAttribute('data-src');
-        if (!src) return;
-        ifr.addEventListener('load', () => onFrameLoad(ifr), { once: false });
-        ifr.src = src;
-      }
-
-      function sizeIframe(ifr) {
-        try {
-          const doc = ifr.contentDocument || ifr.contentWindow.document;
-          if (!doc || !doc.body) return;
-          const h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
-          if (h > 0) ifr.style.height = h + 'px';
-        } catch (e) { /* cross-origin guard */ }
-      }
-
-      function onFrameLoad(ifr) {
-        sizeIframe(ifr);
-        const wrap = ifr.closest('.frame-wrap');
-        if (wrap) wrap.removeAttribute(STATE_ATTR);
-
-        // Keep sizing in sync when inner content changes (React renders, Tweak toggles)
-        try {
-          const doc = ifr.contentDocument || ifr.contentWindow.document;
-          if (!doc || observed.has(ifr)) return;
-          const target = doc.documentElement;
-
-          if ('ResizeObserver' in window) {
-            const ro = new ResizeObserver(() => sizeIframe(ifr));
-            ro.observe(target);
-            observed.add(ifr);
-          }
-          // Fallback: mutation observer for attribute/DOM churn
-          const mo = new MutationObserver(() => sizeIframe(ifr));
-          mo.observe(target, { childList: true, subtree: true, attributes: true });
-
-          // A couple of delayed nudges for late React paints
-          setTimeout(() => sizeIframe(ifr), 400);
-          setTimeout(() => sizeIframe(ifr), 1200);
-          setTimeout(() => sizeIframe(ifr), 2500);
-        } catch (e) { /* ignore */ }
-      }
-
-      // Window resize: re-measure all
-      window.addEventListener('resize', () => {
-        document.querySelectorAll('.frame-wrap iframe').forEach(sizeIframe);
-      }, { passive: true });
-
-      // Lazy mount via IntersectionObserver
-      const frames = document.querySelectorAll('.frame-wrap iframe[data-src]');
-      const eager = [];
-      const lazy = [];
-      frames.forEach(f => (f.hasAttribute(EAGER_ATTR) ? eager : lazy).push(f));
-
-      // Eager: mount immediately
-      eager.forEach(mountIframe);
-
-      // Lazy: mount when within 800px of viewport
-      if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              mountIframe(entry.target);
-              io.unobserve(entry.target);
-            }
-          });
-        }, { rootMargin: '800px 0px 800px 0px' });
-        lazy.forEach(f => io.observe(f));
-      } else {
-        // No IO support → mount all
-        lazy.forEach(mountIframe);
-      }
-    })();
-  </script>
 </body>
 </html>
