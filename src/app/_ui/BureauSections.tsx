@@ -20,7 +20,7 @@ import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
 import TabVReputation from './tabs/TabVReputation';
 import TabVIArchive from './tabs/TabVIArchive';
-import OrchestrationsPanel from './OrchestrationsPanel';
+import TabVIIOrchestrations from './tabs/TabVIIOrchestrations';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
 import { useOrchestrationFeed } from './useOrchestrationFeed';
 import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
@@ -277,7 +277,7 @@ export default function BureauSections({
       {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
       {(tab === 'I' || tab === 'VII') && (
         <div style={{ position: 'relative' }}>
-          <OrchestrationsPanel
+          <TabVIIOrchestrations
             feed={orchFeed}
             loaded={orchLoaded}
             error={orchError}

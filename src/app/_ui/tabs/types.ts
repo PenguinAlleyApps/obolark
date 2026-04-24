@@ -1,5 +1,4 @@
 import type { RefObject } from 'react';
-import type { OrchestrationFeed } from '../orchestrations-types';
 
 export type Agent = { agent: string; code: string; dept: string; role: string; address: string; accountType?: string; codename?: string; epithet?: string };
 export type Endpoint = { path: string; seller: string; price: string; supervisionFee: string; description: string };
@@ -25,4 +24,6 @@ export type TabIVProps = {
 };
 export type TabVProps = { reputation: Record<string, SellerReputation>; registryAddress: string | null; agents: Agent[]; arcscanBase: string };
 export type TabVIProps = { archive: ArchiveEntry[]; arcscanBase: string };
-export type TabVIIProps = { feed: OrchestrationFeed; serviceLabelFor: (code: string) => string };
+// TabVII + TabVIII use local Props definitions (OrchestrationFeed + arcscanBase
+// respectively) — moved-in-place from standalone components, not ported to the
+// scaffolded TabXxxProps shape.
