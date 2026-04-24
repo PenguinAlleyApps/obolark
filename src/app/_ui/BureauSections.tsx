@@ -14,7 +14,7 @@
  *   V   · Reputation   — ERC-8004 crossing scores
  *   VI  · Archive      — full historical crossing record across all logs
  */
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
 import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
@@ -256,7 +256,7 @@ export default function BureauSections({
           agents={agents}
           deptGroups={deptGroups}
           sellerCodes={sellerCodes}
-          rosterRef={rosterRef as RefObject<HTMLDivElement>}
+          rosterRef={rosterRef}
           ceremony={ceremony}
           unfurl={unfurl}
           onHire={(code, label) => setCeremony({ agentCode: code, serviceLabel: label, scope: 'roster' })}

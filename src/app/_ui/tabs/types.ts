@@ -15,7 +15,7 @@ export type TabIVProps = {
   agents: Agent[];
   deptGroups: Array<[string, Agent[]]>;
   sellerCodes: Set<string>;
-  rosterRef: RefObject<HTMLDivElement>;
+  rosterRef: RefObject<HTMLDivElement | null>;
   ceremony: CeremonyArgs | null;
   unfurl: UnfurlArgs | null;
   onHire: (code: string, serviceLabel: string) => void;

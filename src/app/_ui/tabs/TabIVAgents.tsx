@@ -18,8 +18,8 @@ import { AgentCeremonyOverlay, AGENT_REGISTRY } from '../AgentVFX';
 import type { TabIVProps } from './types';
 
 // IV-specific Featherless model bindings.
-// (Also referenced from BureauSections for the ModelCardUnfurl popover —
-//  kept independent here so TabIVAgents is self-contained for rendering.)
+// BureauSections keeps an independent copy for the ModelCardUnfurl popover;
+// both must be kept in sync until T9 consolidation to _ui/featherless-bindings.ts.
 const FEATHERLESS_BINDINGS: Record<string, FeatherlessBinding> = {
   RADAR:    { model: 'DeepSeek-V3.2',     params: '685B', license: 'MIT' },
   PIXEL:    { model: 'Kimi-K2-Instruct',  params: '1T',   license: 'Modified MIT' },
