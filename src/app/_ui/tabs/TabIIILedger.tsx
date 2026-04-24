@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './TabIIILedger.module.css';
 import type { TabIIIProps, Receipt } from './types';
 
@@ -14,6 +14,9 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
   const [rows, setRows] = useState<Receipt[]>(recentCalls);
   const [freshHash, setFreshHash] = useState<string | null>(null);
 
+  const latestHashRef = useRef<string | null>(recentCalls[0]?.receipt.transactionHash ?? null);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -21,17 +24,21 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
         if (!res.ok) return;
         const data = await res.json();
         const next: Receipt[] = (data.recentCalls ?? []).slice(0, 10);
-        if (next[0]?.receipt.transactionHash !== rows[0]?.receipt.transactionHash) {
-          setFreshHash(next[0]?.receipt.transactionHash ?? null);
-          setTimeout(() => setFreshHash(null), 240);
+        const newHash = next[0]?.receipt.transactionHash ?? null;
+        if (newHash && newHash !== latestHashRef.current) {
+          setFreshHash(newHash);
+          if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+          pulseTimerRef.current = setTimeout(() => setFreshHash(null), 240);
         }
+        latestHashRef.current = newHash;
         setRows(next);
       } catch { /* silent */ }
     }, 15_000);
-    return () => clearInterval(id);
-  }, [rows]);
-
-  const display = useMemo(() => rows.slice(0, 10), [rows]);
+    return () => {
+      clearInterval(id);
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
 
   return (
     <section className={styles.panel}>
@@ -39,7 +46,7 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
         <span>[ III · LIVE LEDGER · LAST 10 CROSSINGS ]</span>
         <span>auto-refresh 15s</span>
       </div>
-      {display.length === 0 ? (
+      {rows.length === 0 ? (
         <div className={styles.emptyState}>no crossings yet · awaiting first toll</div>
       ) : (
         <table className={styles.ledgerTable}>
@@ -47,7 +54,7 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
             <tr><th>Status</th><th>Endpoint</th><th>Payer</th><th className={styles.numeric}>Amount (USDC)</th><th>Tx Hash</th><th>When</th></tr>
           </thead>
           <tbody>
-            {display.map((r) => {
+            {rows.map((r) => {
               const isFresh = r.receipt.transactionHash === freshHash;
               return (
                 <tr key={r.receipt.transactionHash} className={isFresh ? styles.settlementPulse : undefined}>
