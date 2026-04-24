@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
 import TabIIILedger from './tabs/TabIIILedger';
+import TabVReputation from './tabs/TabVReputation';
 import ReputationPanel from './ReputationPanel';
 import CrossButton from './CrossButton';
 import OrchestrationsPanel from './OrchestrationsPanel';
@@ -518,18 +519,7 @@ export default function BureauSections({
 
       {/* ── V · Reputation ────────────────────────────────────────────── */}
       {show('V') && (
-        <section className="panel" id="reputation">
-          <div className="panel-header">
-            <span>[ V · REPUTATION · ERC-8004 CROSSING SCORES ]</span>
-            <span>auto-refresh 10s</span>
-          </div>
-          <ReputationPanel
-            initial={reputation}
-            agents={agents}
-            arcscanBase={arcscanBase}
-            registryAddress={registryAddress}
-          />
-        </section>
+        <TabVReputation reputation={reputation} registryAddress={registryAddress} agents={agents} arcscanBase={arcscanBase} />
       )}
 
       {/* ── VI · Archive ──────────────────────────────────────────────── */}
