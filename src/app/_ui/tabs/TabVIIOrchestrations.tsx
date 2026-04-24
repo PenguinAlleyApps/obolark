@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * OrchestrationsPanel — the body of the VII · Orchestrations tab
+ * TabVIIOrchestrations — the body of the VII · Orchestrations tab
  * (and also rendered on I · Front Page as the tentpole section).
  *
  * Renders 4 sub-sections:
@@ -14,8 +14,8 @@
  * Just a mono sentence in muted tone.
  */
 import { useState } from 'react';
-import type { OrchestrationFeed, Run, InboxEntry } from './orchestrations-types';
-import { pickCurrentRun, isActive } from './orchestrations-types';
+import type { OrchestrationFeed, Run, InboxEntry } from '../orchestrations-types';
+import { pickCurrentRun, isActive } from '../orchestrations-types';
 
 type Props = {
   feed: OrchestrationFeed;
@@ -57,7 +57,7 @@ function hhmmss(iso: string): string {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-export default function OrchestrationsPanel({ feed, loaded, error, arcscanBase }: Props) {
+export default function TabVIIOrchestrations({ feed, loaded, error, arcscanBase }: Props) {
   const { state, runs, inbox } = feed;
   const current = pickCurrentRun(runs);
   const paused = state.enabled === false;

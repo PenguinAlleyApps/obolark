@@ -1,0 +1,155 @@
+/* ══════════════════════════════════════════════════════════════════
+   Tab V · Reputation — CSS Module
+   Ported from public/refresh/tab-v-reputation.html
+   Night-mode default: var(--bone) is #0E0A08 (obsidian). Keep as-is.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ─── Panel ─── */
+.panel {
+  background: var(--bone);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--grid-line);
+  padding: 24px 32px 32px;
+  position: relative;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--grid-line);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+/* ─── Registry link (pale-brass, dotted underline) ─── */
+.registryLink {
+  color: var(--pale-brass);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--pale-brass);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  transition: color 160ms ease-out;
+}
+
+.registryLink:hover {
+  color: var(--signal);
+  border-bottom-color: var(--signal);
+}
+
+/* ─── Scores table ─── */
+.scoreTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.scoreTable thead tr {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.scoreTable th {
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--grid-line);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.scoreTable td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px dashed var(--grid-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Numeric cells ─── */
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Seller cell ─── */
+.seller {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.codename {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.015em;
+  color: var(--ink);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ─── Score bar (80px track, ember fill) ─── */
+.scoreBar {
+  display: inline-block;
+  width: 80px;
+  height: 4px;
+  background: color-mix(in oklab, var(--ember) 12%, transparent);
+  vertical-align: middle;
+  margin-left: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--ember);
+  transition: width 400ms ease-out;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: 24px 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ─── Trend links (ERC-8004 tx dots) ─── */
+.trendLink {
+  color: var(--pale-brass);
+  margin-right: 6px;
+  text-decoration: none;
+}
+
+.trendLink:hover,
+.trendLink:focus-visible {
+  color: var(--signal);
+  outline: none;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none !important;
+  }
+}

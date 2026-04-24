@@ -1,0 +1,258 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Obolark · Colors & Type Foundations
+   Extracted from obolark/src/app/globals.css + layout.tsx (v4.2 Bureau edition).
+   Updated 2026-04-20 · Night mode is now the DEFAULT across all surfaces
+   (product + brand). Day mode is opt-in via [data-theme="day"] for
+   high-light venues, print handoff, and accessibility fallback.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Fonts (Google Fonts — SIL OFL / Apache 2.0) ───────────────────────── */
+/* Display: Space Grotesk 400/500/700 · Body: Inter 400/500 · Mono: JetBrains Mono 400/500/700 */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Optional mythic serif — proposed additive display for masthead / big section titles.
+   Cinzel 700/900 (OFL). Use sparingly; Space Grotesk remains the primary display. */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap');
+
+:root {
+  /* ── Core palette — NIGHT (underworld) is the default ──────────────── */
+  /* These roles are remapped to obsidian/ember. The [data-theme="day"]
+     block further down restores the parchment palette when opted-in. */
+  --bone:          #0E0A08;   /* body background · obsidian field */
+  --bone-dark:     #17110D;   /* secondary surface · pitch */
+  --grid-line:     #2A1E16;   /* 8px grid · hairline rules · warm-black */
+  --ink:           #F3E7C8;   /* primary text · candlelit bone-ivory */
+  --graphite:      #1C1512;   /* PA·co brand neutral · nav · status bar */
+  --muted:         #B8A57E;   /* secondary text · ash \u2014 raised from #8A7A5E for AA contrast on obsidian */
+  --signal:        #F5C518;   /* THE accent · obol gold (unchanged across themes) */
+  --signal-dark:   #B8991F;   /* signal hover / pressed */
+  --oxide:         #E04A1E;   /* error · failed tx · hotter on black */
+  --moss:          #6E8A4A;   /* reputation positive · desaturated olive */
+  --pale-brass:    #C89038;   /* cleared · weathered brass */
+  --ember:         #F76B2B;   /* ember orange-red · dot · flame · hot-coal */
+
+  /* ── Semantic (map palette to usage) ──────────────────────────────── */
+  --fg-1:          var(--ink);
+  --fg-2:          var(--muted);
+  --fg-inverse:    var(--bone);
+  --bg-1:          var(--bone);
+  --bg-2:          var(--bone-dark);
+  --border:        var(--grid-line);
+  --border-strong: var(--ink);
+  --accent:        var(--signal);
+  --accent-dark:   var(--signal-dark);
+  --status-ok:     var(--moss);
+  --status-err:    var(--oxide);
+  --status-cleared:var(--pale-brass);
+
+  /* ── Type stack ───────────────────────────────────────────────────── */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-mythic:  'Cinzel', 'Space Grotesk', serif; /* masthead-only; additive */
+
+  /* ── Layout primitives ─────────────────────────────────────────────── */
+  --radius-sharp: 2px;        /* 2px MAX — no pills, no rounded-full */
+  --radius-0:     0px;
+  --ring-width:   2px;
+  --baseline:     8px;        /* 8px grid rhythm */
+
+  /* Spacing scale (multiples of baseline) */
+  --s-1: 4px;    /*   0.5× */
+  --s-2: 8px;    /*   1×   */
+  --s-3: 12px;   /*   1.5× */
+  --s-4: 16px;   /*   2×   */
+  --s-5: 24px;   /*   3×   */
+  --s-6: 32px;   /*   4×   */
+  --s-7: 48px;   /*   6×   */
+  --s-8: 64px;   /*   8×   */
+
+  /* ── Motion timings (diegetic) ─────────────────────────────────────── */
+  --motion-pulse: 180ms;      /* settlement pulse */
+  --motion-fade:  400ms;      /* fade back to transparent */
+  --motion-edge:  320ms;      /* amber dot traversal */
+
+  /* ── Elevation (we barely use shadow — rules do the work) ──────────── */
+  --shadow-0:    none;
+  --shadow-glow: 0 0 6px currentColor;          /* LED halo */
+  --shadow-ink:  0 1px 0 0 var(--ink);          /* hairline under stamp/button */
+
+  /* ── Brand surface tokens (default night) ─────────────────────────── */
+  --brand-bg:       #0B0705;                    /* brand hero field — slightly deeper than body */
+  --brand-surface:  #140E09;
+  --brand-ink:      var(--ink);
+  --brand-muted:    var(--muted);
+  --brand-rule:     #3A2A1E;                    /* slightly warmer rule on brand hero */
+  --brand-dot:      var(--ember);                /* wordmark ember dot */
+  --brand-accent:   var(--signal);
+  --brand-ember:    var(--ember);
+  --brand-glow:     #F5C51833;                  /* amber halo behind type */
+  --brand-terminal: var(--ember);                /* [ obolark.vercel.app ] box */
+
+  /* ── Ambient underworld FX tokens ──────────────────────────────────── */
+  /* Motion / atmosphere values used by the ambient-fx layer.
+     Tuned low so they read as texture, not decoration. */
+  --fx-ember-count:     16;                     /* # drifting embers */
+  --fx-ember-duration:  14s;                    /* per-ember rise */
+  --fx-flicker-depth:   6%;                     /* signal brightness ±% on flicker */
+  --fx-scanline-alpha:  0.035;                  /* paper-grain overlay strength */
+  --fx-vignette-alpha:  0.55;                   /* corner darkening */
+
+  color-scheme: dark;
+  background: var(--bone);
+  color: var(--ink);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Day mode (opt-in) — parchment palette for high-light venues, print, and
+   accessibility fallback. Night is the default; this restores the original
+   Bureau Ledger bone-and-ink look when [data-theme="day"] is set.
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-theme="day"] {
+  --bone:          #FAFAF7;
+  --bone-dark:     #E6E4DB;
+  --grid-line:     #E6E5E0;
+  --ink:           #0D0D0D;
+  --graphite:      #2F3A3E;
+  --muted:         #5A5A52;
+  --signal:        #F5C518;
+  --signal-dark:   #B8991F;
+  --oxide:         #C0392B;
+  --moss:          #3E5E47;
+  --pale-brass:    #D9B87A;
+  --ember:         #D95520;       /* slightly muted on parchment so it doesn't vibrate */
+
+  --brand-bg:       var(--bone);
+  --brand-surface:  var(--bone-dark);
+  --brand-ink:      var(--ink);
+  --brand-muted:    var(--muted);
+  --brand-rule:     var(--ink);
+  --brand-dot:      var(--ember);
+  --brand-accent:   var(--signal);
+  --brand-ember:    var(--ember);
+  --brand-glow:     transparent;
+  --brand-terminal: var(--ink);
+
+  color-scheme: light;
+  background: var(--bone);
+  color: var(--ink);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Base / Semantic typography roles
+   ══════════════════════════════════════════════════════════════════════════ */
+html {
+  color-scheme: dark;                 /* night is the default */
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--bg-1);
+  color: var(--fg-1);
+}
+body { font-family: var(--font-body); font-feature-settings: "ss01","cv01","cv11"; }
+
+/* h1 — masthead / section titles (editorial display) */
+.h1, h1 {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* h2 — panel sub-mastheads */
+.h2, h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+/* h3 — display codenames inline (HADES, CERBERUS...) */
+.h3, h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* lede — italic editorial tagline under mastheads */
+.lede {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* section-header — mono uppercase [ BRACKETED ] section rule title */
+.section-header {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* body / p */
+.p, p {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* small-caps metadata */
+.meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+/* mono / code — the ledger voice */
+.code, code, pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" on;
+}
+
+/* epithet — italic descriptor under codename */
+.epithet {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Tabular figures — numbers must align in the ledger */
+.tnum, [data-numeric], .font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" on;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Motion keyframes (diegetic only — no bouncy CSS)
+   ══════════════════════════════════════════════════════════════════════════ */
+@keyframes signal-pulse {
+  0%   { background-color: color-mix(in oklab, var(--signal) 40%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+@keyframes edge-dot {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}

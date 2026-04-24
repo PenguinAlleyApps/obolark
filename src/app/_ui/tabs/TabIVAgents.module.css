@@ -1,0 +1,225 @@
+/* ══════════════════════════════════════════════════════════════════
+   Tab IV · Agent Roster — CSS Module
+   Ported from BureauSections.tsx inline IV panel + .agent-hire-btn <style>
+   Night-mode default: var(--bone) is #0E0A08 (obsidian field).
+   Dept header: dashed hairline per source HTML audit note.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ─── Panel ─── */
+.panel {
+  background: var(--bone);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--grid-line);
+  padding: 24px 32px 32px;
+  position: relative;
+}
+
+/* ─── Panel header ─── */
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--grid-line);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+/* ─── Roster wrap (ref container for SVG overlay) ─── */
+.rosterWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+}
+
+/* ─── Department header ─── */
+/* NOTE: source HTML audit — was solid, corrected to dashed hairline */
+.deptHeader {
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--grid-line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+/* ─── Roster grid ─── */
+.rosterGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px 24px;
+}
+
+@media (min-width: 640px) {
+  .rosterGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rosterGrid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* ─── Agent card ─── */
+.agentCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--grid-line);
+  position: relative;
+}
+
+/* ─── Status LED ─── */
+/* Mirrors TabIIILedger.module.css lines 83–105 */
+.statusLed {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  vertical-align: middle;
+  margin-top: 6px;
+  flex-shrink: 0;
+  animation: led-blink 2s ease-in-out infinite;
+}
+
+.statusLed[data-state='signal'] {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+.statusLed[data-state='ok'] {
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: none;
+}
+
+.statusLed[data-state='idle'] {
+  background: var(--muted);
+  box-shadow: none;
+  animation: none;
+}
+
+/* ─── Name row ─── */
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── Codename (Greek name in Cinzel / mythic font) ─── */
+.codename {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* ─── Code (uppercase mono tag) ─── */
+.code {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ─── Epithet (italic display, below name row) ─── */
+.epithet {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* ─── Address row ─── */
+.addressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ─── Address (mono, truncated) ─── */
+.address {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Account type badge ─── */
+.accountType {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.accountType[data-type='EOA'] {
+  color: var(--moss);
+}
+
+.accountType[data-type='SCA'] {
+  color: var(--pale-brass);
+}
+
+/* ─── Hire button — ported verbatim from BureauSections inline <style> ─── */
+.agentHireBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-left: 2px;
+  background: transparent;
+  color: var(--ember);
+  border: 1px solid color-mix(in oklab, var(--ember) 55%, transparent);
+  border-radius: var(--radius-sharp);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 160ms ease-out, color 160ms ease-out,
+    border-color 160ms ease-out, box-shadow 240ms ease-out;
+}
+
+.agentHireBtn:hover,
+.agentHireBtn:focus-visible {
+  background: color-mix(in oklab, var(--ember) 14%, transparent);
+  color: var(--signal);
+  border-color: var(--signal);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--ember) 45%, transparent);
+  outline: none;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .statusLed {
+    animation: none !important;
+  }
+  .agentHireBtn {
+    transition: none !important;
+  }
+}

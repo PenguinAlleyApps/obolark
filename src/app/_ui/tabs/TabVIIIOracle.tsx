@@ -79,11 +79,11 @@ const BEAT_DESCENT_AT = 2200;
 const BEAT_VOICE_AT = 4600;
 const CEREMONY_END_AT = 8000;
 
-export type OracleTabProps = {
+export type TabVIIIOracleProps = {
   arcscanBase: string;
 };
 
-export default function OracleTab({ arcscanBase }: OracleTabProps) {
+export default function TabVIIIOracle({ arcscanBase }: TabVIIIOracleProps) {
   const [state, setState] = useState<OracleState>({ kind: 'listening' });
   const hoverParticleHostRef = useRef<HTMLDivElement>(null);
   const summonBtnRef = useRef<HTMLButtonElement>(null);

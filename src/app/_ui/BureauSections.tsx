@@ -15,16 +15,16 @@
  *   VI  · Archive      — full historical crossing record across all logs
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import LedgerTicker from './LedgerTicker';
-import ReputationPanel from './ReputationPanel';
-import CrossButton from './CrossButton';
-import OrchestrationsPanel from './OrchestrationsPanel';
+import TabIITollkeepers from './tabs/TabIITollkeepers';
+import TabIIILedger from './tabs/TabIIILedger';
+import TabVReputation from './tabs/TabVReputation';
+import TabVIArchive from './tabs/TabVIArchive';
+import TabVIIOrchestrations from './tabs/TabVIIOrchestrations';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
-import AgentRosterOverlay from './AgentRosterOverlay';
 import { useOrchestrationFeed } from './useOrchestrationFeed';
-import EmberGlyph from './EmberGlyph';
 import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
-import OracleTab from './OracleTab';
+import TabIVAgents from './tabs/TabIVAgents';
+import TabVIIIOracle from './tabs/TabVIIIOracle';
 import {
   AgentCeremonyOverlay,
   AgentSigilDefs,
@@ -41,14 +41,6 @@ const FEATHERLESS_BINDINGS: Record<string, FeatherlessBinding> = {
   SENTINEL: { model: 'Meta-Llama-3.1-8B', params: '8B',   license: 'Llama 3.1' },
   PHANTOM:  { model: 'Qwen3-8B',          params: '8B',   license: 'Apache 2.0' },
 };
-
-function emberInitialFor(code: string): string {
-  const b = FEATHERLESS_BINDINGS[code];
-  if (!b) return '·';
-  // First alphabetic char of model
-  const m = b.model.match(/[A-Za-z]/);
-  return m ? m[0].toUpperCase() : '·';
-}
 
 type Agent = {
   agent: string;
@@ -109,16 +101,6 @@ function groupByDept(agents: Agent[]): Array<[string, Agent[]]> {
   return [...map.entries()].sort(
     ([a], [b]) => (DEPT_ORDER[a] ?? 50) - (DEPT_ORDER[b] ?? 50),
   );
-}
-
-function truncAddr(a: string): string {
-  if (!a || a.length < 10) return a || '';
-  return `${a.slice(0, 6)}…${a.slice(-4)}`;
-}
-
-function truncHash(h: string): string {
-  if (!h || h.length < 14) return h || '';
-  return `${h.slice(0, 10)}…${h.slice(-6)}`;
 }
 
 type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII';
@@ -192,36 +174,6 @@ export default function BureauSections({
           on this page (both Tab IV card overlays and Tab VII bridge). */}
       <AgentSigilDefs />
 
-      {/* Tab IV hire-button chrome. Sharp 2px radius + ember stroke. */}
-      <style>{`
-        .agent-hire-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 2px 8px;
-          margin-left: 2px;
-          background: transparent;
-          color: var(--ember);
-          border: 1px solid color-mix(in oklab, var(--ember) 55%, transparent);
-          border-radius: var(--radius-sharp);
-          font-family: var(--font-mono);
-          font-size: 9px;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: background-color 160ms ease-out, color 160ms ease-out,
-            border-color 160ms ease-out, box-shadow 240ms ease-out;
-        }
-        .agent-hire-btn:hover,
-        .agent-hire-btn:focus-visible {
-          background: color-mix(in oklab, var(--ember) 14%, transparent);
-          color: var(--signal);
-          border-color: var(--signal);
-          box-shadow: 0 0 10px color-mix(in oklab, var(--ember) 45%, transparent);
-          outline: none;
-        }
-      `}</style>
-
       {/* Tab VII autopilot ceremony — fires when the current run's seller
           changes. Feeds the same ceremony overlay as Tab IV hire clicks. */}
       <AutopilotCeremonyBridge
@@ -292,270 +244,39 @@ export default function BureauSections({
       />
 
       {/* ── II · Tollkeepers (endpoint catalog) ───────────────────────── */}
-      {show('II') && (
-        <section className="panel">
-          <div className="panel-header">
-            <span>[ II · ENDPOINT CATALOG · TOLLS AT THE CROSSING ]</span>
-            <span>POST · requires PAYMENT-SIGNATURE</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full font-mono text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-              <thead>
-                <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] text-left">
-                  <th className="py-2 pr-5">Route</th>
-                  <th className="py-2 pr-5">Tollkeeper</th>
-                  <th className="py-2 pr-5 text-right">Base&nbsp;(USDC)</th>
-                  <th className="py-2 pr-5 text-right">Supervision</th>
-                  <th className="py-2 pr-5">Description</th>
-                  <th className="py-2 pl-5 text-right">Cross</th>
-                </tr>
-              </thead>
-              <tbody>
-                {endpoints.map((e) => {
-                  const sellerAgent = agents.find((a) => a.code === e.seller);
-                  const codename = sellerAgent?.codename ?? e.seller;
-                  return (
-                    <tr
-                      key={e.path}
-                      className="border-b border-dashed"
-                      style={{ borderColor: 'var(--grid-line)' }}
-                    >
-                      <td className="py-2 pr-5">
-                        <span className="font-bold">{e.path}</span>
-                      </td>
-                      <td className="py-2 pr-5">
-                        <span className="inline-flex items-baseline gap-2">
-                          <span className="status-led" data-state="signal" />
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mythic)',
-                              fontWeight: 700,
-                              fontSize: 14,
-                              letterSpacing: '0.02em',
-                              color: 'var(--ink)',
-                            }}
-                          >
-                            {codename}
-                          </span>
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                            · {e.seller}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="py-2 pr-5 text-right" data-numeric>
-                        {e.price}
-                      </td>
-                      <td className="py-2 pr-5 text-right" data-numeric>
-                        {e.supervisionFee}
-                      </td>
-                      <td className="py-2 pr-5 text-[var(--muted)]">{e.description}</td>
-                      <td className="py-2 pl-5 text-right" style={{ whiteSpace: 'nowrap' }}>
-                        <CrossButton
-                          endpoint={e.path}
-                          sellerCodename={codename}
-                          sellerCode={e.seller}
-                          price={e.price}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      {show('II') && (<TabIITollkeepers endpoints={endpoints} agents={agents} arcscanBase={arcscanBase} />)}
 
       {/* ── III · Live Ledger ─────────────────────────────────────────── */}
-      {show('III') && (
-        <section className="panel">
-          <div className="panel-header">
-            <span>[ III · LIVE LEDGER · LAST 10 CROSSINGS ]</span>
-            <span>auto-refresh 15s</span>
-          </div>
-          <LedgerTicker initial={recentCalls} />
-        </section>
-      )}
+      {show('III') && (<TabIIILedger recentCalls={recentCalls} arcscanBase={arcscanBase} />)}
 
       {/* ── IV · Agent roster ─────────────────────────────────────────── */}
       {show('IV') && (
-        <section className="panel" style={{ position: 'relative' }}>
-          <div className="panel-header">
-            <span>[ IV · AGENT ROSTER · UNDERWORLD BUREAU ]</span>
-            <span>{agents.length} wallets on Circle MPC · Greek codenames v4.2</span>
-          </div>
-          <div ref={rosterRef} className="flex flex-col gap-6" style={{ position: 'relative' }}>
-            <AgentRosterOverlay containerRef={rosterRef} />
-            {deptGroups.map(([dept, list]) => (
-              <div key={dept}>
-                <div
-                  className="mb-2 pb-1 border-b"
-                  style={{
-                    borderColor: 'var(--grid-line)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.22em',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  · {dept}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                  {list.map((a) => {
-                    const isSeller = sellerCodes.has(a.code);
-                    const ledState = isSeller ? 'signal' : a.code === 'BUYER-EOA' ? 'ok' : 'idle';
-                    const hasCeremony = Boolean(AGENT_REGISTRY[a.code]);
-                    const cardCeremony =
-                      ceremony?.scope === 'roster' && ceremony.agentCode === a.code
-                        ? ceremony
-                        : null;
-                    return (
-                      <div
-                        key={a.address}
-                        className="flex items-start gap-3 py-2 border-b border-dashed"
-                        data-agent-code={a.code}
-                        style={{ borderColor: 'var(--grid-line)', position: 'relative' }}
-                      >
-                        <span className="status-led mt-[6px]" data-state={ledState} />
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-mythic)',
-                                fontWeight: 700,
-                                fontSize: 15,
-                                letterSpacing: '0.02em',
-                                lineHeight: 1,
-                                color: 'var(--ink)',
-                              }}
-                            >
-                              {a.codename ?? a.code}
-                            </span>
-                            {FEATHERLESS_BINDINGS[a.code] && (
-                              <EmberGlyph
-                                initial={emberInitialFor(a.code)}
-                                ariaLabel={`Open Featherless model card for ${a.codename ?? a.code} · ${FEATHERLESS_BINDINGS[a.code].model}`}
-                                active={unfurl?.code === a.code}
-                                onActivate={(anchor) =>
-                                  setUnfurl({
-                                    code: a.code,
-                                    codename: a.codename ?? a.code,
-                                    anchor,
-                                  })
-                                }
-                              />
-                            )}
-                            {hasCeremony && (
-                              <button
-                                type="button"
-                                className="agent-hire-btn"
-                                aria-label={`Hire ${a.codename ?? a.code} — trigger ceremony`}
-                                onClick={() =>
-                                  setCeremony({
-                                    agentCode: a.code,
-                                    serviceLabel: serviceLabelFor(a.code),
-                                    scope: 'roster',
-                                  })
-                                }
-                              >
-                                ◆ HIRE
-                              </button>
-                            )}
-                            <span
-                              className="font-mono uppercase"
-                              style={{
-                                fontSize: 9,
-                                letterSpacing: '0.14em',
-                                color: 'var(--muted)',
-                              }}
-                            >
-                              {a.code}
-                            </span>
-                          </div>
-                          <AgentCeremonyOverlay
-                            active={cardCeremony}
-                            onClear={() =>
-                              setCeremony((c) =>
-                                c?.scope === 'roster' && c.agentCode === a.code ? null : c,
-                              )
-                            }
-                          />
-                          {a.epithet && (
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-display)',
-                                fontStyle: 'italic',
-                                fontSize: 11,
-                                color: 'var(--muted)',
-                                marginTop: 1,
-                              }}
-                            >
-                              {a.epithet}
-                            </span>
-                          )}
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <span className="font-mono text-[11px] text-[var(--muted)] truncate">
-                              {truncAddr(a.address)}
-                            </span>
-                            <span
-                              className="font-mono uppercase"
-                              style={{
-                                fontSize: 9,
-                                letterSpacing: '0.12em',
-                                color:
-                                  a.accountType === 'EOA'
-                                    ? 'var(--moss)'
-                                    : 'var(--pale-brass)',
-                              }}
-                            >
-                              {a.accountType ?? '?'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <TabIVAgents
+          agents={agents}
+          deptGroups={deptGroups}
+          sellerCodes={sellerCodes}
+          rosterRef={rosterRef}
+          ceremony={ceremony}
+          unfurl={unfurl}
+          onHire={(code, label) => setCeremony({ agentCode: code, serviceLabel: label, scope: 'roster' })}
+          onGlyphHover={(a) => setUnfurl(a)}
+          onCeremonyClear={(code) => setCeremony((c) => c?.scope === 'roster' && c.agentCode === code ? null : c)}
+          serviceLabelFor={serviceLabelFor}
+        />
       )}
 
       {/* ── V · Reputation ────────────────────────────────────────────── */}
       {show('V') && (
-        <section className="panel" id="reputation">
-          <div className="panel-header">
-            <span>[ V · REPUTATION · ERC-8004 CROSSING SCORES ]</span>
-            <span>auto-refresh 10s</span>
-          </div>
-          <ReputationPanel
-            initial={reputation}
-            agents={agents}
-            arcscanBase={arcscanBase}
-            registryAddress={registryAddress}
-          />
-        </section>
+        <TabVReputation reputation={reputation} registryAddress={registryAddress} agents={agents} arcscanBase={arcscanBase} />
       )}
 
       {/* ── VI · Archive ──────────────────────────────────────────────── */}
-      {show('VI') && (
-        <section className="panel" id="archive">
-          <div className="panel-header">
-            <span>[ VI · ARCHIVE · ALL CROSSINGS ON RECORD ]</span>
-            <span>
-              {archive.length} tx &middot; chronological · newest first
-            </span>
-          </div>
-          <ArchiveTable archive={archive} arcscanBase={arcscanBase} />
-        </section>
-      )}
+      {show('VI') && (<TabVIArchive archive={archive} arcscanBase={arcscanBase} />)}
 
       {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
       {(tab === 'I' || tab === 'VII') && (
         <div style={{ position: 'relative' }}>
-          <OrchestrationsPanel
+          <TabVIIOrchestrations
             feed={orchFeed}
             loaded={orchLoaded}
             error={orchError}
@@ -571,7 +292,7 @@ export default function BureauSections({
       )}
 
       {/* ── VIII · Oracle (Delphi · Gemini 3.1 Flash Live) ────────────── */}
-      {tab === 'VIII' && <OracleTab arcscanBase={arcscanBase} />}
+      {tab === 'VIII' && <TabVIIIOracle arcscanBase={arcscanBase} />}
 
       {/* ── Featherless Model Card Unfurl (portal-style popover) ──────── */}
       {unfurl && FEATHERLESS_BINDINGS[unfurl.code] && (
@@ -640,136 +361,6 @@ function MetricsRow({
         </div>
       </div>
     </section>
-  );
-}
-
-function ArchiveTable({
-  archive,
-  arcscanBase,
-}: {
-  archive: ArchiveEntry[];
-  arcscanBase: string;
-}) {
-  const [filter, setFilter] = useState<string>('all');
-  const sources = useMemo(() => {
-    const set = new Set(archive.map((e) => e.source));
-    return ['all', ...Array.from(set).sort()];
-  }, [archive]);
-  const filtered = useMemo(
-    () => (filter === 'all' ? archive : archive.filter((e) => e.source === filter)),
-    [archive, filter],
-  );
-
-  if (archive.length === 0) {
-    return (
-      <div className="font-mono text-sm text-[var(--muted)] py-6">
-        Archive is empty. Run a crossing to populate history.
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col">
-      {/* Source filter chips */}
-      <div
-        className="flex flex-wrap gap-2 pb-3 mb-2 border-b"
-        style={{ borderColor: 'var(--grid-line)' }}
-      >
-        {sources.map((s) => {
-          const active = filter === s;
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setFilter(s)}
-              style={{
-                background: active ? 'var(--ink)' : 'transparent',
-                color: active ? 'var(--bone)' : 'var(--muted)',
-                border: '1px solid var(--grid-line)',
-                padding: '4px 10px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                borderRadius: 2,
-              }}
-            >
-              {s}
-            </button>
-          );
-        })}
-      </div>
-
-      <div
-        className="grid font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] py-1 border-b"
-        style={{
-          gridTemplateColumns: '128px 140px 110px 130px 1fr 100px',
-          borderColor: 'var(--grid-line)',
-          columnGap: '14px',
-        }}
-      >
-        <span>When</span>
-        <span>Route / note</span>
-        <span className="text-right">Amount</span>
-        <span>Payer</span>
-        <span>Arc Tx Hash</span>
-        <span className="text-right">Source</span>
-      </div>
-      <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-        {filtered.map((row, i) => {
-          const base = Number(row.receipt.amount) / 1_000_000;
-          const time = row.at ? new Date(row.at) : null;
-          const t = time ? time.toLocaleString() : '—';
-          return (
-            <div
-              key={`${row.receipt.transactionHash}-${i}`}
-              className="grid items-baseline font-mono text-[12px] py-2 border-b border-dashed"
-              style={{
-                gridTemplateColumns: '128px 140px 110px 130px 1fr 100px',
-                borderColor: 'var(--grid-line)',
-                columnGap: '14px',
-              }}
-            >
-              <span className="text-[var(--muted)] text-[11px]">{t}</span>
-              <span className="font-bold truncate" title={row.endpoint}>
-                {row.endpoint}
-              </span>
-              <span className="text-right" data-numeric>
-                {Number.isFinite(base) && base > 0 ? base.toFixed(6) : '—'}
-              </span>
-              <span className="truncate" title={row.receipt.payer}>
-                {truncAddr(row.receipt.payer)}
-              </span>
-              <a
-                href={`${arcscanBase}/tx/${row.receipt.transactionHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="truncate text-[var(--muted)] underline-offset-2 hover:underline"
-                title={row.receipt.transactionHash}
-              >
-                {truncHash(row.receipt.transactionHash)}
-              </a>
-              <span
-                className="text-right font-mono uppercase"
-                style={{
-                  fontSize: 9,
-                  letterSpacing: '0.14em',
-                  color:
-                    row.source === 'reputation'
-                      ? 'var(--moss)'
-                      : row.source === 'endpoints'
-                        ? 'var(--signal)'
-                        : 'var(--pale-brass)',
-                }}
-              >
-                {row.source}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 
