@@ -14,7 +14,7 @@
  *   V   · Reputation   — ERC-8004 crossing scores
  *   VI  · Archive      — full historical crossing record across all logs
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import LedgerTicker from './LedgerTicker';
 import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
@@ -22,10 +22,9 @@ import TabVReputation from './tabs/TabVReputation';
 import TabVIArchive from './tabs/TabVIArchive';
 import OrchestrationsPanel from './OrchestrationsPanel';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
-import AgentRosterOverlay from './AgentRosterOverlay';
 import { useOrchestrationFeed } from './useOrchestrationFeed';
-import EmberGlyph from './EmberGlyph';
 import ModelCardUnfurl, { type FeatherlessBinding } from './ModelCardUnfurl';
+import TabIVAgents from './tabs/TabIVAgents';
 import OracleTab from './OracleTab';
 import {
   AgentCeremonyOverlay,
@@ -43,14 +42,6 @@ const FEATHERLESS_BINDINGS: Record<string, FeatherlessBinding> = {
   SENTINEL: { model: 'Meta-Llama-3.1-8B', params: '8B',   license: 'Llama 3.1' },
   PHANTOM:  { model: 'Qwen3-8B',          params: '8B',   license: 'Apache 2.0' },
 };
-
-function emberInitialFor(code: string): string {
-  const b = FEATHERLESS_BINDINGS[code];
-  if (!b) return '·';
-  // First alphabetic char of model
-  const m = b.model.match(/[A-Za-z]/);
-  return m ? m[0].toUpperCase() : '·';
-}
 
 type Agent = {
   agent: string;
@@ -112,12 +103,6 @@ function groupByDept(agents: Agent[]): Array<[string, Agent[]]> {
     ([a], [b]) => (DEPT_ORDER[a] ?? 50) - (DEPT_ORDER[b] ?? 50),
   );
 }
-
-function truncAddr(a: string): string {
-  if (!a || a.length < 10) return a || '';
-  return `${a.slice(0, 6)}…${a.slice(-4)}`;
-}
-
 
 type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII';
 const TABS: Array<{ id: TabId; label: string }> = [
@@ -189,36 +174,6 @@ export default function BureauSections({
       {/* Inline sigil defs — shared by every AgentVFX instance rendered
           on this page (both Tab IV card overlays and Tab VII bridge). */}
       <AgentSigilDefs />
-
-      {/* Tab IV hire-button chrome. Sharp 2px radius + ember stroke. */}
-      <style>{`
-        .agent-hire-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 2px 8px;
-          margin-left: 2px;
-          background: transparent;
-          color: var(--ember);
-          border: 1px solid color-mix(in oklab, var(--ember) 55%, transparent);
-          border-radius: var(--radius-sharp);
-          font-family: var(--font-mono);
-          font-size: 9px;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: background-color 160ms ease-out, color 160ms ease-out,
-            border-color 160ms ease-out, box-shadow 240ms ease-out;
-        }
-        .agent-hire-btn:hover,
-        .agent-hire-btn:focus-visible {
-          background: color-mix(in oklab, var(--ember) 14%, transparent);
-          color: var(--signal);
-          border-color: var(--signal);
-          box-shadow: 0 0 10px color-mix(in oklab, var(--ember) 45%, transparent);
-          outline: none;
-        }
-      `}</style>
 
       {/* Tab VII autopilot ceremony — fires when the current run's seller
           changes. Feeds the same ceremony overlay as Tab IV hire clicks. */}
@@ -297,148 +252,18 @@ export default function BureauSections({
 
       {/* ── IV · Agent roster ─────────────────────────────────────────── */}
       {show('IV') && (
-        <section className="panel" style={{ position: 'relative' }}>
-          <div className="panel-header">
-            <span>[ IV · AGENT ROSTER · UNDERWORLD BUREAU ]</span>
-            <span>{agents.length} wallets on Circle MPC · Greek codenames v4.2</span>
-          </div>
-          <div ref={rosterRef} className="flex flex-col gap-6" style={{ position: 'relative' }}>
-            <AgentRosterOverlay containerRef={rosterRef} />
-            {deptGroups.map(([dept, list]) => (
-              <div key={dept}>
-                <div
-                  className="mb-2 pb-1 border-b"
-                  style={{
-                    borderColor: 'var(--grid-line)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.22em',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  · {dept}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                  {list.map((a) => {
-                    const isSeller = sellerCodes.has(a.code);
-                    const ledState = isSeller ? 'signal' : a.code === 'BUYER-EOA' ? 'ok' : 'idle';
-                    const hasCeremony = Boolean(AGENT_REGISTRY[a.code]);
-                    const cardCeremony =
-                      ceremony?.scope === 'roster' && ceremony.agentCode === a.code
-                        ? ceremony
-                        : null;
-                    return (
-                      <div
-                        key={a.address}
-                        className="flex items-start gap-3 py-2 border-b border-dashed"
-                        data-agent-code={a.code}
-                        style={{ borderColor: 'var(--grid-line)', position: 'relative' }}
-                      >
-                        <span className="status-led mt-[6px]" data-state={ledState} />
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-mythic)',
-                                fontWeight: 700,
-                                fontSize: 15,
-                                letterSpacing: '0.02em',
-                                lineHeight: 1,
-                                color: 'var(--ink)',
-                              }}
-                            >
-                              {a.codename ?? a.code}
-                            </span>
-                            {FEATHERLESS_BINDINGS[a.code] && (
-                              <EmberGlyph
-                                initial={emberInitialFor(a.code)}
-                                ariaLabel={`Open Featherless model card for ${a.codename ?? a.code} · ${FEATHERLESS_BINDINGS[a.code].model}`}
-                                active={unfurl?.code === a.code}
-                                onActivate={(anchor) =>
-                                  setUnfurl({
-                                    code: a.code,
-                                    codename: a.codename ?? a.code,
-                                    anchor,
-                                  })
-                                }
-                              />
-                            )}
-                            {hasCeremony && (
-                              <button
-                                type="button"
-                                className="agent-hire-btn"
-                                aria-label={`Hire ${a.codename ?? a.code} — trigger ceremony`}
-                                onClick={() =>
-                                  setCeremony({
-                                    agentCode: a.code,
-                                    serviceLabel: serviceLabelFor(a.code),
-                                    scope: 'roster',
-                                  })
-                                }
-                              >
-                                ◆ HIRE
-                              </button>
-                            )}
-                            <span
-                              className="font-mono uppercase"
-                              style={{
-                                fontSize: 9,
-                                letterSpacing: '0.14em',
-                                color: 'var(--muted)',
-                              }}
-                            >
-                              {a.code}
-                            </span>
-                          </div>
-                          <AgentCeremonyOverlay
-                            active={cardCeremony}
-                            onClear={() =>
-                              setCeremony((c) =>
-                                c?.scope === 'roster' && c.agentCode === a.code ? null : c,
-                              )
-                            }
-                          />
-                          {a.epithet && (
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-display)',
-                                fontStyle: 'italic',
-                                fontSize: 11,
-                                color: 'var(--muted)',
-                                marginTop: 1,
-                              }}
-                            >
-                              {a.epithet}
-                            </span>
-                          )}
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <span className="font-mono text-[11px] text-[var(--muted)] truncate">
-                              {truncAddr(a.address)}
-                            </span>
-                            <span
-                              className="font-mono uppercase"
-                              style={{
-                                fontSize: 9,
-                                letterSpacing: '0.12em',
-                                color:
-                                  a.accountType === 'EOA'
-                                    ? 'var(--moss)'
-                                    : 'var(--pale-brass)',
-                              }}
-                            >
-                              {a.accountType ?? '?'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <TabIVAgents
+          agents={agents}
+          deptGroups={deptGroups}
+          sellerCodes={sellerCodes}
+          rosterRef={rosterRef as RefObject<HTMLDivElement>}
+          ceremony={ceremony}
+          unfurl={unfurl}
+          onHire={(code, label) => setCeremony({ agentCode: code, serviceLabel: label, scope: 'roster' })}
+          onGlyphHover={(a) => setUnfurl(a)}
+          onCeremonyClear={(code) => setCeremony((c) => c?.scope === 'roster' && c.agentCode === code ? null : c)}
+          serviceLabelFor={serviceLabelFor}
+        />
       )}
 
       {/* ── V · Reputation ────────────────────────────────────────────── */}
