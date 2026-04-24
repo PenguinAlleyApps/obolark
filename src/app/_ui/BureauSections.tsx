@@ -15,7 +15,6 @@
  *   VI  · Archive      — full historical crossing record across all logs
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import LedgerTicker from './LedgerTicker';
 import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
 import TabVReputation from './tabs/TabVReputation';

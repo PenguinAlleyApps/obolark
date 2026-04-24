@@ -23,7 +23,7 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
   const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const id = setInterval(async () => {
+    const tick = async () => {
       try {
         const res = await fetch('/api/state', { cache: 'no-store' });
         if (!res.ok) return;
@@ -38,9 +38,15 @@ export default function TabIIILedger({ recentCalls, arcscanBase }: TabIIIProps) 
         latestHashRef.current = newHash;
         setRows(next);
       } catch { /* silent */ }
-    }, 15_000);
+    };
+    const id = setInterval(tick, 15_000);
+    // CrossButton dispatches this on settled payment — refresh immediately
+    // rather than waiting up to 15s for the next poll tick.
+    const onSettled = () => { void tick(); };
+    window.addEventListener('obolark:settled', onSettled as EventListener);
     return () => {
       clearInterval(id);
+      window.removeEventListener('obolark:settled', onSettled as EventListener);
       if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
     };
   }, []);
