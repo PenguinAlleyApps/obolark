@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Stage 1 Audit Ledger · Bureau Forensic Memo</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bone);
+      color: var(--ink);
+      min-height: 100vh;
+      font-family: var(--font-body);
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 48px 96px;
+    }
+
+    /* ─── Masthead ─────────────────────────────────────────────────── */
+    .masthead {
+      padding: 28px 0 22px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: end;
+      gap: 32px;
+      margin-bottom: 20px;
+    }
+    .masthead .brand {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 54px;
+      line-height: 1;
+      letter-spacing: 0.012em;
+      color: var(--signal);
+    }
+    .masthead .brand .dot { color: var(--ember); }
+    .masthead .title-stack {
+      display: flex; flex-direction: column; gap: 6px;
+      padding-bottom: 6px;
+    }
+    .masthead .kicker {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+    }
+    .masthead .title {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 30px;
+      line-height: 1.05;
+      letter-spacing: 0.005em;
+      color: var(--ink);
+    }
+    .masthead .folio {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      border: 1px solid var(--brand-rule);
+      padding: 8px 12px;
+      display: inline-flex; flex-direction: column; gap: 4px;
+      text-align: right;
+    }
+    .masthead .folio .stamp { color: var(--pale-brass); }
+
+    /* ─── Abstract row ─────────────────────────────────────────────── */
+    .abstract {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px dashed var(--grid-line);
+      border-bottom: 1px dashed var(--grid-line);
+      padding: 16px 0;
+      margin-bottom: 32px;
+      gap: 24px;
+    }
+    .abstract .col { display: flex; flex-direction: column; gap: 6px; }
+    .abstract .label {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+    }
+    .abstract .value {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .abstract .value .u {
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px;
+    }
+    .abstract .value.crit { color: var(--oxide); }
+    .abstract .value.ok   { color: var(--moss); }
+
+    /* ─── Memo preface ──────────────────────────────────────────────── */
+    .preface {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 32px;
+      padding-bottom: 28px;
+      border-bottom: 2px solid var(--ink);
+      margin-bottom: 32px;
+    }
+    .preface .label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+    }
+    .preface .body {
+      font-family: var(--font-display);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      text-wrap: pretty;
+    }
+    .preface .body em { font-style: italic; color: var(--pale-brass); }
+    .preface .body .sig {
+      display: block;
+      margin-top: 18px;
+      font-family: var(--font-mythic);
+      font-style: italic;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ─── Section headers ──────────────────────────────────────────── */
+    .section {
+      margin-top: 48px;
+      padding-top: 18px;
+      border-top: 2px solid var(--ink);
+    }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex-wrap: wrap; gap: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 20px;
+    }
+    .section-head .h {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 0.005em;
+      color: var(--ink);
+    }
+    .section-head .h .num { color: var(--pale-brass); margin-right: 10px; }
+    .section-head .meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    /* ─── Findings table ───────────────────────────────────────────── */
+    .findings {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-body);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .findings thead th {
+      text-align: left;
+      padding: 10px 10px 10px 0;
+      border-bottom: 1px solid var(--ink);
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      font-weight: 500;
+      vertical-align: bottom;
+    }
+    .findings tbody td {
+      padding: 12px 10px 12px 0;
+      border-bottom: 1px dashed var(--grid-line);
+      vertical-align: top;
+      color: var(--ink);
+    }
+    .findings tbody tr:last-child td { border-bottom: 1px solid var(--grid-line); }
+
+    .findings .col-id  { width: 54px;  font-family: var(--font-mono); color: var(--pale-brass); font-size: 11.5px; letter-spacing: 0.04em; }
+    .findings .col-sev { width: 84px; }
+    .findings .col-title { width: 28%; font-family: var(--font-display); font-weight: 500; }
+    .findings .col-where { width: 110px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+    .findings .col-fix   {}
+    .findings .col-eo    { width: 58px; font-family: var(--font-mono); font-size: 11px; text-align: center; }
+
+    .findings .detail {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.005em;
+    }
+
+    .sev {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 3px 8px 2px;
+      border: 1px solid currentColor;
+      border-radius: 2px;
+    }
+    .sev.high { color: var(--oxide); }
+    .sev.med  { color: var(--ember); }
+    .sev.low  { color: var(--muted); }
+
+    .eo {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px 2px;
+      border-radius: 2px;
+      letter-spacing: 0.1em;
+    }
+    .eo.y { background: var(--oxide); color: var(--bone); }
+    .eo.n { color: var(--muted); border: 1px dashed var(--grid-line); }
+    .eo.c { color: var(--ember); border: 1px dashed var(--ember); }
+
+    code, .mono {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: var(--bone-dark);
+      border: 1px solid var(--grid-line);
+      padding: 1px 5px;
+      border-radius: 2px;
+      color: var(--ink);
+    }
+    .mono.ok  { color: var(--moss); border-color: color-mix(in oklab, var(--moss) 40%, var(--grid-line)); }
+    .mono.bad { color: var(--oxide); border-color: color-mix(in oklab, var(--oxide) 40%, var(--grid-line)); }
+
+    /* ─── Inline diff cards ────────────────────────────────────────── */
+    .diff-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    .diff {
+      border: 1px solid var(--grid-line);
+      padding: 10px 12px;
+      background: var(--bone-dark);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .diff .dh {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .diff.before { border-left: 2px solid var(--oxide); }
+    .diff.before .dh { color: var(--oxide); }
+    .diff.after  { border-left: 2px solid var(--moss); }
+    .diff.after  .dh { color: var(--moss); }
+
+    /* ─── EO-016 summary panel ─────────────────────────────────────── */
+    .eo-panel {
+      background: var(--bone-dark);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 28px;
+      margin: 40px 0;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 32px;
+    }
+    .eo-panel .tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--oxide);
+      border-left: 2px solid var(--oxide);
+      padding-left: 12px;
+    }
+    .eo-panel .tag .num { display:block; font-family: var(--font-mythic); font-size: 36px; color: var(--ink); letter-spacing: 0.005em; margin-top: 6px; }
+    .eo-panel .body { font-family: var(--font-display); font-size: 14px; line-height: 1.6; color: var(--ink); }
+    .eo-panel ul { margin: 8px 0 0; padding-left: 18px; }
+    .eo-panel li { margin-bottom: 4px; }
+    .eo-panel li strong { color: var(--pale-brass); font-weight: 500; }
+
+    /* ─── Footer ───────────────────────────────────────────────────── */
+    footer {
+      margin-top: 72px;
+      padding-top: 16px;
+      border-top: 2px solid var(--ink);
+      position: relative;
+    }
+    footer::before {
+      content: '';
+      position: absolute; top: -7px; left: 0; right: 0;
+      border-top: 1px solid var(--ink);
+      opacity: 0.55;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+    }
+    .footer-grid .center { text-align: center; color: var(--pale-brass); }
+    .footer-grid .right { text-align: right; }
+
+    /* ─── Print ────────────────────────────────────────────────────── */
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      html, body { background: #fff !important; color: #000 !important; }
+      .page { padding: 0; max-width: none; }
+      .section { page-break-inside: avoid; }
+      .findings tbody tr { page-break-inside: avoid; }
+      code, .mono { background: #f4f1ea !important; }
+      .diff, .eo-panel { background: #f4f1ea !important; }
+    }
+
+    @media (max-width: 900px) {
+      .page { padding: 0 24px 72px; }
+      .masthead { grid-template-columns: 1fr; align-items: start; }
+      .abstract { grid-template-columns: 1fr 1fr; }
+      .preface { grid-template-columns: 1fr; }
+      .findings .col-where { display: none; }
+      .diff-row { grid-template-columns: 1fr; }
+      .eo-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div class="page">
+
+    <!-- ═════════════════ MASTHEAD ═════════════════ -->
+    <header class="masthead">
+      <div class="brand">OBOLARK<span class="dot" aria-hidden>.</span></div>
+      <div class="title-stack">
+        <div class="kicker">Bureau of Crossings · Forensic Memo</div>
+        <h1 class="title">Stage 1 Audit Ledger<br/>on the state of the ledger face</h1>
+      </div>
+      <div class="folio">
+        <span>Vol. I · No. 1</span>
+        <span class="stamp">Filed 2026-04-23</span>
+        <span>Arc Testnet · commit d66cf20</span>
+      </div>
+    </header>
+
+    <!-- ═════════════════ ABSTRACT ═════════════════ -->
+    <section class="abstract" aria-label="Findings at a glance">
+      <div class="col">
+        <span class="label">Findings, total</span>
+        <span class="value">33</span>
+      </div>
+      <div class="col">
+        <span class="label">Severity · high</span>
+        <span class="value crit">09</span>
+      </div>
+      <div class="col">
+        <span class="label">EO-016 violations</span>
+        <span class="value crit">01 <span class="u">+ 2 conditional</span></span>
+      </div>
+      <div class="col">
+        <span class="label">Tabs audited</span>
+        <span class="value ok">VIII / VIII</span>
+      </div>
+    </section>
+
+    <!-- ═════════════════ PREFACE ═════════════════ -->
+    <section class="preface">
+      <div class="label">To the bureau</div>
+      <div class="body">
+        This memo consolidates Stage 1 findings against the live Obolark bureau ledger
+        (<code>obolark.vercel.app</code>, commit <code>d66cf20</code>) cross-referenced
+        against <em>BRAND_SPEC.md v1</em> and the Obolark design system guide. Thirty-three
+        issues were logged across eight tabs and four chrome layers. Nine are marked high
+        severity — rule violations that either burn semantic tokens or break the spec's
+        stated shadow/gradient/type contracts. One EO-016 violation is confirmed
+        (<em>masthead text-shadow</em> on display type); two are conditional pending a
+        repository grep for stray Tailwind palette utilities and any Inter-on-display leak.
+        <br/><br/>
+        The recommended sequencing is severity-first, chrome-first: repair the masthead,
+        unify table borders, correct the settlement-semantic leaks in Tabs IV and VI, then
+        move the Oracle's radial out of panel chrome. Stage 2 will re-audit against a
+        freshly-built commit and produce an approval stamp suitable for judge handoff.
+        <span class="sig">— filed on behalf of PA·co, on the twenty-third of April,<br/>anno testnet 2026</span>
+      </div>
+    </section>
+
+    <!-- ═════════════════ TAB I ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">I</span>Front Page · masthead &amp; metrics</div>
+        <div class="meta">5 findings · 1 high · 0 eo-016</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">I-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Masthead <code>text-shadow</code> on H1
+              <span class="detail">Glow on typography — DS §Shadows: "the only shadow in use is the LED halo."</span>
+            </td>
+            <td class="col-where">page.tsx L~142</td>
+            <td>Strip inline <code>textShadow</code>. Ember glow belongs to <code>.fx-atmosphere</code>, not type.</td>
+            <td><span class="eo y">Y</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">I-02</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Trailing <code>.</code> span in masthead wordmark
+              <span class="detail">Reads as debug artifact; spec contract is bare OBOLARK.</span>
+            </td>
+            <td class="col-where">page.tsx</td>
+            <td>Either remove the span or promote to intentional folio glyph with <code>aria-hidden</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">I-03</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Masthead status LED = <code>signal</code> (gold)
+              <span class="detail">Burns the settlement-flash semantic (signal budget &lt;1%).</span>
+            </td>
+            <td class="col-where">Masthead.tsx</td>
+            <td>Set <code>data-state="ok"</code> (moss). Reserve signal for ledger row flash.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">I-04</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Folio stamp missing date triad
+              <span class="detail">"Filed 2026" is downgraded substitute for spec's <code>Vol. I · No. 1 · YYYY-MM-DD</code>.</span>
+            </td>
+            <td class="col-where">page.tsx hero</td>
+            <td>Collapse to single top-left folio with full triad. PA·co moves to footer.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">I-05</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Metric sub-labels force-uppercased incorrectly
+              <span class="detail"><code>.label</code> applies <code>text-transform: uppercase</code> + 0.14em (spec: 0.12em).</span>
+            </td>
+            <td class="col-where">MetricsRow.tsx</td>
+            <td>Split into <code>.label</code> / <code>.label-sub</code>. Normalize tracking to 0.12em.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB II ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">II</span>Tollkeepers · endpoint registry</div>
+        <div class="meta">3 findings · 1 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">II-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Dashed row-rules silently not painting
+              <span class="detail"><code>border-collapse: separate</code> + <code>border-dashed</code> on <code>&lt;tr&gt;</code> drops border in most browsers.</span>
+            </td>
+            <td class="col-where">BureauSections</td>
+            <td>Switch table to <code>border-collapse: collapse</code>, or move dashed rule onto <code>&lt;td&gt;</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">II-02</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Bracket ornament underlined on active nav
+              <span class="detail">Underline extends under <code>[ ]</code>, visually detaching label.</span>
+            </td>
+            <td class="col-where">tab nav</td>
+            <td>Drop brackets on nav (keep only on panel headers) or nest label in <code>&lt;span&gt;</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">II-03</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Column headers wrap at narrow viewports
+              <span class="detail">Only <code>Base (USDC)</code> uses <code>&amp;nbsp;</code>; others wrap awkwardly.</span>
+            </td>
+            <td class="col-where">tollkeeper table</td>
+            <td>Apply <code>white-space: nowrap</code> on all <code>&lt;th&gt;</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB III ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">III</span>Ledger · live crossings history</div>
+        <div class="meta">2 findings · 2 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">III-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">LedgerTicker vs. LedgerTable ambiguity
+              <span class="detail">Component named as ticker; spec requires static 10-row table with dashed rules + tabular-nums.</span>
+            </td>
+            <td class="col-where">LedgerTicker.tsx</td>
+            <td>Verify static table rendering. If it's a marquee, build separate <code>&lt;LedgerTable&gt;</code> component.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">III-02</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Arcscan links rendered in muted, not brass-gold
+              <span class="detail">Spec Tab III: arcscan links = <code>--pale-brass</code>. Live: <code>--muted</code>.</span>
+            </td>
+            <td class="col-where">ArchiveTable / LedgerRow</td>
+            <td>Replace with <code>color: var(--pale-brass)</code>. Reserve muted for row metadata.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB IV ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">IV</span>Agents · warden roster</div>
+        <div class="meta">4 findings · 0 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">IV-01</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Hire-btn hover adds <code>box-shadow</code> halo on chrome</td>
+            <td class="col-where">agent-hire-btn</td>
+            <td>Keep color + border-color swap; drop the box-shadow.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">IV-02</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Account-type chip color-encodes with <code>moss</code> / <code>pale-brass</code>
+              <span class="detail">EOA=moss, SCA=pale-brass — two roles bound to unrelated semantic tokens.</span>
+            </td>
+            <td class="col-where">AgentCard</td>
+            <td>Neutralize both to <code>--muted</code>; differentiate via small-caps text only.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">IV-03</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">EmberGlyph always-on baseline <code>drop-shadow</code>
+              <span class="detail">4px glow is a third shadow source outside the LED halo contract.</span>
+            </td>
+            <td class="col-where">EmberGlyph.tsx</td>
+            <td>Drop baseline drop-shadow; keep hover flare as intentional diegetic flicker.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">IV-04</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Department header uses solid, not dashed, rule
+              <span class="detail">DS: 1px dashed closes a row; 2px solid opens a panel.</span>
+            </td>
+            <td class="col-where">dept-label</td>
+            <td><code>border-bottom: 1px dashed var(--grid-line)</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB V ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">V</span>Reputation · ERC-8004 crossing scores</div>
+        <div class="meta">2 findings · 0 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">V-01</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Registry contract address not surfaced in panel header</td>
+            <td class="col-where">ReputationPanel</td>
+            <td>Render <code>registry: 0x…</code> (truncAddr + arcscan link in pale-brass) in panel metadata slot.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">V-02</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Inconsistent cadence copy
+              <span class="detail">Tab III: <code>auto-refresh 15s</code>. Tab V: <code>auto-refresh 10s</code>.</span>
+            </td>
+            <td class="col-where">panel-header</td>
+            <td>Unify to 15s across both panels; confirm poll interval matches.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB VI ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">VI</span>Archive · settled crossings record</div>
+        <div class="meta">4 findings · 2 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">VI-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Active filter chip inverts light/dark
+              <span class="detail">ink-on-bone on night-mode page reads as a light-mode chip dropped on dark.</span>
+            </td>
+            <td class="col-where">SourceFilter</td>
+            <td>
+              Use <code>bone-dark</code> bg + <code>signal</code> text + <code>signal</code> border for active state.
+              <div class="diff-row">
+                <div class="diff before"><span class="dh">before</span>bg: var(--ink); color: var(--bone); border: 1px solid var(--ink);</div>
+                <div class="diff after"><span class="dh">after</span>bg: var(--bone-dark); color: var(--signal); border: 1px solid var(--signal);</div>
+              </div>
+            </td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VI-02</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Source column color-encodes with semantic tokens
+              <span class="detail">reputation=moss, endpoints=signal — burns the settlement-pulse semantic on a low-salience column.</span>
+            </td>
+            <td class="col-where">ArchiveTable</td>
+            <td>Use <code>--muted</code> for all source labels; differentiate via small-caps text only.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VI-03</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Empty-state copy is SaaS-imperative, not forensic-lowercase</td>
+            <td class="col-where">ArchiveTable empty</td>
+            <td>Rewrite: <code class="mono ok">no archived crossings — hit an endpoint with PAYMENT-SIGNATURE to populate</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VI-04</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Column header <code>Arc Tx Hash</code> uses title case
+              <span class="detail">DS: column headers should be lowercase input, CSS-uppercased.</span>
+            </td>
+            <td class="col-where">ArchiveTable thead</td>
+            <td>Source → <code>tx hash</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB VII ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">VII</span>Orchestrations · agent chain ceremonies</div>
+        <div class="meta">2 findings · 1 high</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">VII-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">AgentVFX hire ceremony fires on every run-id change
+              <span class="detail">Spec motion rules forbid auto-rotating decoration; ceremony is heavy animation.</span>
+            </td>
+            <td class="col-where">AutopilotCeremonyBridge</td>
+            <td>Debounce dispatch to max 1 fire / 4s per chain; suppress on <code>prefers-reduced-motion</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VII-02</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Tab I ↔ VII marquee asymmetry
+              <span class="detail">Front Page renders marquee + full panel; Tab VII renders panel only.</span>
+            </td>
+            <td class="col-where">page.tsx show()</td>
+            <td>Either render marquee on Tab VII, or keep marquee on Tab I and full panel on Tab VII only.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ TAB VIII ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">VIII</span>Oracle · ceremonial query surface</div>
+        <div class="meta">5 findings · 2 high · 1 conditional eo-016</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">VIII-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Radial gradient inside <code>.oracle-surface</code> chrome
+              <span class="detail">DS §Backgrounds: "no gradients inside product panels. Gradients live only in the ambient FX layer."</span>
+            </td>
+            <td class="col-where">oracle styles</td>
+            <td>Move radial into <code>.fx-atmosphere</code> layer; leave <code>.oracle-surface</code> flat <code>--bone</code>.</td>
+            <td><span class="eo c">c</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VIII-02</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Utterance body rendered in signal-gold on bone-dark
+              <span class="detail">Signal-on-obsidian is the settlement pair; burns the pulse semantic at scale.</span>
+            </td>
+            <td class="col-where">.oracle-utterance</td>
+            <td>Body in <code>--ink</code>. Reserve <code>--signal</code> for caret <code>::after</code> only.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VIII-03</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Mandorla pulse reads as bounce
+              <span class="detail">900ms ease-out infinite on a ceremonial surface.</span>
+            </td>
+            <td class="col-where">@keyframes mandorla-pulse</td>
+            <td>1800ms ease-in-out; gate loop on <code>prefers-reduced-motion: no-preference</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VIII-04</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">SUMMON label illegible
+              <span class="detail">Cinzel 14px at 0.22em tracking on obsidian.</span>
+            </td>
+            <td class="col-where">.oracle-summon</td>
+            <td>Swap to <code>var(--font-mono)</code> at 16px. Cinzel stays reserved for masthead/codenames.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">VIII-05</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Hover-fired ember-particles on SUMMON
+              <span class="detail">Not in the canonical motion catalog (signal pulse, LED blink, amber dot, ticker, ambient embers).</span>
+            </td>
+            <td class="col-where">.oracle-summon-particle</td>
+            <td>Remove. Hover = border + bg swap only.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ CROSS-CUTTING ═════════════════ -->
+    <section class="section">
+      <div class="section-head">
+        <div class="h"><span class="num">✦</span>Cross-cutting · applies to all tabs</div>
+        <div class="meta">6 findings · 1 high · 2 conditional eo-016</div>
+      </div>
+      <table class="findings">
+        <thead>
+          <tr><th class="col-id">id</th><th class="col-sev">sev</th><th class="col-title">finding</th><th class="col-where">where</th><th class="col-fix">fix</th><th class="col-eo">eo-016</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">X-01</td>
+            <td><span class="sev high">high</span></td>
+            <td class="col-title">Possible Inter-on-display leak
+              <span class="detail">DS still lists Inter for body; BRAND_SPEC EO-016 forbids Inter for display. Requires audit of every heading.</span>
+            </td>
+            <td class="col-where">layout.tsx · all components</td>
+            <td>Grep for <code>font-sans</code> / <code>var(--font-body)</code> on <code>h1/h2/h3/masthead</code>. Confirm display copy is <code>--font-mythic</code> or <code>--font-display</code> only.</td>
+            <td><span class="eo c">c</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">X-02</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Stray Tailwind palette grep
+              <span class="detail">Tailwind 4 exposes <code>indigo/violet/purple/fuchsia</code> utilities by default. Any hit = EO-016 violation.</span>
+            </td>
+            <td class="col-where">src/**</td>
+            <td>CI lint: <code class="mono">grep -r "indigo|violet|purple|fuchsia|6366f1" src/</code>. Zero-tolerance.</td>
+            <td><span class="eo c">c</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">X-03</td>
+            <td><span class="sev med">med</span></td>
+            <td class="col-title">Tab-nav hover-via-JS fragile
+              <span class="detail"><code>onMouseEnter</code>/<code>Leave</code> swap; misses keyboard focus, touch, reduced-motion contexts.</span>
+            </td>
+            <td class="col-where">TabStrip</td>
+            <td>Replace with CSS <code>:hover</code> + <code>:focus-visible</code>.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">X-04</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Day-mode CSS defined but no UI toggle exposed
+              <span class="detail">EO-016 carve-out permits opt-in day mode; dead code shipping if not reachable.</span>
+            </td>
+            <td class="col-where">globals.css + layout.tsx</td>
+            <td>Either expose masthead day/night toggle (forensic mono button), or strip day-mode CSS until print pipeline needs it.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">X-05</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Footer rule asymmetric to masthead
+              <span class="detail">Masthead: 3px top + 1px bottom. Footer: single 1px.</span>
+            </td>
+            <td class="col-where">layout.tsx footer</td>
+            <td>Mirror: <code>border-top: 2px solid var(--ink)</code> + 1px hairline above at opacity 0.55.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+          <tr>
+            <td class="col-id">X-06</td>
+            <td><span class="sev low">low</span></td>
+            <td class="col-title">Redundant <code>&lt;em style="font-style: italic"&gt;</code> in footer</td>
+            <td class="col-where">layout.tsx footer</td>
+            <td>Remove inline <code>fontStyle</code>; <code>&lt;em&gt;</code> already italicizes.</td>
+            <td><span class="eo n">n</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═════════════════ EO-016 PANEL ═════════════════ -->
+    <section class="eo-panel">
+      <div class="tag">
+        Executive Order<span class="num">EO-016</span>
+      </div>
+      <div class="body">
+        <strong style="color: var(--ink); font-weight: 500;">One confirmed violation, two conditional.</strong>
+        EO-016 (issued 2026-04-20) forbids display-type glow, Inter on display, and any indigo/violet/purple/fuchsia palette usage; it carves out the night-mode palette for all surfaces.
+        <ul>
+          <li><strong>Confirmed</strong> — <code>I-01</code>: masthead <code>text-shadow</code> on H1 reads as display-layer glow. The night-mode carve-out did not re-license type glow.</li>
+          <li><strong>Conditional</strong> — <code>X-01</code>: Inter-on-display leak. Requires full audit of every heading before stamp.</li>
+          <li><strong>Conditional</strong> — <code>X-02</code>: stray Tailwind palette utilities. Requires repo-wide grep sweep.</li>
+        </ul>
+        Both conditional violations resolve on a clean grep pass and a heading-level font audit. Stage 2 will re-audit.
+      </div>
+    </section>
+
+    <!-- ═════════════════ FOOTER ═════════════════ -->
+    <footer>
+      <div class="footer-grid">
+        <div>PA·co · Penguin Alley Company</div>
+        <div class="center">Bureau of Crossings · Arc Testnet · chain_id 5042002</div>
+        <div class="right">filed 2026-04-23 · Vol. I · No. 1</div>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

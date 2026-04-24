@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab IV · Agents Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB IV — AGENTS roster refresh.
+
+       Audit-driven fixes:
+       · AccountType chip: neutral --muted for BOTH eoa and sca; role
+         encoded in small-caps text only (no more moss/brass collision)
+       · EmberGlyph: baseline drop-shadow removed; glow fires only on
+         hover / focus as an intentional diegetic ember flare
+       · Department headers: dashed hairline (was solid)
+       · Hire button hover: color + border swap only (no box-shadow halo)
+       · Reputation bar uses moss (ok) as the sole "good" signal;
+         signal-gold reserved for settlement flash on the ledger column
+       · LED in status column = moss (ok) at rest; never always-signal
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ─── Mini chrome (matches Tabs II / III) ─── */
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    /* ─── Panel ─── */
+    .panel {
+      background: var(--bone);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+    .panel-header .right {
+      display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .panel-header .cadence {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .panel-header .cadence .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    /* ─── Department section ─── */
+    .dept {
+      margin-top: 24px;
+    }
+    .dept:first-of-type { margin-top: 0; }
+
+    .dept-header {
+      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+      border-bottom: 1px dashed var(--grid-line);   /* ← audit fix: dashed */
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .dept-header .name { color: var(--ink); letter-spacing: 0.18em; }
+    .dept-header .count { color: var(--pale-brass); font-variant-numeric: tabular-nums; }
+    .dept-header .motto {
+      flex: 1; text-align: right; font-family: var(--font-display);
+      font-style: italic; font-size: 12px; color: var(--muted);
+      letter-spacing: 0; text-transform: none;
+    }
+
+    /* ─── Agent roster grid ─── */
+    .roster {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1px;
+      background: var(--grid-line);   /* becomes the hairline between cards */
+      border: 1px solid var(--grid-line);
+    }
+
+    .agent-card {
+      background: var(--bone);
+      padding: 16px 18px 14px;
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      grid-template-rows: auto auto auto auto;
+      column-gap: 14px;
+      row-gap: 10px;
+      align-items: start;
+      position: relative;
+    }
+
+    /* EmberGlyph — 52px warden sigil (per-codename VFX via warden-vfx.jsx) */
+    .glyph {
+      grid-row: 1 / span 2;
+      width: 52px; height: 52px;
+      display: grid; place-items: center;
+      color: var(--ember);
+      filter: none;
+      transition: filter 220ms ease-out, transform 220ms ease-out;
+    }
+    .agent-card:hover .glyph,
+    .agent-card:focus-within .glyph {
+      filter:
+        drop-shadow(0 0 7px var(--ember))
+        drop-shadow(0 0 14px color-mix(in oklab, var(--ember) 40%, transparent));
+    }
+    .glyph svg { width: 100%; height: 100%; overflow: visible; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glyph svg * { animation: none !important; }
+    }
+
+    .name-line {
+      grid-column: 2;
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    }
+    .codename {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.015em;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .paco {
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--pale-brass);
+    }
+    .epithet {
+      font-family: var(--font-display); font-style: italic;
+      font-size: 12px; color: var(--muted);
+      grid-column: 2;
+      margin-top: -4px;
+    }
+
+    /* accountType chip: NEUTRAL for both — role encoded in text only */
+    .acct-chip {
+      grid-column: 3;
+      grid-row: 1;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px 2px;
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      white-space: nowrap;
+    }
+    .acct-chip[data-type="sca"] {
+      /* SCA: contract-authored — hairline becomes doubled via box-shadow inset */
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--muted) 45%, transparent);
+    }
+    .acct-chip .mark {
+      font-family: var(--font-mono); font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* Status row: LED + ledger stats */
+    .status-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px dashed var(--grid-line);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .status-row .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2.2s ease-in-out infinite;
+    }
+    .status-row .reputation {
+      display: flex; align-items: center; gap: 10px;
+      min-width: 0;
+    }
+    .status-row .rep-bar {
+      flex: 1 1 120px;
+      min-width: 80px;
+      height: 4px;
+      background: var(--bone-dark);
+      border: 1px solid var(--grid-line);
+      position: relative;
+      overflow: hidden;
+    }
+    .status-row .rep-bar .fill {
+      position: absolute; inset: 0 auto 0 0;
+      background: var(--moss);    /* reputation = moss; reserved role */
+    }
+    .status-row .rep-bar .fill[data-tier="high"]  { background: var(--moss); }
+    .status-row .rep-bar .fill[data-tier="mid"]   { background: var(--pale-brass); }
+    .status-row .rep-bar .fill[data-tier="low"]   { background: var(--oxide); }
+    .status-row .rep-score {
+      font-variant-numeric: tabular-nums;
+      color: var(--ink); font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .status-row .settled {
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .status-row .settled .unit {
+      color: var(--muted); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      margin-left: 4px;
+    }
+
+    /* Hire button — audit fix: no box-shadow on hover */
+    .hire-row {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding-top: 10px;
+    }
+    .agent-hire-btn {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      background: transparent;
+      color: var(--ember);
+      border: 1px solid var(--ember);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+    }
+    .agent-hire-btn:hover {
+      color: var(--bone);
+      background: var(--ember);
+      border-color: var(--ember);
+      /* no box-shadow — color + bg swap alone communicates hover */
+    }
+    .agent-hire-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--signal);
+    }
+    .agent-hire-btn[data-busy="true"] {
+      color: var(--signal);
+      border-color: var(--signal);
+      border-style: dashed;
+    }
+    .agent-hire-btn[data-hired="true"] {
+      color: var(--bone);
+      background: var(--signal);
+      border-color: var(--signal);
+    }
+    .hire-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .hire-meta .rate { color: var(--ink); }
+
+    /* ─── Panel summary strip ─── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grid-line);
+    }
+    .summary .m { border-left: 2px solid var(--ink); padding-left: 14px; }
+    .summary .k {
+      font-family: var(--font-mono); font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+    }
+    .summary .v {
+      font-family: var(--font-mono); font-size: 28px; font-weight: 700;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+      line-height: 1; margin-top: 4px; letter-spacing: -0.01em;
+    }
+    .summary .v[data-role="signal"] { color: var(--signal); }
+    .summary .v[data-role="brass"]  { color: var(--pale-brass); }
+    .summary .sub {
+      font-family: var(--font-mono); font-size: 9.5px;
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-top: 6px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-led, .status-row .led, .panel-header .cadence .led { animation: none !important; }
+      .glyph { transition: none !important; }
+    }
+
+    @media (max-width: 900px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="warden-vfx.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "density": "default",
+      "showEpithet": true,
+      "showRepBar": true,
+      "vfxEnabled": true,
+      "accountChipMode": "neutral"
+    }/*EDITMODE-END*/;
+
+    /* ─── Roster data ─────────────────────────────────────────────── */
+    const DEPARTMENTS = [
+      {
+        id: 'research',
+        name: 'Research',
+        motto: 'what is and what was',
+        agents: [
+          { code: 'RADAR',    codename: 'ORACLE',    epithet: 'the one who sees the signal in the noise',    accountType: 'sca', reputation: 0.94, settled: 412.39, rate: 0.0022 },
+          { code: 'ASTRA',    codename: 'URANIA',    epithet: 'of celestial charts and distant indices',    accountType: 'eoa', reputation: 0.78, settled: 188.14, rate: 0.0018 },
+          { code: 'LEXICON',  codename: 'MNEMOSYNE', epithet: 'of all things remembered',                    accountType: 'sca', reputation: 0.86, settled: 301.88, rate: 0.0020 },
+        ],
+      },
+      {
+        id: 'design',
+        name: 'Design',
+        motto: 'the craft of the made',
+        agents: [
+          { code: 'PIXEL',    codename: 'DAEDALUS',  epithet: 'patient maker of labyrinths',                 accountType: 'sca', reputation: 0.91, settled: 267.02, rate: 0.0024 },
+          { code: 'VERSE',    codename: 'CALLIOPE',  epithet: 'of long lines and measured tone',             accountType: 'eoa', reputation: 0.69, settled:  94.51, rate: 0.0016 },
+        ],
+      },
+      {
+        id: 'operations',
+        name: 'Operations',
+        motto: 'gates and thresholds',
+        agents: [
+          { code: 'SENTINEL', codename: 'CERBERUS',  epithet: 'three-headed, one-minded',                    accountType: 'sca', reputation: 0.97, settled: 583.14, rate: 0.0030 },
+          { code: 'PHANTOM',  codename: 'THANATOS',  epithet: 'silent clerk at the final window',            accountType: 'eoa', reputation: 0.72, settled: 145.22, rate: 0.0028 },
+          { code: 'ARGUS',    codename: 'ARGUS',     epithet: 'hundred-eyed, none of them closed',           accountType: 'sca', reputation: 0.88, settled: 344.60, rate: 0.0026 },
+          { code: 'FERRY',    codename: 'CHARON',    epithet: 'the only working crossing at low tide',       accountType: 'eoa', reputation: 0.81, settled: 220.77, rate: 0.0019 },
+        ],
+      },
+    ];
+
+    /* Ember sigil is now per-warden and lore-accurate.
+       See warden-vfx.jsx for the full dispatcher + motion bodies. */
+    function EmberGlyph({ codename, vfxEnabled }) {
+      if (!vfxEnabled) {
+        return (
+          <svg viewBox="-22 -22 44 44" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.1">
+            <circle r="10" />
+            <circle r="2.2" fill="currentColor" stroke="none" />
+          </svg>
+        );
+      }
+      return <WardenSigil codename={codename} />;
+    }
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 3 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function tierFor(r) {
+      if (r >= 0.85) return 'high';
+      if (r >= 0.70) return 'mid';
+      return 'low';
+    }
+
+    function AgentCard({ a, t }) {
+      const [busy, setBusy] = useState(false);
+      const [hired, setHired] = useState(false);
+
+      function onHire() {
+        if (busy || hired) return;
+        setBusy(true);
+        setTimeout(() => { setBusy(false); setHired(true); }, 700);
+      }
+
+      return (
+        <article className="agent-card" tabIndex={-1}>
+          <div className="glyph">
+            <EmberGlyph codename={a.codename} vfxEnabled={t.vfxEnabled} />
+          </div>
+          <div className="name-line">
+            <span className="codename">{a.codename}</span>
+            <span className="paco">· {a.code}</span>
+          </div>
+          <span className="acct-chip" data-type={a.accountType} aria-label={a.accountType === 'sca' ? 'smart contract account' : 'externally owned account'}>
+            <span className="mark">{a.accountType === 'sca' ? 'SCA' : 'EOA'}</span>
+          </span>
+          {t.showEpithet && <div className="epithet">{a.epithet}</div>}
+
+          <div className="status-row">
+            <span className="led" aria-hidden />
+            {t.showRepBar && (
+              <span className="reputation">
+                <span className="rep-bar"><span className="fill" data-tier={tierFor(a.reputation)} style={{ width: `${Math.round(a.reputation * 100)}%` }} /></span>
+                <span className="rep-score">{a.reputation.toFixed(2)}</span>
+              </span>
+            )}
+            {!t.showRepBar && (
+              <span className="rep-score" style={{ color: 'var(--muted)' }}>
+                rep {a.reputation.toFixed(2)}
+              </span>
+            )}
+            <span className="settled">{a.settled.toFixed(2)}<span className="unit">USDC</span></span>
+          </div>
+
+          <div className="hire-row">
+            <button
+              type="button"
+              className="agent-hire-btn"
+              data-busy={busy}
+              data-hired={hired}
+              onClick={onHire}
+              aria-busy={busy}
+            >
+              {hired ? '✓ hired' : busy ? '··· crossing' : '◆ hire'}
+            </button>
+            <span className="hire-meta">rate · <span className="rate">{a.rate.toFixed(4)} USDC</span> / call</span>
+          </div>
+        </article>
+      );
+    }
+
+    function Dept({ d, t }) {
+      return (
+        <section className="dept">
+          <header className="dept-header">
+            <span className="name">[ {d.name.toUpperCase()} ]</span>
+            <span className="count">{d.agents.length.toString().padStart(2, '0')} wardens</span>
+            <span className="motto">— {d.motto}</span>
+          </header>
+          <div className="roster">
+            {d.agents.map(a => <AgentCard key={a.code} a={a} t={t} />)}
+          </div>
+        </section>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      const totalAgents = useMemo(() => DEPARTMENTS.reduce((s, d) => s + d.agents.length, 0), []);
+      const scaCount = useMemo(() => DEPARTMENTS.reduce((s, d) => s + d.agents.filter(a => a.accountType === 'sca').length, 0), []);
+      const eoaCount = totalAgents - scaCount;
+      const totalSettled = useMemo(() => DEPARTMENTS.reduce((s, d) => s + d.agents.reduce((x, a) => x + a.settled, 0), 0), []);
+      const avgRep = useMemo(() => {
+        const all = DEPARTMENTS.flatMap(d => d.agents);
+        return all.reduce((s, a) => s + a.reputation, 0) / all.length;
+      }, []);
+
+      return (
+        <div className="page" data-density={t.density}>
+          <MiniMast />
+          <TabStrip />
+
+          <section className="panel">
+            <div className="panel-header">
+              <span>[ IV · AGENTS · {totalAgents} WARDENS ACROSS {DEPARTMENTS.length} DEPARTMENTS ]</span>
+              <span className="right">
+                <span className="cadence">
+                  <span className="led" aria-hidden />
+                  roster synced · ERC-8004
+                </span>
+              </span>
+            </div>
+
+            {DEPARTMENTS.map(d => <Dept key={d.id} d={d} t={t} />)}
+
+            <div className="summary">
+              <div className="m">
+                <div className="k">Wardens</div>
+                <div className="v">{totalAgents.toString().padStart(2, '0')}</div>
+                <div className="sub">{scaCount} sca · {eoaCount} eoa</div>
+              </div>
+              <div className="m">
+                <div className="k">Total settled</div>
+                <div className="v" data-role="signal">{totalSettled.toFixed(2)}</div>
+                <div className="sub">usdc · lifetime</div>
+              </div>
+              <div className="m">
+                <div className="k">Avg reputation</div>
+                <div className="v" data-role="brass">{avgRep.toFixed(2)}</div>
+                <div className="sub">erc-8004 crossing scores</div>
+              </div>
+              <div className="m">
+                <div className="k">Departments</div>
+                <div className="v">{DEPARTMENTS.length.toString().padStart(2, '0')}</div>
+                <div className="sub">research · design · ops</div>
+              </div>
+            </div>
+          </section>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Card chrome" />
+            <TweakRadio
+              label="Density"
+              value={t.density}
+              options={['compact', 'default', 'comfy']}
+              onChange={(v) => setTweak('density', v)}
+            />
+            <TweakToggle
+              label="Epithet line"
+              value={t.showEpithet}
+              onChange={(v) => setTweak('showEpithet', v)}
+            />
+            <TweakToggle
+              label="Reputation bar"
+              value={t.showRepBar}
+              onChange={(v) => setTweak('showRepBar', v)}
+            />
+
+            <TweakSection label="Warden VFX" />
+            <TweakToggle
+              label="Lore-accurate sigils"
+              value={t.vfxEnabled}
+              onChange={(v) => setTweak('vfxEnabled', v)}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

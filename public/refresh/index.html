@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Bureau of Crossings · Ledger Face Index</title>
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+  <template id="__bundler_thumbnail" data-bg-color="#0E0A08">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#0E0A08"/>
+      <g transform="translate(600,400)">
+        <circle r="220" fill="none" stroke="#F5C518" stroke-width="6"/>
+        <circle r="180" fill="none" stroke="#F76B2B" stroke-width="2" stroke-dasharray="8 10"/>
+        <circle r="18" fill="#F76B2B"/>
+        <text x="0" y="-280" text-anchor="middle" font-family="serif" font-weight="700" font-size="96" fill="#F5C518" letter-spacing="4">OBOLARK</text>
+        <text x="0" y="300" text-anchor="middle" font-family="monospace" font-size="24" fill="#B8A57E" letter-spacing="8">BUREAU OF CROSSINGS</text>
+      </g>
+    </svg>
+  </template>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bone); color: var(--ink);
+      min-height: 100vh;
+      font-family: var(--font-body);
+      position: relative;
+    }
+    .page { max-width: 1180px; margin: 0 auto; padding: 0 48px 96px; position: relative; z-index: 1; }
+
+    .masthead {
+      padding: 36px 0 24px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: end; gap: 32px;
+    }
+    .masthead .brand {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 64px; line-height: 1;
+      letter-spacing: 0.012em; color: var(--signal);
+    }
+    .masthead .brand .dot { color: var(--ember); }
+    .masthead .title-stack { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+    .masthead .kicker {
+      font-family: var(--font-mono); font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+    }
+    .masthead .title {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 36px; line-height: 1.05; letter-spacing: 0.005em; color: var(--ink);
+    }
+    .masthead .folio {
+      font-family: var(--font-mono); font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+      border: 1px solid var(--brand-rule); padding: 8px 12px;
+      display: inline-flex; flex-direction: column; gap: 4px; text-align: right;
+    }
+    .masthead .folio .stamp { color: var(--pale-brass); }
+
+    .lede-row {
+      display: grid; grid-template-columns: 180px 1fr; gap: 32px;
+      padding: 22px 0 24px;
+      border-bottom: 2px solid var(--ink);
+    }
+    .lede-row .label {
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+    }
+    .lede-row .body {
+      font-family: var(--font-display); font-style: italic;
+      font-size: 17px; line-height: 1.6; color: var(--ink); text-wrap: pretty;
+    }
+    .lede-row .body em { color: var(--pale-brass); font-style: italic; }
+
+    /* ── abstract row ── */
+    .abstract {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      border-bottom: 1px dashed var(--grid-line);
+      padding: 16px 0; margin-bottom: 32px; gap: 24px;
+    }
+    .abstract .col { display: flex; flex-direction: column; gap: 6px; }
+    .abstract .label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .abstract .value { font-family: var(--font-mono); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .abstract .value .u { font-size: 10px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px; }
+    .abstract .value.sig { color: var(--signal); }
+    .abstract .value.crit { color: var(--oxide); }
+
+    /* ── section header ── */
+    .section-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex-wrap: wrap; gap: 16px;
+      padding: 32px 0 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 0;
+    }
+    .section-head .h {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 22px; letter-spacing: 0.005em; color: var(--ink);
+    }
+    .section-head .h .num { color: var(--pale-brass); margin-right: 10px; }
+    .section-head .meta {
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    }
+
+    /* ── artifact grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--grid-line);
+      border-right: 1px solid var(--grid-line);
+    }
+    .card {
+      display: flex; flex-direction: column;
+      padding: 22px 22px 20px;
+      border-top: 1px dashed var(--grid-line);
+      border-left: 1px solid var(--grid-line);
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      transition: background 160ms ease-out, border-color 160ms ease-out;
+      min-height: 220px;
+    }
+    .card:hover {
+      background: var(--bone-dark);
+      border-left-color: var(--ember);
+    }
+    .card:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--signal);
+    }
+    .card .tag-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono); font-size: 9.5px;
+      letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .card .tag-row .num {
+      color: var(--pale-brass);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+    .card .tag-row .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+    .card .tag-row .led[data-state="signal"] { background: var(--signal); box-shadow: 0 0 6px var(--signal); }
+    .card .tag-row .led[data-state="ember"]  { background: var(--ember);  box-shadow: 0 0 6px var(--ember);  }
+
+    .card .codename {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: 0.005em;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .card .epithet {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .card .note {
+      font-family: var(--font-body);
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      text-wrap: pretty;
+      flex: 1;
+    }
+    .card .foot {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--grid-line);
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    }
+    .card .foot .open {
+      color: var(--ember);
+      letter-spacing: 0.22em;
+    }
+    .card:hover .foot .open { color: var(--signal); }
+
+    /* Special treatment: featured card (stage 1 audit ledger) spans 2 cols */
+    .card.feat { grid-column: span 2; background: var(--bone-dark); border-left: 2px solid var(--ember); }
+    .card.feat .codename { font-size: 34px; }
+    .card.feat .note { font-size: 14px; }
+
+    /* ── footer ── */
+    footer {
+      margin-top: 64px; padding-top: 16px;
+      border-top: 2px solid var(--ink); position: relative;
+    }
+    footer::before {
+      content: ''; position: absolute; top: -7px; left: 0; right: 0;
+      border-top: 1px solid var(--ink); opacity: 0.55;
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; gap: 24px;
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+    }
+    .footer-grid .center { text-align: center; color: var(--pale-brass); }
+    .footer-grid .right { text-align: right; }
+
+    @media (max-width: 1000px) {
+      .page { padding: 0 24px 72px; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .card.feat { grid-column: span 2; }
+      .abstract { grid-template-columns: repeat(2, 1fr); }
+      .masthead, .lede-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      .card.feat { grid-column: span 1; }
+      .abstract { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card .led { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fx-atmosphere" aria-hidden></div>
+
+  <div class="page">
+    <header class="masthead">
+      <div class="brand">OBOLARK<span class="dot" aria-hidden>.</span></div>
+      <div class="title-stack">
+        <div class="kicker">Bureau of Crossings · Ledger Face Index</div>
+        <h1 class="title">The refreshed bureau —<br/>ten artifacts, one handoff</h1>
+      </div>
+      <div class="folio">
+        <span>Vol. I · No. 1</span>
+        <span class="stamp">Filed 2026-04-23</span>
+        <span>Arc Testnet · chain_id 5042002</span>
+      </div>
+    </header>
+
+    <div class="lede-row">
+      <div class="label">Summary</div>
+      <div class="body">
+        Ten documents, filed in sequence against <em>BRAND_SPEC.md</em> and the Obolark design system. Each tab carries a refreshed face; each refresh answers a severity-ranked finding from the Stage 1 audit.
+        The ledger closes with a single forensic memo — a bureau-voice readout any judge can print and staple.
+      </div>
+    </div>
+
+    <section class="abstract" aria-label="at a glance">
+      <div class="col"><span class="label">Artifacts</span><span class="value">10</span></div>
+      <div class="col"><span class="label">Findings filed</span><span class="value">33</span></div>
+      <div class="col"><span class="label">Severity · high</span><span class="value crit">09</span></div>
+      <div class="col"><span class="label">EO-016</span><span class="value crit">01 <span class="u">+2 cond</span></span></div>
+      <div class="col"><span class="label">Commit</span><span class="value sig">d66cf20</span></div>
+    </section>
+
+    <!-- TAB REFRESHES -->
+    <div class="section-head">
+      <div class="h"><span class="num">A</span>Tab refreshes · the eight faces</div>
+      <div class="meta">open any folio to inspect</div>
+    </div>
+    <div class="grid">
+      <a class="card" href="masthead.html">
+        <div class="tag-row"><span class="num">I · front page</span><span class="led" data-state="signal" aria-hidden></span></div>
+        <div class="codename">THE MASTHEAD</div>
+        <div class="epithet">— first face of the bureau</div>
+        <div class="note">Folio triad restored (Vol. I · No. 1 · YYYY-MM-DD). Status LED returned to moss. Text-shadow stripped from H1; ember glow relocated to <code>.fx-atmosphere</code>.</div>
+        <div class="foot"><span>5 findings · 1 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-ii-tollkeepers.html">
+        <div class="tag-row"><span class="num">II · endpoints</span><span class="led" aria-hidden></span></div>
+        <div class="codename">TOLLKEEPERS</div>
+        <div class="epithet">— registry of crossings</div>
+        <div class="note">Dashed row rules now paint (collapse model). Bracket ornaments lifted off the active-tab underline. Column headers nowrap across viewports.</div>
+        <div class="foot"><span>3 findings · 1 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-iii-ledger.html">
+        <div class="tag-row"><span class="num">III · live history</span><span class="led" data-state="signal" aria-hidden></span></div>
+        <div class="codename">THE LEDGER</div>
+        <div class="epithet">— what has lately crossed</div>
+        <div class="note">Static 10-row table replaces the ticker confusion. Arcscan links rendered in pale-brass per spec. Tabular-nums on every amount.</div>
+        <div class="foot"><span>2 findings · 2 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-iv-agents.html">
+        <div class="tag-row"><span class="num">IV · roster</span><span class="led" aria-hidden></span></div>
+        <div class="codename">AGENTS</div>
+        <div class="epithet">— the wardens at post</div>
+        <div class="note">Hire-button hover halo removed. Account-type chip neutralized to muted. EmberGlyph baseline drop-shadow dropped; hover flare preserved as diegetic flicker.</div>
+        <div class="foot"><span>4 findings · 0 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-v-reputation.html">
+        <div class="tag-row"><span class="num">V · erc-8004</span><span class="led" aria-hidden></span></div>
+        <div class="codename">REPUTATION</div>
+        <div class="epithet">— crossing scores on record</div>
+        <div class="note">Registry contract address surfaced in panel metadata slot (pale-brass arcscan link). Cadence copy unified to <code>auto-refresh 15s</code> across III/V.</div>
+        <div class="foot"><span>2 findings · 0 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-vi-archive.html">
+        <div class="tag-row"><span class="num">VI · archive</span><span class="led" data-state="ember" aria-hidden></span></div>
+        <div class="codename">THE ARCHIVE</div>
+        <div class="epithet">— settled crossings, filed</div>
+        <div class="note">Active filter chip no longer inverts the page (bone-dark + signal). Source column neutralized. Empty-state copy rewritten in lowercase forensic voice.</div>
+        <div class="foot"><span>4 findings · 2 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-vii-orchestrations.html">
+        <div class="tag-row"><span class="num">VII · chains</span><span class="led" data-state="signal" aria-hidden></span></div>
+        <div class="codename">ORCHESTRATIONS</div>
+        <div class="epithet">— ceremonies of agents in concert</div>
+        <div class="note">Hire-ceremony dispatch debounced to 1/4s per chain; suppressed under <code>prefers-reduced-motion</code>. Tab I/VII asymmetry resolved.</div>
+        <div class="foot"><span>2 findings · 1 high</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-viii-oracle.html">
+        <div class="tag-row"><span class="num">VIII · oracle</span><span class="led" data-state="ember" aria-hidden></span></div>
+        <div class="codename">THE ORACLE</div>
+        <div class="epithet">— ceremonial query surface</div>
+        <div class="note">Radial gradient moved out of panel chrome into <code>.fx-atmosphere</code>. Utterance body in ink, not signal. Mandorla pulse at 1800ms ease-in-out. SUMMON in mono 16px.</div>
+        <div class="foot"><span>5 findings · 2 high</span><span class="open">open ↗</span></div>
+      </a>
+    </div>
+
+    <!-- FORENSIC MEMO -->
+    <div class="section-head">
+      <div class="h"><span class="num">B</span>The forensic memo</div>
+      <div class="meta">stage 1 · handoff-ready</div>
+    </div>
+    <div class="grid">
+      <a class="card feat" href="tab-i-audit-ledger.html">
+        <div class="tag-row"><span class="num">memo · stage 1</span><span class="led" data-state="ember" aria-hidden></span></div>
+        <div class="codename">THE AUDIT LEDGER</div>
+        <div class="epithet">— all thirty-three findings, filed in one hand</div>
+        <div class="note">
+          Per-tab findings tables, severity chips, EO-016 column, inline before/after diffs,
+          cross-cutting section (Inter-leak, Tailwind-palette grep, hover-via-JS, day-mode toggle, footer asymmetry),
+          and a dedicated EO-016 panel distinguishing the one confirmed violation from the two conditional ones.
+          Print-ready — @page A4, 14mm margins, breaks honored.
+        </div>
+        <div class="foot"><span>33 findings · 9 high · 1 confirmed eo-016</span><span class="open">open ↗</span></div>
+      </a>
+
+      <a class="card" href="tab-i-audit-ledger.html" onclick="window.print(); return false;" role="button">
+        <div class="tag-row"><span class="num">print</span><span class="led" aria-hidden></span></div>
+        <div class="codename">PRINT</div>
+        <div class="epithet">— staple &amp; hand to bureau</div>
+        <div class="note">Opens the memo in the browser's print dialog. A4, 14mm margins, dashed rules preserved on white ground. Suitable for judge handoff at the bureau desk.</div>
+        <div class="foot"><span>A4 · 14mm margin</span><span class="open">open ↗</span></div>
+      </a>
+    </div>
+
+    <footer>
+      <div class="footer-grid">
+        <div>PA·co · Penguin Alley Company</div>
+        <div class="center">Bureau of Crossings · Arc Testnet · chain_id 5042002</div>
+        <div class="right">filed 2026-04-23 · Vol. I · No. 1</div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

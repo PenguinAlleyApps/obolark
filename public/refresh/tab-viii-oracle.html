@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab VIII · Oracle Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB VIII — ORACLE (ceremonial query surface).
+
+       Audit-driven fixes:
+       · Radial gradient moved out of .oracle-surface chrome into a
+         dedicated .fx-atmosphere layer behind the panel (still diegetic,
+         but no longer inside product chrome)
+       · .oracle-surface is flat var(--bone) with an ink border rule
+       · .oracle-mandorla pulse: ease-in-out at 1800ms (was 900ms ease-out
+         infinite; read as bounce)
+       · .oracle-utterance body renders in var(--ink) (bone-ivory);
+         signal-gold reserved for the blinking caret only
+       · SUMMON button: mono 16px (Cinzel at 14px was illegible on obsidian)
+       · Hover ember-particles removed; hover state = border + bg swap only
+       · Metrics row gated to Tab I elsewhere; not rendered here
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    /* ─── FX atmosphere layer (gradient lives HERE, not in .oracle-surface) ─── */
+    .fx-atmosphere {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 45% at 50% 45%,
+          color-mix(in oklab, var(--ember) 12%, transparent) 0%,
+          transparent 70%);
+      opacity: 0.8;
+    }
+    .fx-atmosphere[data-mode="off"]  { opacity: 0; }
+    .fx-atmosphere[data-mode="soft"] { opacity: 0.45; }
+    .fx-atmosphere[data-mode="cinematic"] { opacity: 1; }
+
+    /* ─── Panel ─── */
+    .panel {
+      background: var(--bone);      /* flat — audit fix */
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+      z-index: 1;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 24px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+
+    /* ─── Oracle surface (flat, no gradients) ─── */
+    .oracle-surface {
+      background: var(--bone);              /* flat */
+      border: 1px solid var(--grid-line);
+      border-left: 2px solid var(--ember);
+      padding: 40px 32px 32px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto auto;
+      column-gap: 32px;
+      row-gap: 20px;
+      position: relative;
+    }
+
+    /* Mandorla — the almond-shaped halo */
+    .mandorla {
+      grid-row: 1 / span 3;
+      width: 140px; height: 200px;
+      display: grid; place-items: center;
+      position: relative;
+    }
+    .mandorla svg { width: 100%; height: 100%; overflow: visible; color: var(--ember); }
+
+    .mandorla .shape {
+      fill: none; stroke: currentColor; stroke-width: 1.2;
+      animation: mandorla-pulse 1800ms ease-in-out infinite;  /* audit fix */
+    }
+    @keyframes mandorla-pulse {
+      0%, 100% { opacity: 0.45; transform: scale(0.98); }
+      50%      { opacity: 1;    transform: scale(1.02); }
+    }
+    .mandorla .inner { animation-delay: -0.6s; opacity: 0.7; }
+    .mandorla .kernel {
+      fill: currentColor; stroke: none;
+      animation: mandorla-pulse 2400ms ease-in-out infinite;
+    }
+    .mandorla .ring {
+      fill: none; stroke: currentColor; stroke-width: 0.8;
+      stroke-dasharray: 2 4;
+      transform-origin: center; transform-box: fill-box;
+      animation: mand-rotate 22s linear infinite;
+      opacity: 0.6;
+    }
+    @keyframes mand-rotate { to { transform: rotate(360deg); } }
+
+    /* Query block */
+    .q-block {
+      grid-column: 2;
+    }
+    .q-prompt {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .q-text {
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+      /* NO text-shadow — audit fix */
+    }
+    .q-text .quote { color: var(--pale-brass); margin: 0 4px; }
+
+    /* Utterance block */
+    .u-block {
+      grid-column: 2;
+      padding-top: 18px;
+      border-top: 1px dashed var(--grid-line);
+    }
+    .u-prompt {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .u-prompt .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+    .u-prompt .led[data-state="signal"] {
+      background: var(--signal); box-shadow: 0 0 6px var(--signal);
+    }
+
+    .oracle-utterance {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--ink);                    /* audit fix: ink, not signal */
+      min-height: 82px;
+      letter-spacing: 0.005em;
+      text-wrap: pretty;
+    }
+    .oracle-utterance::after {
+      content: '▍';
+      margin-left: 2px;
+      color: var(--signal);                 /* caret is the only signal-gold */
+      animation: led-blink 1.1s steps(2, end) infinite;
+      font-style: normal;
+    }
+    .oracle-utterance[data-state="idle"]::after { opacity: 0.4; }
+
+    /* Summon row */
+    .summon-row {
+      grid-column: 2;
+      padding-top: 18px;
+      border-top: 1px dashed var(--grid-line);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .oracle-summon {
+      font-family: var(--font-mono);        /* audit fix: mono for SUMMON */
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 11px 22px 10px;
+      background: transparent;
+      color: var(--ember);
+      border: 1px solid var(--ember);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color 180ms ease-out, background 180ms ease-out, border-color 180ms ease-out;
+      /* no particles on hover — audit fix */
+    }
+    .oracle-summon:hover {
+      color: var(--bone);
+      background: var(--ember);
+      border-color: var(--ember);
+    }
+    .oracle-summon:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--signal);
+    }
+    .oracle-summon[data-state="summoning"] {
+      color: var(--signal);
+      border-color: var(--signal);
+      border-style: dashed;
+      background: transparent;
+      pointer-events: none;
+    }
+    .oracle-summon[data-state="settled"] {
+      color: var(--bone);
+      background: var(--signal);
+      border-color: var(--signal);
+    }
+
+    .summon-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .summon-meta .cost { color: var(--pale-brass); }
+    .summon-meta .sep  { color: var(--brand-rule); margin: 0 8px; }
+
+    /* Previous consultations strip */
+    .history {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grid-line);
+    }
+    .history-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .history-grid {
+      display: grid;
+      grid-template-columns:
+        130px  /* when */
+        1fr    /* question */
+        90px   /* cost */
+        130px; /* hash */
+      column-gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .history-row { display: contents; }
+    .history-row > .cell {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--grid-line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex; align-items: center;
+    }
+    .history-row .when { color: var(--muted); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; }
+    .history-row .q { color: var(--ink); white-space: normal; font-style: italic; font-family: var(--font-display); font-size: 13px; }
+    .history-row .cost { color: var(--pale-brass); justify-content: flex-end; }
+    .history-row .cost .unit { color: var(--muted); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px; }
+    .history-row .hash a { color: var(--pale-brass); text-decoration: none; letter-spacing: 0.02em; }
+    .history-row .hash a:hover { color: var(--signal); text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .oracle-surface { grid-template-columns: 1fr; }
+      .mandorla { grid-row: auto; grid-column: 1; justify-self: center; }
+      .q-block, .u-block, .summon-row { grid-column: 1; }
+      .history-grid { grid-template-columns: 1fr; }
+      .history-row > .cell { border-bottom: none; padding: 3px 0; }
+      .history-row > .cell.q { padding-top: 8px; border-top: 1px dashed var(--grid-line); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-led, .u-prompt .led,
+      .mandorla .shape, .mandorla .kernel, .mandorla .ring,
+      .oracle-utterance::after {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "atmosphere": "cinematic",
+      "mandorlaSpeed": 1800,
+      "typeSpeed": 28,
+      "autoSummon": false
+    }/*EDITMODE-END*/;
+
+    const ARCSCAN = 'https://testnet.arcscan.app';
+
+    const CONSULTATIONS = [
+      { q: 'which tollkeeper will bridge the memory-to-verse chain tonight?', a: 'Mnemosyne speaks through Calliope; the ferry lies quiet at the ninth hour. Charon waits.', cost: 0.014, hash: '0xa31d5c9fe18b2704c091' },
+      { q: 'why did the phantom quote void on block 4218742?', a: 'Thanatos closed the final window early. A drip fell outside the register — the signature had no witness.', cost: 0.012, hash: '0x6f2e8b041a9d7c5e3f44' },
+      { q: 'whose gaze was turned away when argus blinked?', a: 'None of the hundred. In the mosaic of watching, no eye is ever all closed. You saw a shadow, not an absence.', cost: 0.018, hash: '0xcbe4711d6a092f4b8e21' },
+    ];
+
+    const ARCHIVE = [
+      { at: '2026-04-23 14:02', q: 'which chain runs the oracle-reputation cycle?',          cost: 0.018, hash: '0xcbe4711d6a092f4b8e21' },
+      { at: '2026-04-23 11:48', q: 'why did the phantom quote void on block 4218742?',       cost: 0.012, hash: '0x6f2e8b041a9d7c5e3f44' },
+      { at: '2026-04-23 09:31', q: 'what became of the orchestration that never settled?',   cost: 0.022, hash: '0x9a4de2f8c7013b56e0d2' },
+      { at: '2026-04-22 23:17', q: 'which warden holds the highest reputation at dusk?',     cost: 0.016, hash: '0x1b8eaf340712ce95d7af' },
+      { at: '2026-04-22 18:05', q: 'who crossed the styx without paying?',                   cost: 0.028, hash: '0x3f027c1a9eb4580d6c13' },
+    ];
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 7 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function Mandorla({ speed }) {
+      const pulseDur = `${speed}ms`;
+      return (
+        <div className="mandorla">
+          <svg viewBox="-80 -110 160 220" aria-hidden>
+            <circle className="ring" r="90" />
+            <path
+              className="shape"
+              d="M 0 -95 C 50 -70, 55 70, 0 95 C -55 70, -50 -70, 0 -95 Z"
+              style={{ animationDuration: pulseDur }}
+            />
+            <path
+              className="shape inner"
+              d="M 0 -60 C 30 -44, 32 44, 0 60 C -32 44, -30 -44, 0 -60 Z"
+              style={{ animationDuration: `${Math.round(speed * 1.33)}ms` }}
+            />
+            <circle className="kernel" r="5" style={{ animationDuration: `${Math.round(speed * 1.33)}ms` }} />
+          </svg>
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [question] = useState(CONSULTATIONS[0].q);
+      const [answer, setAnswer] = useState('');
+      const [state, setState] = useState('idle'); // idle | summoning | settled
+      const idxRef = useRef(0);
+      const timerRef = useRef(null);
+
+      function summon() {
+        if (state === 'summoning') return;
+        setState('summoning');
+        setAnswer('');
+        const full = CONSULTATIONS[idxRef.current % CONSULTATIONS.length].a;
+        let i = 0;
+        const step = () => {
+          i += 1;
+          setAnswer(full.slice(0, i));
+          if (i < full.length) {
+            timerRef.current = setTimeout(step, t.typeSpeed);
+          } else {
+            setState('settled');
+            idxRef.current += 1;
+            setTimeout(() => setState('idle'), 2600);
+          }
+        };
+        timerRef.current = setTimeout(step, 500);
+      }
+
+      useEffect(() => {
+        if (!t.autoSummon) return;
+        const id = setInterval(() => {
+          if (state === 'idle') summon();
+        }, 12000);
+        return () => clearInterval(id);
+      }, [t.autoSummon, state]);
+
+      useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+      return (
+        <div className="page">
+          <div className="fx-atmosphere" data-mode={t.atmosphere} aria-hidden />
+
+          <MiniMast />
+          <TabStrip />
+
+          <section className="panel">
+            <div className="panel-header">
+              <span>[ VIII · ORACLE · ceremonial query surface ]</span>
+              <span>single-call · {CONSULTATIONS[0].cost.toFixed(3)} USDC · x402</span>
+            </div>
+
+            <div className="oracle-surface">
+              <Mandorla speed={t.mandorlaSpeed} />
+
+              <div className="q-block">
+                <div className="q-prompt">the question laid at the altar</div>
+                <div className="q-text">
+                  <span className="quote">“</span>{question}<span className="quote">”</span>
+                </div>
+              </div>
+
+              <div className="u-block">
+                <div className="u-prompt">
+                  <span className="led" data-state={state === 'summoning' ? 'signal' : 'ok'} aria-hidden />
+                  the utterance · state {state}
+                </div>
+                <div className="oracle-utterance" data-state={state}>
+                  {answer || (state === 'idle' ? 'the pythia waits. place an obol.' : '')}
+                </div>
+              </div>
+
+              <div className="summon-row">
+                <button
+                  type="button"
+                  className="oracle-summon"
+                  data-state={state}
+                  onClick={summon}
+                  aria-busy={state === 'summoning'}
+                >
+                  {state === 'summoning' ? '··· summoning' : state === 'settled' ? '✓ settled' : '◆ summon'}
+                </button>
+                <span className="summon-meta">
+                  cost · <span className="cost">0.014 USDC</span>
+                  <span className="sep">·</span>
+                  gas · <span style={{ color: 'var(--ink)' }}>~0.0003 USDC</span>
+                  <span className="sep">·</span>
+                  channel · <span style={{ color: 'var(--ink)' }}>x402</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="history">
+              <div className="history-title">[ PREVIOUS CONSULTATIONS · {ARCHIVE.length} on record ]</div>
+              <div className="history-grid" role="table">
+                {ARCHIVE.map((c) => (
+                  <div className="history-row" key={c.hash}>
+                    <span className="cell when">{c.at}</span>
+                    <span className="cell q">“{c.q}”</span>
+                    <span className="cell cost">{c.cost.toFixed(3)}<span className="unit">USDC</span></span>
+                    <span className="cell hash">
+                      <a href={`${ARCSCAN}/tx/${c.hash}`} target="_blank" rel="noreferrer">
+                        {c.hash.slice(0, 10)}…{c.hash.slice(-6)} ↗
+                      </a>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Atmosphere" />
+            <TweakRadio
+              label="FX depth"
+              value={t.atmosphere}
+              options={['off', 'soft', 'cinematic']}
+              onChange={(v) => setTweak('atmosphere', v)}
+            />
+
+            <TweakSection label="Mandorla" />
+            <TweakSlider
+              label="Pulse period"
+              value={t.mandorlaSpeed}
+              min={1200} max={3600} step={100} unit="ms"
+              onChange={(v) => setTweak('mandorlaSpeed', v)}
+            />
+
+            <TweakSection label="Utterance" />
+            <TweakSlider
+              label="Type speed"
+              value={t.typeSpeed}
+              min={12} max={80} step={2} unit="ms/ch"
+              onChange={(v) => setTweak('typeSpeed', v)}
+            />
+            <TweakToggle
+              label="Auto-summon demo"
+              value={t.autoSummon}
+              onChange={(v) => setTweak('autoSummon', v)}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

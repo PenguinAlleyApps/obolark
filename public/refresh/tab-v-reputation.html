@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab V · Reputation Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB V — REPUTATION (ERC-8004 Crossing Scores).
+
+       Audit-driven fixes:
+       · Registry contract address surfaced in panel-header metadata slot
+         (truncAddr + arcscan link in --pale-brass)
+       · Cadence unified with Tab III: "auto-refresh 15s"
+       · Score gauges use moss (ok) / pale-brass (mid) / oxide (low);
+         signal-gold reserved for score-change flash only
+       · Dashed bottom rules per warden row; tabular-nums throughout
+       · No gradients in chrome; no text-shadows; 2px max radius
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    .panel {
+      background: var(--bone);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+    .panel-header .right {
+      display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .panel-header .cadence {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .panel-header .cadence .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    /* ─── Registry header card (in-panel, not masthead) ─── */
+    .registry-card {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 32px;
+      align-items: baseline;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      background: var(--bone-dark);
+      border: 1px solid var(--grid-line);
+      border-left: 2px solid var(--pale-brass);
+    }
+    .registry-card .k {
+      font-family: var(--font-mono); font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--muted); display: block; margin-bottom: 4px;
+    }
+    .registry-card .addr {
+      font-family: var(--font-mono); font-size: 13px;
+      color: var(--pale-brass); text-decoration: none;
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .registry-card .addr:hover {
+      color: var(--signal); text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .registry-card .v {
+      font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    .registry-card .v.brass { color: var(--pale-brass); }
+
+    /* ─── Scores table ─── */
+    .scores-grid {
+      display: grid;
+      grid-template-columns:
+        180px   /* warden */
+        70px    /* score */
+        1fr     /* gauge */
+        90px    /* crossings */
+        90px    /* settled */
+        110px   /* Δ 24h */
+        90px;   /* tier */
+      column-gap: 16px;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+    .scores-head { display: contents; }
+    .scores-head > span {
+      padding: 8px 0;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--grid-line);
+      white-space: nowrap;
+    }
+    .scores-head > span.num { text-align: right; }
+
+    .scores-row { display: contents; }
+    .scores-row > .cell {
+      padding: 12px 0;
+      border-bottom: 1px dashed var(--grid-line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+    }
+    .scores-row > .cell.num { justify-content: flex-end; }
+    .scores-row[data-flash="true"] > .cell {
+      animation: ledger-pulse 600ms ease-out;
+    }
+    @keyframes ledger-pulse {
+      0%   { background-color: color-mix(in oklab, var(--signal) 28%, transparent); }
+      100% { background-color: transparent; }
+    }
+
+    .c-warden {
+      display: flex; align-items: baseline; gap: 8px;
+      min-width: 0;
+    }
+    .c-warden .codename {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 15px; letter-spacing: 0.015em;
+      color: var(--ink);
+    }
+    .c-warden .paco {
+      font-family: var(--font-mono); font-size: 9.5px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .c-score { color: var(--ink); font-weight: 500; font-size: 14px; }
+
+    .gauge {
+      width: 100%; height: 6px;
+      background: var(--bone-dark);
+      border: 1px solid var(--grid-line);
+      position: relative;
+      overflow: hidden;
+    }
+    .gauge .fill {
+      position: absolute; inset: 0 auto 0 0;
+      background: var(--moss);
+      transition: width 400ms ease-out;
+    }
+    .gauge .fill[data-tier="high"] { background: var(--moss); }
+    .gauge .fill[data-tier="mid"]  { background: var(--pale-brass); }
+    .gauge .fill[data-tier="low"]  { background: var(--oxide); }
+
+    .c-crossings, .c-settled { color: var(--ink); }
+    .c-settled .unit {
+      color: var(--muted); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      margin-left: 4px;
+    }
+
+    .c-delta { justify-content: flex-end; }
+    .c-delta .v { font-weight: 500; }
+    .c-delta .v[data-dir="up"]    { color: var(--moss); }
+    .c-delta .v[data-dir="down"]  { color: var(--oxide); }
+    .c-delta .v[data-dir="flat"]  { color: var(--muted); }
+    .c-delta .v .arrow { margin-right: 4px; font-family: var(--font-mono); }
+
+    .c-tier {
+      justify-content: flex-start;
+    }
+    .tier-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px 2px;
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tier-chip[data-tier="high"] { color: var(--moss); border-color: var(--moss); }
+    .tier-chip[data-tier="mid"]  { color: var(--pale-brass); border-color: var(--pale-brass); }
+    .tier-chip[data-tier="low"]  { color: var(--oxide); border-color: var(--oxide); }
+
+    /* ─── Summary strip ─── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grid-line);
+    }
+    .summary .m { border-left: 2px solid var(--ink); padding-left: 14px; }
+    .summary .k {
+      font-family: var(--font-mono); font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+    }
+    .summary .v {
+      font-family: var(--font-mono); font-size: 28px; font-weight: 700;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+      line-height: 1; margin-top: 4px; letter-spacing: -0.01em;
+    }
+    .summary .v[data-role="signal"] { color: var(--signal); }
+    .summary .v[data-role="brass"]  { color: var(--pale-brass); }
+    .summary .v[data-role="moss"]   { color: var(--moss); }
+    .summary .sub {
+      font-family: var(--font-mono); font-size: 9.5px;
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-top: 6px;
+    }
+
+    @media (max-width: 1100px) {
+      .scores-grid { grid-template-columns: 150px 60px 1fr 80px 110px 90px; }
+      .scores-head > span:nth-child(5), .scores-row > .cell:nth-child(5) { display: none; }
+      .registry-card { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 760px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .status-led, .panel-header .cadence .led { animation: none !important; }
+      .scores-row[data-flash="true"] > .cell { animation: none !important; }
+      .gauge .fill { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "cadenceMs": 15000,
+      "liveFeed": true,
+      "sortBy": "score",
+      "showGauge": true,
+      "showDelta": true
+    }/*EDITMODE-END*/;
+
+    const ARCSCAN = 'https://testnet.arcscan.app';
+    const REG_ADDR = '0x8004cafe71a9b3d2e5f0983c421b772d49abc9f1';
+    const REG_BLOCK = 4201442;
+
+    const WARDENS = [
+      { code: 'RADAR',    codename: 'ORACLE',    score: 0.94, crossings: 1288, settled: 412.39, delta:  0.012 },
+      { code: 'PIXEL',    codename: 'DAEDALUS',  score: 0.91, crossings:  904, settled: 267.02, delta:  0.004 },
+      { code: 'SENTINEL', codename: 'CERBERUS',  score: 0.97, crossings: 2142, settled: 583.14, delta:  0.008 },
+      { code: 'PHANTOM',  codename: 'THANATOS',  score: 0.72, crossings:  418, settled: 145.22, delta: -0.018 },
+      { code: 'ARGUS',    codename: 'ARGUS',     score: 0.88, crossings: 1104, settled: 344.60, delta:  0.002 },
+      { code: 'FERRY',    codename: 'CHARON',    score: 0.81, crossings:  707, settled: 220.77, delta: -0.006 },
+      { code: 'ASTRA',    codename: 'URANIA',    score: 0.78, crossings:  566, settled: 188.14, delta:  0.000 },
+      { code: 'LEXICON',  codename: 'MNEMOSYNE', score: 0.86, crossings:  822, settled: 301.88, delta:  0.014 },
+      { code: 'VERSE',    codename: 'CALLIOPE',  score: 0.69, crossings:  298, settled:  94.51, delta: -0.024 },
+    ];
+
+    function tierFor(s) {
+      if (s >= 0.85) return 'high';
+      if (s >= 0.72) return 'mid';
+      return 'low';
+    }
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 4 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function DeltaCell({ d }) {
+      const dir = d > 0.0005 ? 'up' : d < -0.0005 ? 'down' : 'flat';
+      const arrow = dir === 'up' ? '↑' : dir === 'down' ? '↓' : '·';
+      const sign = d > 0 ? '+' : d < 0 ? '' : '±';
+      return (
+        <span className="v" data-dir={dir}>
+          <span className="arrow">{arrow}</span>
+          {sign}{d.toFixed(3)}
+        </span>
+      );
+    }
+
+    function ScoresTable({ t, flashId }) {
+      const sorted = useMemo(() => {
+        const copy = [...WARDENS];
+        if (t.sortBy === 'score')     copy.sort((a, b) => b.score - a.score);
+        if (t.sortBy === 'crossings') copy.sort((a, b) => b.crossings - a.crossings);
+        if (t.sortBy === 'settled')   copy.sort((a, b) => b.settled - a.settled);
+        if (t.sortBy === 'delta')     copy.sort((a, b) => b.delta - a.delta);
+        return copy;
+      }, [t.sortBy]);
+
+      return (
+        <div className="scores-grid" role="table" aria-label="ERC-8004 Crossing Scores">
+          <div className="scores-head" role="row">
+            <span role="columnheader">Warden</span>
+            <span role="columnheader" className="num">Score</span>
+            <span role="columnheader">Gauge</span>
+            <span role="columnheader" className="num">Crossings</span>
+            <span role="columnheader" className="num">Settled</span>
+            <span role="columnheader" className="num">Δ 24h</span>
+            <span role="columnheader">Tier</span>
+          </div>
+          {sorted.map(w => {
+            const tier = tierFor(w.score);
+            return (
+              <div className="scores-row" key={w.code} data-flash={flashId === w.code}>
+                <span className="cell c-warden">
+                  <span className="codename">{w.codename}</span>
+                  <span className="paco">· {w.code}</span>
+                </span>
+                <span className="cell c-score num">{w.score.toFixed(2)}</span>
+                <span className="cell">
+                  {t.showGauge ? (
+                    <span className="gauge">
+                      <span className="fill" data-tier={tier} style={{ width: `${Math.round(w.score * 100)}%` }} />
+                    </span>
+                  ) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                </span>
+                <span className="cell c-crossings num">{w.crossings.toLocaleString()}</span>
+                <span className="cell c-settled num">
+                  {w.settled.toFixed(2)}<span className="unit">USDC</span>
+                </span>
+                <span className="cell c-delta num">
+                  {t.showDelta ? <DeltaCell d={w.delta} /> : <span style={{ color: 'var(--muted)' }}>—</span>}
+                </span>
+                <span className="cell c-tier">
+                  <span className="tier-chip" data-tier={tier}>{tier}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [flashId, setFlashId] = useState(null);
+
+      useEffect(() => {
+        if (!t.liveFeed) return;
+        const id = setInterval(() => {
+          const pick = WARDENS[Math.floor(Math.random() * WARDENS.length)];
+          setFlashId(pick.code);
+          setTimeout(() => setFlashId(null), 600);
+        }, t.cadenceMs);
+        return () => clearInterval(id);
+      }, [t.liveFeed, t.cadenceMs]);
+
+      const totalCrossings = WARDENS.reduce((s, w) => s + w.crossings, 0);
+      const avgScore = WARDENS.reduce((s, w) => s + w.score, 0) / WARDENS.length;
+      const totalSettled = WARDENS.reduce((s, w) => s + w.settled, 0);
+      const upCount = WARDENS.filter(w => w.delta > 0).length;
+
+      return (
+        <div className="page">
+          <MiniMast />
+          <TabStrip />
+
+          <section className="panel">
+            <div className="panel-header">
+              <span>[ V · ERC-8004 CROSSING SCORES · {WARDENS.length} WARDENS ]</span>
+              <span className="right">
+                <span className="cadence">
+                  <span className="led" aria-hidden />
+                  auto-refresh {Math.round(t.cadenceMs / 1000)}s
+                </span>
+              </span>
+            </div>
+
+            <div className="registry-card">
+              <div>
+                <span className="k">Reputation registry</span>
+                <a className="addr" href={`${ARCSCAN}/address/${REG_ADDR}`} target="_blank" rel="noreferrer" title="ERC-8004 CrossingScores registry">
+                  {REG_ADDR} ↗
+                </a>
+              </div>
+              <div>
+                <span className="k">Standard</span>
+                <span className="v brass">ERC-8004</span>
+              </div>
+              <div>
+                <span className="k">Deployed</span>
+                <span className="v">#{REG_BLOCK.toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="k">Chain</span>
+                <span className="v">arc-testnet</span>
+              </div>
+            </div>
+
+            <ScoresTable t={t} flashId={flashId} />
+
+            <div className="summary">
+              <div className="m">
+                <div className="k">Wardens scored</div>
+                <div className="v">{WARDENS.length.toString().padStart(2, '0')}</div>
+                <div className="sub">all departments</div>
+              </div>
+              <div className="m">
+                <div className="k">Avg score</div>
+                <div className="v" data-role="brass">{avgScore.toFixed(3)}</div>
+                <div className="sub">moving · erc-8004</div>
+              </div>
+              <div className="m">
+                <div className="k">Total crossings</div>
+                <div className="v" data-role="signal">{totalCrossings.toLocaleString()}</div>
+                <div className="sub">lifetime · settled</div>
+              </div>
+              <div className="m">
+                <div className="k">Δ 24h rising</div>
+                <div className="v" data-role="moss">{upCount.toString().padStart(2, '0')}</div>
+                <div className="sub">of {WARDENS.length} wardens</div>
+              </div>
+            </div>
+          </section>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Feed" />
+            <TweakToggle
+              label="Live feed"
+              value={t.liveFeed}
+              onChange={(v) => setTweak('liveFeed', v)}
+            />
+            <TweakSlider
+              label="Cadence"
+              value={t.cadenceMs}
+              min={2000} max={30000} step={1000} unit="ms"
+              onChange={(v) => setTweak('cadenceMs', v)}
+            />
+
+            <TweakSection label="Table chrome" />
+            <TweakRadio
+              label="Sort by"
+              value={t.sortBy}
+              options={['score', 'crossings', 'settled', 'delta']}
+              onChange={(v) => setTweak('sortBy', v)}
+            />
+            <TweakToggle
+              label="Score gauge"
+              value={t.showGauge}
+              onChange={(v) => setTweak('showGauge', v)}
+            />
+            <TweakToggle
+              label="Δ 24h column"
+              value={t.showDelta}
+              onChange={(v) => setTweak('showDelta', v)}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

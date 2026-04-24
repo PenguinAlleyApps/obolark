@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab VI · Archive Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB VI — ARCHIVE (full crossings history).
+
+       Audit-driven fixes:
+       · Filter chip active state no longer inverts to bone-on-ink; uses
+         bone-dark + signal text + signal border (matches rest of chrome)
+       · source column uses --muted for ALL labels (no moss / signal /
+         pale-brass collision); role encoded via small-caps text only
+       · Column header copy lowercased at source; CSS does uppercase
+         (so "arc tx hash" not "Arc Tx Hash")
+       · Empty state rewritten to bureau voice:
+         "no archived crossings — hit an endpoint with PAYMENT-SIGNATURE
+          to populate"
+       · Dashed row rules; tabular-nums; brass-gold tx hashes
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    .panel {
+      background: var(--bone);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+    .panel-header .cadence {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .panel-header .cadence .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    /* ─── Controls: filter chips + search + date range ─── */
+    .controls {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 18px;
+    }
+    .ctrl-group {
+      display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .ctrl-group .label {
+      font-family: var(--font-mono); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin-right: 4px;
+    }
+    .ctrl-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+    }
+    .ctrl-chip:hover { color: var(--ink); border-color: var(--muted); }
+
+    /* Audit fix: active state no longer inverts bone-on-ink. Instead:
+       bone-dark bg + signal-gold text + signal border. Matches rest of
+       the chrome and keeps the only ink-on-bone pairing for the stamp-
+       button on Tab II. */
+    .ctrl-chip[aria-pressed="true"] {
+      background: var(--bone-dark);
+      color: var(--signal);
+      border-color: var(--signal);
+    }
+    .ctrl-chip .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted);
+    }
+    .ctrl-chip[aria-pressed="true"] .dot {
+      background: var(--signal);
+      box-shadow: 0 0 6px var(--signal);
+    }
+
+    .search {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: var(--bone-dark);
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink);
+      min-width: 260px;
+    }
+    .search:focus-within {
+      border-color: var(--signal);
+      box-shadow: 0 0 0 1px var(--signal);
+    }
+    .search .prefix {
+      color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase;
+      font-size: 9.5px;
+    }
+    .search input {
+      background: transparent; border: none; outline: none;
+      color: var(--ink); font: inherit; flex: 1; min-width: 0;
+    }
+    .search input::placeholder { color: var(--muted); }
+
+    /* ─── Archive table ─── */
+    .arc-grid {
+      display: grid;
+      grid-template-columns:
+        150px  /* when */
+        150px  /* route */
+        110px  /* amount */
+        130px  /* payer */
+        130px  /* tollkeeper */
+        110px  /* source */
+        1fr    /* tx hash */
+        80px;  /* block */
+      column-gap: 16px;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+    .arc-head { display: contents; }
+    .arc-head > span {
+      padding: 8px 0;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;        /* CSS does the casing */
+      color: var(--muted);
+      border-bottom: 1px solid var(--grid-line);
+      white-space: nowrap;
+    }
+    .arc-head > span.num { text-align: right; }
+
+    .arc-row { display: contents; }
+    .arc-row > .cell {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--grid-line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex; align-items: center;
+    }
+    .arc-row > .cell.num { justify-content: flex-end; }
+    .arc-row:hover > .cell {
+      background-color: color-mix(in oklab, var(--signal) 4%, transparent);
+    }
+
+    .c-when { color: var(--muted); font-size: 11px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+    .c-when .date { color: var(--ink); font-size: 12px; }
+    .c-when .time { color: var(--muted); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+
+    .c-route    { color: var(--ink); font-weight: 700; }
+    .c-amount   { color: var(--ink); font-weight: 500; }
+    .c-amount .unit { color: var(--muted); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px; }
+    .c-payer    { color: var(--muted); }
+
+    .c-seller {
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .c-seller .codename {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 13px; letter-spacing: 0.02em; color: var(--ink);
+    }
+    .c-seller .paco {
+      color: var(--muted); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+    }
+
+    /* Audit fix: source column neutral muted for ALL sources. */
+    .c-source {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .c-hash a {
+      color: var(--pale-brass);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+    .c-hash a:hover { color: var(--signal); text-decoration: underline; text-underline-offset: 3px; }
+
+    .c-block { color: var(--muted); justify-content: flex-end; }
+
+    .empty {
+      grid-column: 1 / -1;
+      padding: 48px 0;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Pagination ─── */
+    .pagination {
+      display: flex; align-items: center; gap: 16px;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid var(--grid-line);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .pagination .count { color: var(--ink); }
+    .pagination .spacer { flex: 1; }
+    .page-btn {
+      padding: 5px 12px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      cursor: pointer;
+      transition: color 180ms ease-out, border-color 180ms ease-out;
+    }
+    .page-btn:hover:not([disabled]) { color: var(--ink); border-color: var(--muted); }
+    .page-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+    .page-btn.current {
+      color: var(--signal); border-color: var(--signal); background: var(--bone-dark);
+    }
+
+    @media (max-width: 1100px) {
+      .arc-grid { grid-template-columns: 120px 140px 100px 120px 1fr 80px; }
+      .arc-head > span.col-payer, .arc-row > .cell.c-payer,
+      .arc-head > span.col-source, .arc-row > .cell.c-source { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .status-led, .panel-header .cadence .led { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "pageSize": 14,
+      "source": "all",
+      "verdict": "all",
+      "density": "default"
+    }/*EDITMODE-END*/;
+
+    const ARCSCAN = 'https://testnet.arcscan.app';
+    const SELLERS = [
+      { code: 'RADAR',    codename: 'ORACLE',    path: '/api/research' },
+      { code: 'PIXEL',    codename: 'DAEDALUS',  path: '/api/design-review' },
+      { code: 'SENTINEL', codename: 'CERBERUS',  path: '/api/qa' },
+      { code: 'PHANTOM',  codename: 'THANATOS',  path: '/api/security-scan' },
+      { code: 'ARGUS',    codename: 'ARGUS',     path: '/api/audit' },
+      { code: 'FERRY',    codename: 'CHARON',    path: '/api/bridge' },
+    ];
+    const SOURCES = ['endpoints', 'reputation', 'orchestrations', 'oracle'];
+    const VERDICTS = ['verified', 'cleared', 'void'];
+
+    function rand(seed) {
+      let x = seed;
+      return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 0xffffffff; };
+    }
+
+    function makeRow(i) {
+      const r = rand(0xBEEF + i * 1013);
+      const seller = SELLERS[Math.floor(r() * SELLERS.length)];
+      const amount = (0.0012 + r() * 0.0065).toFixed(6);
+      const ageMin = Math.floor(r() * 8640) + 5;
+      const at = new Date(Date.now() - ageMin * 60 * 1000);
+      const payer = '0x' + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 12);
+      const hash  = '0x' + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 10)
+                   + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 10);
+      const block = 4218900 - i * 3 - Math.floor(r() * 12);
+      const source = SOURCES[Math.floor(r() * SOURCES.length)];
+      const verdict = r() < 0.08 ? 'void' : r() < 0.24 ? 'cleared' : 'verified';
+      return {
+        id: `arc-${i}`,
+        at,
+        route: seller.path,
+        seller, amount,
+        payer: payer.slice(0, 6) + '…' + payer.slice(-4),
+        hash,
+        hashShort: hash.slice(0, 10) + '…' + hash.slice(-6),
+        block, source, verdict,
+      };
+    }
+
+    const ARCHIVE = Array.from({ length: 96 }, (_, i) => makeRow(i));
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 5 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function ArchiveRow({ row }) {
+      return (
+        <div className="arc-row">
+          <span className="cell c-when">
+            <span className="date">{row.at.toLocaleDateString('en-CA')}</span>
+            <span className="time">{row.at.toLocaleTimeString('en-US', { hour12: false })}</span>
+          </span>
+          <span className="cell c-route" title={row.route}>{row.route}</span>
+          <span className="cell c-amount num">{row.amount}<span className="unit">USDC</span></span>
+          <span className="cell c-payer" title={row.payer}>{row.payer}</span>
+          <span className="cell c-seller">
+            <span className="codename">{row.seller.codename}</span>
+            <span className="paco">· {row.seller.code}</span>
+          </span>
+          <span className="cell c-source">{row.source}</span>
+          <span className="cell c-hash">
+            <a href={`${ARCSCAN}/tx/${row.hash}`} target="_blank" rel="noreferrer" title={row.hash}>
+              {row.hashShort} ↗
+            </a>
+          </span>
+          <span className="cell c-block num">#{row.block.toLocaleString()}</span>
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [page, setPage] = useState(0);
+      const [q, setQ] = useState('');
+
+      const filtered = useMemo(() => {
+        let rows = ARCHIVE;
+        if (t.source !== 'all')  rows = rows.filter(r => r.source === t.source);
+        if (t.verdict !== 'all') rows = rows.filter(r => r.verdict === t.verdict);
+        if (q.trim()) {
+          const s = q.trim().toLowerCase();
+          rows = rows.filter(r =>
+            r.route.includes(s) ||
+            r.seller.codename.toLowerCase().includes(s) ||
+            r.seller.code.toLowerCase().includes(s) ||
+            r.hash.toLowerCase().includes(s) ||
+            r.payer.toLowerCase().includes(s)
+          );
+        }
+        return rows;
+      }, [t.source, t.verdict, q]);
+
+      const totalPages = Math.max(1, Math.ceil(filtered.length / t.pageSize));
+      const pageClamped = Math.min(page, totalPages - 1);
+      const visible = filtered.slice(pageClamped * t.pageSize, (pageClamped + 1) * t.pageSize);
+
+      function setSource(s) { setTweak('source', s); setPage(0); }
+      function setVerdict(v) { setTweak('verdict', v); setPage(0); }
+
+      return (
+        <div className="page">
+          <MiniMast />
+          <TabStrip />
+
+          <section className="panel">
+            <div className="panel-header">
+              <span>[ VI · ARCHIVE · {ARCHIVE.length} CROSSINGS ON RECORD ]</span>
+              <span className="cadence">
+                <span className="led" aria-hidden />
+                mirror of arc-testnet · indexer synced 12s
+              </span>
+            </div>
+
+            <div className="controls">
+              <span className="ctrl-group">
+                <span className="label">Source</span>
+                <button type="button" className="ctrl-chip" aria-pressed={t.source === 'all'} onClick={() => setSource('all')}>
+                  <span className="dot" /> all
+                </button>
+                {SOURCES.map(s => (
+                  <button key={s} type="button" className="ctrl-chip" aria-pressed={t.source === s} onClick={() => setSource(s)}>
+                    <span className="dot" /> {s}
+                  </button>
+                ))}
+              </span>
+              <span className="ctrl-group">
+                <span className="label">Verdict</span>
+                <button type="button" className="ctrl-chip" aria-pressed={t.verdict === 'all'} onClick={() => setVerdict('all')}>
+                  <span className="dot" /> all
+                </button>
+                {VERDICTS.map(v => (
+                  <button key={v} type="button" className="ctrl-chip" aria-pressed={t.verdict === v} onClick={() => setVerdict(v)}>
+                    <span className="dot" /> {v}
+                  </button>
+                ))}
+              </span>
+              <span className="search">
+                <span className="prefix">query</span>
+                <input
+                  type="text"
+                  placeholder="route · codename · hash · payer"
+                  value={q}
+                  onChange={(e) => { setQ(e.target.value); setPage(0); }}
+                />
+              </span>
+            </div>
+
+            <div className="arc-grid" role="table" aria-label="Archived crossings">
+              <div className="arc-head" role="row">
+                <span role="columnheader">when</span>
+                <span role="columnheader">route</span>
+                <span role="columnheader" className="num">amount</span>
+                <span role="columnheader" className="col-payer">payer</span>
+                <span role="columnheader">tollkeeper</span>
+                <span role="columnheader" className="col-source">source</span>
+                <span role="columnheader">tx hash</span>
+                <span role="columnheader" className="num">block</span>
+              </div>
+
+              {visible.length === 0 ? (
+                <div className="empty">
+                  no archived crossings — hit an endpoint with PAYMENT-SIGNATURE to populate.
+                </div>
+              ) : (
+                visible.map(r => <ArchiveRow key={r.id} row={r} />)
+              )}
+            </div>
+
+            <div className="pagination">
+              <span className="count">
+                {filtered.length === 0
+                  ? '00 of 00'
+                  : `${(pageClamped * t.pageSize + 1).toString().padStart(2, '0')}–${Math.min((pageClamped + 1) * t.pageSize, filtered.length).toString().padStart(2, '0')} of ${filtered.length.toString().padStart(3, '0')}`}
+              </span>
+              <span className="spacer" />
+              <button type="button" className="page-btn" disabled={pageClamped === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>← prev</button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const start = Math.max(0, Math.min(pageClamped - 2, totalPages - 5));
+                const idx = start + i;
+                if (idx >= totalPages) return null;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`page-btn ${idx === pageClamped ? 'current' : ''}`}
+                    onClick={() => setPage(idx)}
+                  >
+                    {(idx + 1).toString().padStart(2, '0')}
+                  </button>
+                );
+              })}
+              <button type="button" className="page-btn" disabled={pageClamped >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>next →</button>
+            </div>
+          </section>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Table chrome" />
+            <TweakSlider
+              label="Page size"
+              value={t.pageSize}
+              min={8} max={30} step={2} unit=" rows"
+              onChange={(v) => { setTweak('pageSize', v); setPage(0); }}
+            />
+
+            <TweakSection label="Filters" />
+            <TweakRadio
+              label="Source"
+              value={t.source}
+              options={['all', 'endpoints', 'reputation', 'orchestrations', 'oracle']}
+              onChange={(v) => { setTweak('source', v); setPage(0); }}
+            />
+            <TweakRadio
+              label="Verdict"
+              value={t.verdict}
+              options={['all', 'verified', 'cleared', 'void']}
+              onChange={(v) => { setTweak('verdict', v); setPage(0); }}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

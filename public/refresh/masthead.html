@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Bureau Ledger · Masthead Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       MASTHEAD REFRESH — Tab I hero chrome only.
+       Fixes from audit:
+       · textShadow on H1 removed (DS §Shadows: LED halo only)
+       · LED in folio promoted from `signal` → `ok` (moss) to reclaim
+         signal as settlement-flash token (<1% budget)
+       · Hierarchy: OBOLARK dominates (clamp 80–160 via Tweaks)
+         folio recedes to 11px mono, network metadata to 11px mono tnum
+       · Folio stamp now single top-left block with Vol · No · Date triad
+       · Masthead double-rule (3px top ink + 1px hairline) matches spec
+       ══════════════════════════════════════════════════════════════════ */
+
+    :root {
+      --tw-mast-size: 120px;
+      --tw-ember: 0.45;
+    }
+
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bone);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* Page shell — just enough context to show the masthead in situ */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Masthead container ─── */
+    .mast {
+      position: relative;
+      background: var(--brand-bg);
+      color: var(--brand-ink);
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      padding: 24px 32px 20px;
+      isolation: isolate;
+    }
+
+    /* Inner secondary rule — bureau broadsheet double-line */
+    .mast::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 7px;
+      border-top: 1px solid var(--brand-rule);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    /* Ember radial wash — lives BEHIND content as atmosphere, not on type.
+       Controlled by --tw-ember (Tweaks). Sits at z-index: 0 under z:1 content. */
+    .mast::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 90% at 18% 60%,
+          color-mix(in oklab, var(--ember) calc(var(--tw-ember) * 22%), transparent) 0%,
+          transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .mast > * { position: relative; z-index: 1; }
+
+    /* ─── Folio row (top meta strip) ─── */
+    .mast-folio {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--brand-rule);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--brand-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .folio-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 6px 12px 5px;
+      color: var(--ink);
+      letter-spacing: 0.22em;
+      font-weight: 500;
+    }
+    .folio-stamp .status-led { margin-right: 2px; }
+    .folio-stamp .sep {
+      color: var(--brand-rule);
+      padding: 0 2px;
+    }
+
+    .folio-side {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 9.5px;
+      letter-spacing: 0.28em;
+    }
+    .folio-side .serial {
+      border: 1px solid var(--brand-rule);
+      padding: 4px 10px 3px;
+      color: var(--ink);
+      letter-spacing: 0.34em;
+    }
+
+    /* ─── Masthead main grid ─── */
+    .mast-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+      gap: 48px;
+      align-items: end;
+    }
+
+    .wordmark-wrap { min-width: 0; }
+
+    /* H1 — OBOLARK. Cinzel 700. NO text-shadow. */
+    .wordmark {
+      margin: 0;
+      font-family: var(--font-mythic);
+      font-weight: 700;
+      font-size: var(--tw-mast-size);
+      line-height: 0.86;
+      letter-spacing: 0.012em;
+      color: var(--brand-accent);
+      white-space: nowrap;
+    }
+    /* Ember dot — optional via Tweaks; default off to match spec */
+    .wordmark .dot {
+      color: var(--brand-dot);
+      opacity: 0;
+      transition: opacity 220ms ease-out;
+    }
+    .wordmark.has-dot .dot { opacity: 1; }
+
+    .tagline {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.2;
+      color: var(--brand-muted);
+      margin-top: 12px;
+      letter-spacing: 0.005em;
+    }
+
+    /* ─── Right column · network metadata ─── */
+    .netmeta {
+      border-left: 1px solid var(--brand-rule);
+      padding-left: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 18px;
+      align-content: end;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .netmeta .k {
+      color: var(--brand-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 9.5px;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .netmeta .v {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .netmeta .v .hash {
+      color: var(--pale-brass);
+    }
+    /* Density modes (Tweak) */
+    .netmeta[data-density="sparse"] { gap: 10px 18px; font-size: 12px; }
+    .netmeta[data-density="sparse"] .k { font-size: 10px; }
+    .netmeta[data-density="dense"]  { gap: 3px 14px; font-size: 10.5px; }
+    .netmeta[data-density="dense"] .k { font-size: 9px; }
+
+    /* ─── Folio positioning variants (Tweak) ─── */
+    .mast[data-folio="top-center"] .mast-folio { justify-content: center; }
+    .mast[data-folio="top-center"] .folio-side { display: none; }
+    .mast[data-folio="bottom-left"] .mast-folio {
+      order: 3;
+      margin: 20px 0 0;
+      padding: 16px 0 0;
+      border-top: 1px solid var(--brand-rule);
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .mast[data-folio="bottom-left"] { display: flex; flex-direction: column; }
+
+    /* ─── Palette variants (Tweak) ─── */
+    .mast[data-palette="obsidian-brass"] .wordmark { color: var(--pale-brass); }
+    .mast[data-palette="obsidian-brass"] { --brand-glow: #C8903833; }
+    .mast[data-palette="obsidian-ember"] .wordmark { color: var(--ember); }
+    .mast[data-palette="obsidian-ember"] { --brand-glow: #F76B2B33; }
+    /* obsidian-primary (default) keeps signal-gold wordmark */
+
+    /* ─── Below-masthead context placeholder ─── */
+    .context {
+      padding: 32px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      border-bottom: 1px dashed var(--grid-line);
+    }
+    .context .dim { color: var(--brand-rule); }
+
+    /* Hide ember radial when subtle/off */
+    body[data-ember="off"] .mast::after { display: none; }
+    body[data-ember="off"] .fx-ember-field { display: none; }
+
+    /* Reduced motion respect */
+    @media (prefers-reduced-motion: reduce) {
+      .wordmark .dot { transition: none; }
+    }
+
+    /* Mobile: stack the grid */
+    @media (max-width: 760px) {
+      .mast-grid { grid-template-columns: 1fr; gap: 24px; }
+      .netmeta { border-left: none; padding-left: 0; border-top: 1px solid var(--brand-rule); padding-top: 16px; }
+      .wordmark { font-size: clamp(56px, 16vw, var(--tw-mast-size)); }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useEffect, useMemo } = React;
+
+    /* Tweak defaults — block MUST be valid JSON for host persistence. */
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "palette": "obsidian-brass",
+      "mastSize": 104,
+      "folio": "top-left",
+      "density": "dense",
+      "ember": "cinematic",
+      "emberDot": true,
+      "ambientFx": true
+    }/*EDITMODE-END*/;
+
+    /* ─── Ambient ember-field (opt-in, matches DS ambient-fx.js contract) ─── */
+    function AmbientFx({ on, intensity }) {
+      useEffect(() => {
+        const body = document.body;
+        if (on) {
+          body.classList.add('fx-atmosphere', 'fx-smoke', 'fx-flicker');
+          body.setAttribute('data-ember', intensity);
+        } else {
+          body.classList.remove('fx-atmosphere', 'fx-smoke', 'fx-flicker');
+          body.setAttribute('data-ember', 'off');
+        }
+        return () => {
+          body.classList.remove('fx-atmosphere', 'fx-smoke', 'fx-flicker');
+        };
+      }, [on, intensity]);
+
+      if (!on || intensity === 'off') return null;
+
+      const count = intensity === 'cinematic' ? 22 : intensity === 'subtle' ? 10 : 16;
+      const embers = useMemo(() => {
+        const arr = [];
+        for (let i = 0; i < count; i++) {
+          arr.push({
+            x: Math.random() * 100,
+            dur: 10 + Math.random() * 14,
+            delay: -Math.random() * 14,
+            size: Math.random() < 0.3 ? 'small' : Math.random() < 0.15 ? 'large' : '',
+          });
+        }
+        return arr;
+      }, [count]);
+
+      return (
+        <div className="fx-ember-field" aria-hidden>
+          {embers.map((e, i) => (
+            <span
+              key={i}
+              className={`fx-ember ${e.size}`}
+              style={{
+                '--x': `${e.x}%`,
+                '--dur': `${e.dur}s`,
+                '--delay': `${e.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    /* ─── Folio stamp ─── */
+    function FolioStamp() {
+      return (
+        <span className="folio-stamp">
+          <span className="status-led" data-state="ok" aria-hidden />
+          Bureau Ledger
+          <span className="sep">·</span>
+          Vol. I
+          <span className="sep">·</span>
+          No. 1
+          <span className="sep">·</span>
+          2026&#8209;04&#8209;23
+        </span>
+      );
+    }
+
+    function FolioSide() {
+      return (
+        <span className="folio-side">
+          <span>Penguin Alley · PA·co</span>
+          <span className="serial">Filed · ARC TESTNET</span>
+        </span>
+      );
+    }
+
+    /* ─── Network metadata column ─── */
+    function NetMeta({ density }) {
+      const rows = [
+        ['network',     <span className="v">Arc Testnet</span>],
+        ['chain_id',    <span className="v">5042002</span>],
+        ['usdc',        <span className="v"><span className="hash">0xa0b8…eb48</span></span>],
+        ['gateway',     <span className="v"><span className="hash">0x0077…8d2a</span></span>],
+        ['reputation',  <span className="v"><span className="hash">0x8004…c9f1</span></span>],
+        ['deposit',     <span className="v">0.250000 USDC</span>],
+        ['block',       <span className="v">#4,218,903</span>],
+        ['gas',         <span className="v">0.000003</span>],
+      ];
+      // density controls how many rows show
+      const slice =
+        density === 'sparse' ? rows.slice(0, 4)
+        : density === 'dense' ? rows
+        : rows.slice(0, 6);
+      return (
+        <div className="netmeta" data-density={density}>
+          {slice.map(([k, v], i) => (
+            <React.Fragment key={k}>
+              <span className="k">{k}</span>
+              {v}
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+
+    /* ─── The masthead ─── */
+    function Masthead({ t }) {
+      return (
+        <header
+          className="mast"
+          data-palette={t.palette}
+          data-folio={t.folio}
+          style={{ '--tw-mast-size': `${t.mastSize}px` }}
+        >
+          <div className="mast-folio">
+            <FolioStamp />
+            <FolioSide />
+          </div>
+          <div className="mast-grid">
+            <div className="wordmark-wrap">
+              <h1 className={`wordmark ${t.emberDot ? 'has-dot' : ''}`}>
+                OBOLARK<span className="dot" aria-hidden>.</span>
+              </h1>
+              <div className="tagline">The agent economy, priced per crossing.</div>
+            </div>
+            <NetMeta density={t.density} />
+          </div>
+        </header>
+      );
+    }
+
+    /* ─── Context strip below masthead ─── */
+    function ContextStrip() {
+      return (
+        <div className="context">
+          <span className="status-led" data-state="signal" aria-hidden />
+          <span>[ MASTHEAD REFRESH · PROMPT 2 + 3 ]</span>
+          <span className="dim">|</span>
+          <span>tab i · front page · hero chrome only</span>
+        </div>
+      );
+    }
+
+    /* ─── App ─── */
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      return (
+        <div className="page">
+          <AmbientFx on={t.ambientFx} intensity={t.ember} />
+          <Masthead t={t} />
+          <ContextStrip />
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Palette" />
+            <TweakRadio
+              label="Variant"
+              value={t.palette}
+              options={['obsidian-primary', 'obsidian-brass', 'obsidian-ember']}
+              onChange={(v) => setTweak('palette', v)}
+            />
+
+            <TweakSection label="Masthead" />
+            <TweakSlider
+              label="OBOLARK size"
+              value={t.mastSize}
+              min={80}
+              max={160}
+              step={2}
+              unit="px"
+              onChange={(v) => setTweak('mastSize', v)}
+            />
+            <TweakToggle
+              label="Ember dot"
+              value={t.emberDot}
+              onChange={(v) => setTweak('emberDot', v)}
+            />
+
+            <TweakSection label="Folio" />
+            <TweakRadio
+              label="Position"
+              value={t.folio}
+              options={['top-left', 'top-center', 'bottom-left']}
+              onChange={(v) => setTweak('folio', v)}
+            />
+
+            <TweakSection label="Network metadata" />
+            <TweakRadio
+              label="Density"
+              value={t.density}
+              options={['sparse', 'default', 'dense']}
+              onChange={(v) => setTweak('density', v)}
+            />
+
+            <TweakSection label="Atmosphere" />
+            <TweakRadio
+              label="Ember intensity"
+              value={t.ember}
+              options={['off', 'subtle', 'cinematic']}
+              onChange={(v) => {
+                setTweak('ember', v);
+                if (v === 'off') setTweak('ambientFx', false);
+                else setTweak('ambientFx', true);
+              }}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

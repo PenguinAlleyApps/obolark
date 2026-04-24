@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab VII · Orchestrations Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB VII — ORCHESTRATIONS (autopilot chains).
+
+       Audit-driven fixes:
+       · Ceremony dispatch debounced: max 1 fire per 4s; suppressed if
+         prefers-reduced-motion is set
+       · Tab I/VII asymmetry resolved: marquee + panel BOTH render here;
+         front page will carry only the marquee (see comment below)
+       · Cadence unified with III/V: "auto-refresh 15s"
+       · No gradients in chrome, no text-shadows on type
+       · Run status encoded by dashed-border + icon, not by signal-gold
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    /* ─── Marquee strip (shared w/ Tab I) ─── */
+    .marquee {
+      border-top: 1px solid var(--grid-line);
+      border-bottom: 1px solid var(--grid-line);
+      background: var(--bone-dark);
+      overflow: hidden;
+      position: relative;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+    .marquee-inner {
+      display: inline-flex;
+      gap: 40px;
+      padding: 10px 0;
+      white-space: nowrap;
+      animation: ticker-scroll 36s linear infinite;
+    }
+    .marquee-item { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); }
+    .marquee-item .led {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 5px var(--moss);
+    }
+    .marquee-item .led[data-state="signal"] { background: var(--signal); box-shadow: 0 0 5px var(--signal); }
+    .marquee-item .cname { font-family: var(--font-mythic); font-size: 12px; color: var(--ink); letter-spacing: 0.015em; }
+    .marquee-item .sep { color: var(--brand-rule); }
+    .marquee-item .amt { color: var(--pale-brass); font-variant-numeric: tabular-nums; }
+
+    .panel {
+      background: var(--bone);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 22px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+    .panel-header .cadence {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .panel-header .cadence .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+
+    /* ─── Orchestration chain card ─── */
+    .chains {
+      display: grid; grid-template-columns: 1fr; gap: 1px;
+      background: var(--grid-line);
+      border: 1px solid var(--grid-line);
+    }
+    .chain-card {
+      background: var(--bone);
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto auto;
+      row-gap: 14px; column-gap: 16px;
+    }
+    .chain-head {
+      grid-column: 1 / span 2;
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--grid-line);
+    }
+    .chain-head .title {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 20px; letter-spacing: 0.015em; color: var(--ink);
+    }
+    .chain-head .motto {
+      font-family: var(--font-display); font-style: italic;
+      color: var(--muted); font-size: 12px;
+    }
+    .chain-head .runs {
+      margin-left: auto;
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .chain-head .runs .n { color: var(--pale-brass); font-variant-numeric: tabular-nums; }
+
+    /* Flow: nodes + edges */
+    .flow {
+      grid-column: 1 / span 2;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 0;
+      align-items: center;
+      position: relative;
+    }
+    .flow-node {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 10px;
+      border: 1px dashed var(--grid-line);
+      border-radius: 2px;
+      background: var(--bone);
+      position: relative;
+      text-align: center;
+    }
+    .flow-node[data-state="cleared"] { border-style: solid; border-color: var(--moss); }
+    .flow-node[data-state="active"]  { border-style: solid; border-color: var(--signal); }
+    .flow-node[data-state="void"]    { border-style: dashed; border-color: var(--oxide); }
+
+    .flow-node .ring {
+      width: 26px; height: 26px; display: grid; place-items: center;
+      color: var(--ember);
+    }
+    .flow-node .ring svg { width: 100%; height: 100%; overflow: visible; }
+    .flow-node .codename {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 13px; color: var(--ink); letter-spacing: 0.015em;
+      line-height: 1;
+    }
+    .flow-node .meta {
+      font-family: var(--font-mono); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-variant-numeric: tabular-nums;
+    }
+    .flow-node .meta.amt { color: var(--pale-brass); }
+
+    .flow-edge {
+      height: 1px;
+      background: transparent;
+      border-top: 1px dashed var(--grid-line);
+      position: relative;
+      margin: 0 -4px;
+      align-self: center;
+    }
+    .flow-edge::after {
+      content: '';
+      position: absolute; right: -2px; top: -4px;
+      width: 0; height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid var(--grid-line);
+    }
+    .flow-edge[data-armed="true"] { border-top-color: var(--signal); }
+    .flow-edge[data-armed="true"]::after { border-left-color: var(--signal); }
+
+    .flow-edge .dot {
+      position: absolute;
+      top: -3px; left: 0;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--signal);
+      box-shadow: 0 0 5px var(--signal);
+      animation: edge-travel 1600ms cubic-bezier(0.3, 0.2, 0.3, 1);
+    }
+    @keyframes edge-travel {
+      0%   { left: 0%;   opacity: 0; }
+      12%  { opacity: 1; }
+      88%  { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+
+    /* Run log strip */
+    .runs-strip {
+      grid-column: 1 / span 2;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      padding-top: 10px;
+      border-top: 1px dashed var(--grid-line);
+      font-family: var(--font-mono); font-size: 10.5px;
+      color: var(--muted); letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .runs-strip .k {
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    }
+    .runs-strip .val { color: var(--ink); }
+    .runs-strip .hash { color: var(--pale-brass); text-decoration: none; letter-spacing: 0.02em; }
+    .runs-strip .hash:hover { color: var(--signal); text-decoration: underline; text-underline-offset: 3px; }
+    .runs-strip .dim { color: var(--brand-rule); }
+
+    /* Ceremony overlay — edge pulse + centered label */
+    .ceremony {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .ceremony[data-fire="true"] {
+      animation: ceremony-fade 1600ms ease-out;
+    }
+    @keyframes ceremony-fade {
+      0%   { opacity: 0; }
+      12%  { opacity: 1; }
+      88%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .ceremony .edge {
+      position: absolute;
+      background: var(--signal);
+      box-shadow: 0 0 12px var(--signal);
+    }
+    .ceremony .edge.t, .ceremony .edge.b { left: 0; right: 0; height: 1px; }
+    .ceremony .edge.t { top: 0; }
+    .ceremony .edge.b { bottom: 0; }
+    .ceremony .edge.l, .ceremony .edge.r { top: 0; bottom: 0; width: 1px; }
+    .ceremony .edge.l { left: 0; }
+    .ceremony .edge.r { right: 0; }
+    .ceremony .label {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--signal); padding: 3px 10px;
+      background: var(--bone-dark); border: 1px solid var(--signal);
+      border-radius: 2px;
+    }
+
+    /* Summary strip */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grid-line);
+    }
+    .summary .m { border-left: 2px solid var(--ink); padding-left: 14px; }
+    .summary .k {
+      font-family: var(--font-mono); font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+    }
+    .summary .v {
+      font-family: var(--font-mono); font-size: 28px; font-weight: 700;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+      line-height: 1; margin-top: 4px; letter-spacing: -0.01em;
+    }
+    .summary .v[data-role="signal"] { color: var(--signal); }
+    .summary .v[data-role="brass"]  { color: var(--pale-brass); }
+    .summary .v[data-role="moss"]   { color: var(--moss); }
+    .summary .sub {
+      font-family: var(--font-mono); font-size: 9.5px;
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .flow { grid-auto-flow: row; grid-auto-columns: unset; }
+      .flow-edge { display: none; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-led, .panel-header .cadence .led,
+      .marquee-inner { animation: none !important; }
+      .ceremony[data-fire="true"] { animation: none !important; opacity: 0 !important; }
+      .flow-edge .dot { animation: none !important; opacity: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="warden-vfx.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "cadenceMs": 15000,
+      "liveRuns": true,
+      "showMarquee": true,
+      "ceremonyEnabled": true,
+      "showNodeSigils": true
+    }/*EDITMODE-END*/;
+
+    const ARCSCAN = 'https://testnet.arcscan.app';
+
+    /* Reduced-motion check (reactive to OS toggle) */
+    function usePrefersReducedMotion() {
+      const [reduced, setReduced] = useState(() =>
+        typeof window !== 'undefined' && window.matchMedia
+          ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          : false
+      );
+      useEffect(() => {
+        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const on = (e) => setReduced(e.matches);
+        mq.addEventListener?.('change', on);
+        return () => mq.removeEventListener?.('change', on);
+      }, []);
+      return reduced;
+    }
+
+    /* Debounced ceremony dispatcher — max 1 fire per 4s, per chain. */
+    function useDebouncedCeremony(delayMs = 4000) {
+      const lastFireRef = useRef({});
+      return (chainId) => {
+        const now = Date.now();
+        const last = lastFireRef.current[chainId] || 0;
+        if (now - last < delayMs) return false;
+        lastFireRef.current[chainId] = now;
+        return true;
+      };
+    }
+
+    const CHAINS = [
+      {
+        id: 'research-to-design',
+        title: 'Research → Design Review',
+        motto: 'the pythia speaks; the maker listens',
+        nodes: [
+          { codename: 'ORACLE',   code: 'RADAR', amount: 0.0022 },
+          { codename: 'DAEDALUS', code: 'PIXEL', amount: 0.0024 },
+        ],
+        runs: 142,
+      },
+      {
+        id: 'gate-audit-bridge',
+        title: 'Gate → Audit → Bridge',
+        motto: 'what passes, is watched; what is watched, is ferried',
+        nodes: [
+          { codename: 'CERBERUS', code: 'SENTINEL', amount: 0.0030 },
+          { codename: 'ARGUS',    code: 'ARGUS',    amount: 0.0026 },
+          { codename: 'CHARON',   code: 'FERRY',    amount: 0.0019 },
+        ],
+        runs: 307,
+      },
+      {
+        id: 'memory-verse-seal',
+        title: 'Memory → Verse → Seal',
+        motto: 'what is remembered, sung, and sealed',
+        nodes: [
+          { codename: 'MNEMOSYNE', code: 'LEXICON', amount: 0.0020 },
+          { codename: 'CALLIOPE',  code: 'VERSE',   amount: 0.0016 },
+          { codename: 'THANATOS',  code: 'PHANTOM', amount: 0.0028 },
+        ],
+        runs: 89,
+      },
+    ];
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 6 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function Marquee({ items }) {
+      return (
+        <div className="marquee" aria-label="Recent orchestration runs">
+          <div className="marquee-inner">
+            {[...items, ...items].map((m, i) => (
+              <span key={i} className="marquee-item">
+                <span className="led" data-state={m.state} aria-hidden />
+                <span className="cname">{m.codename}</span>
+                <span className="sep">·</span>
+                <span>{m.action}</span>
+                <span className="sep">·</span>
+                <span className="amt">{m.amt}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function ChainCard({ chain, liveRuns, cadenceMs, ceremonyEnabled, showNodeSigils, reducedMotion, canFireCeremony }) {
+      // per-node state: idle | active | cleared | void
+      const [activeIdx, setActiveIdx] = useState(null);
+      const [ceremonyFire, setCeremonyFire] = useState(false);
+      const [lastRun, setLastRun] = useState({
+        at: new Date(Date.now() - 8000),
+        hash: '0x' + Math.floor(Math.random() * 1e16).toString(16).padStart(16, '0').slice(0, 16),
+        total: chain.nodes.reduce((s, n) => s + n.amount, 0).toFixed(6),
+      });
+      const [runCount, setRunCount] = useState(chain.runs);
+      const timerRef = useRef(null);
+
+      useEffect(() => {
+        if (!liveRuns) return;
+        function tick() {
+          // advance node-by-node
+          let i = 0;
+          setActiveIdx(0);
+          const step = () => {
+            i += 1;
+            if (i < chain.nodes.length) {
+              setActiveIdx(i);
+              timerRef.current = setTimeout(step, 520);
+            } else {
+              // complete the run
+              setActiveIdx(null);
+              setRunCount((c) => c + 1);
+              setLastRun({
+                at: new Date(),
+                hash: '0x' + Math.floor(Math.random() * 1e16).toString(16).padStart(16, '0').slice(0, 16),
+                total: chain.nodes.reduce((s, n) => s + n.amount, 0).toFixed(6),
+              });
+              // debounced ceremony fire
+              if (ceremonyEnabled && !reducedMotion && canFireCeremony(chain.id)) {
+                setCeremonyFire(true);
+                setTimeout(() => setCeremonyFire(false), 1600);
+              }
+            }
+          };
+          timerRef.current = setTimeout(step, 520);
+        }
+
+        const id = setInterval(tick, cadenceMs);
+        return () => { clearInterval(id); if (timerRef.current) clearTimeout(timerRef.current); };
+      }, [liveRuns, cadenceMs, chain, ceremonyEnabled, reducedMotion, canFireCeremony]);
+
+      const agoSec = Math.max(1, Math.floor((Date.now() - lastRun.at.getTime()) / 1000));
+
+      return (
+        <article className="chain-card" style={{ position: 'relative' }}>
+          <header className="chain-head">
+            <span className="title">{chain.title}</span>
+            <span className="motto">— {chain.motto}</span>
+            <span className="runs">runs · <span className="n">{runCount.toLocaleString()}</span></span>
+          </header>
+
+          <div className="flow">
+            {chain.nodes.map((n, i) => {
+              const state =
+                activeIdx === null
+                  ? 'cleared'
+                  : i < activeIdx
+                    ? 'cleared'
+                    : i === activeIdx
+                      ? 'active'
+                      : 'idle';
+              return (
+                <React.Fragment key={n.codename}>
+                  <div className="flow-node" data-state={state}>
+                    {showNodeSigils && (
+                      <div className="ring">
+                        <WardenSigil codename={n.codename} />
+                      </div>
+                    )}
+                    <div className="codename">{n.codename}</div>
+                    <div className="meta">· {n.code}</div>
+                    <div className="meta amt">{n.amount.toFixed(4)}</div>
+                  </div>
+                  {i < chain.nodes.length - 1 && (
+                    <div className="flow-edge" data-armed={activeIdx !== null && i < activeIdx}>
+                      {activeIdx === i + 1 && !reducedMotion && (
+                        <span className="dot" key={`dot-${runCount}-${i}`} />
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          <div className="runs-strip">
+            <span className="k">last run</span>
+            <span className="val">{agoSec < 60 ? `${agoSec}s ago` : `${Math.floor(agoSec/60)}m ago`}</span>
+            <span className="dim">·</span>
+            <span className="k">tx</span>
+            <a className="hash" href={`${ARCSCAN}/tx/${lastRun.hash}`} target="_blank" rel="noreferrer">
+              {lastRun.hash.slice(0, 10)}…{lastRun.hash.slice(-6)} ↗
+            </a>
+            <span className="dim">·</span>
+            <span className="k">total</span>
+            <span className="val">{lastRun.total} <span style={{ color: 'var(--muted)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase' }}>USDC</span></span>
+            <span className="dim">·</span>
+            <span className="k">steps</span>
+            <span className="val">{chain.nodes.length.toString().padStart(2, '0')}</span>
+          </div>
+
+          <div className="ceremony" data-fire={ceremonyFire}>
+            <span className="edge t" /><span className="edge b" />
+            <span className="edge l" /><span className="edge r" />
+            <span className="label">✦ orchestration settled</span>
+          </div>
+        </article>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const reducedMotion = usePrefersReducedMotion();
+      const canFireCeremony = useDebouncedCeremony(4000);
+
+      const totalRuns = CHAINS.reduce((s, c) => s + c.runs, 0);
+      const totalWardens = new Set(CHAINS.flatMap(c => c.nodes.map(n => n.codename))).size;
+      const avgChainValue = CHAINS.reduce((s, c) => s + c.nodes.reduce((x, n) => x + n.amount, 0), 0) / CHAINS.length;
+
+      // Marquee content pulled from chain activity
+      const marqueeItems = CHAINS.flatMap(c => c.nodes.slice(-2).map((n, i) => ({
+        codename: n.codename,
+        action: i === 0 ? 'queued' : 'settled',
+        amt: n.amount.toFixed(6) + ' USDC',
+        state: i === 0 ? 'signal' : 'ok',
+      })));
+
+      return (
+        <div className="page">
+          <MiniMast />
+          <TabStrip />
+
+          {t.showMarquee && <Marquee items={marqueeItems} />}
+
+          <section className="panel">
+            <div className="panel-header">
+              <span>[ VII · ORCHESTRATIONS · {CHAINS.length} AUTOPILOT CHAINS ]</span>
+              <span className="cadence">
+                <span className="led" aria-hidden />
+                auto-refresh {Math.round(t.cadenceMs / 1000)}s
+                {reducedMotion && <span style={{ marginLeft: 10, color: 'var(--muted)' }}>· reduced-motion</span>}
+              </span>
+            </div>
+
+            <div className="chains">
+              {CHAINS.map(c => (
+                <ChainCard
+                  key={c.id}
+                  chain={c}
+                  liveRuns={t.liveRuns}
+                  cadenceMs={t.cadenceMs}
+                  ceremonyEnabled={t.ceremonyEnabled}
+                  showNodeSigils={t.showNodeSigils}
+                  reducedMotion={reducedMotion}
+                  canFireCeremony={canFireCeremony}
+                />
+              ))}
+            </div>
+
+            <div className="summary">
+              <div className="m">
+                <div className="k">Chains</div>
+                <div className="v">{CHAINS.length.toString().padStart(2, '0')}</div>
+                <div className="sub">autopilot · active</div>
+              </div>
+              <div className="m">
+                <div className="k">Lifetime runs</div>
+                <div className="v" data-role="signal">{totalRuns.toLocaleString()}</div>
+                <div className="sub">all chains · settled</div>
+              </div>
+              <div className="m">
+                <div className="k">Wardens engaged</div>
+                <div className="v" data-role="brass">{totalWardens.toString().padStart(2, '0')}</div>
+                <div className="sub">unique · across chains</div>
+              </div>
+              <div className="m">
+                <div className="k">Avg chain value</div>
+                <div className="v" data-role="moss">{avgChainValue.toFixed(4)}</div>
+                <div className="sub">usdc · per settled run</div>
+              </div>
+            </div>
+          </section>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Feed" />
+            <TweakToggle label="Live runs" value={t.liveRuns} onChange={(v) => setTweak('liveRuns', v)} />
+            <TweakSlider label="Cadence" value={t.cadenceMs} min={4000} max={45000} step={1000} unit="ms" onChange={(v) => setTweak('cadenceMs', v)} />
+
+            <TweakSection label="Chrome" />
+            <TweakToggle label="Marquee strip" value={t.showMarquee} onChange={(v) => setTweak('showMarquee', v)} />
+            <TweakToggle label="Node sigils" value={t.showNodeSigils} onChange={(v) => setTweak('showNodeSigils', v)} />
+
+            <TweakSection label="Ceremony" />
+            <TweakToggle label="Settle ceremony" value={t.ceremonyEnabled} onChange={(v) => setTweak('ceremonyEnabled', v)} />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

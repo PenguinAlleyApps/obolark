@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OBOLARK — Tab III · Ledger Refresh</title>
+
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="ambient-fx.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       TAB III — LEDGER (last 10 crossings) refresh.
+
+       Audit-driven fixes:
+       · Static tabular view (not a marquee); dashed bottom rules per row
+       · tabular-nums on every number column (amount · block · gas · when)
+       · Arcscan tx hash links in --pale-brass (was --muted)
+       · Panel meta: "auto-refresh 15s" — unified with Tab V cadence
+       · Settlement flash via signal-pulse on freshly-landed row
+       · Reputation-registry address surfaced in panel-header right slot
+       · Status LED = moss (ok) at rest, signal (gold) on settlement flash
+       · No gradients in chrome; no text-shadows on type
+       ══════════════════════════════════════════════════════════════════ */
+
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bone); color: var(--ink); min-height: 100vh; }
+
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ─── Mini chrome (matches Tab II for continuity) ─── */
+    .mini-mast {
+      padding: 14px 32px;
+      border-top: 3px solid var(--ink);
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--brand-muted);
+    }
+    .mini-mast .brand {
+      font-family: var(--font-mythic); font-weight: 700; font-size: 22px;
+      letter-spacing: 0.015em; color: var(--signal); text-transform: none;
+    }
+    .mini-mast .brand .dot { color: var(--ember); }
+    .mini-mast .folio {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid var(--brand-rule);
+      padding: 5px 10px 4px; color: var(--ink);
+    }
+
+    .tabstrip {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      padding: 10px 32px 12px;
+      border-bottom: 1px solid var(--brand-rule);
+      background: var(--brand-bg);
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .tabstrip button {
+      background: transparent; border: none; padding: 4px 0;
+      font: inherit; letter-spacing: inherit; text-transform: inherit;
+      color: var(--brand-muted); cursor: default;
+    }
+    .tabstrip button[aria-current="true"] {
+      color: var(--signal); border-bottom: 1px solid var(--signal);
+    }
+
+    /* ─── Panel ─── */
+    .panel {
+      background: var(--bone);
+      border-top: 2px solid var(--ink);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 24px 32px 32px;
+      position: relative;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grid-line);
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--muted);
+    }
+    .panel-header .right {
+      display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .panel-header .right .cadence {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--muted);
+    }
+    .panel-header .right .cadence .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+    .panel-header .right .registry {
+      color: var(--muted);
+    }
+    .panel-header .right .registry .addr {
+      color: var(--pale-brass);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      font-size: 10.5px;
+    }
+    .panel-header .right .registry .addr:hover {
+      text-decoration: underline; text-underline-offset: 3px;
+    }
+
+    /* ─── Table grid ─── */
+    .ledger-grid {
+      display: grid;
+      grid-template-columns:
+        150px      /* when */
+        150px      /* route */
+        110px      /* amount */
+        130px      /* payer */
+        120px      /* tollkeeper */
+        1fr        /* tx hash */
+        90px;      /* block */
+      column-gap: 16px;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+
+    .ledger-head {
+      display: contents;
+    }
+    .ledger-head > span {
+      padding: 8px 0;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--grid-line);
+      white-space: nowrap;
+    }
+    .ledger-head > span.num { text-align: right; }
+
+    /* Each row is contents-display so the grid columns align; dashed rule
+       on every cell makes the bottom hairline paint across the full width. */
+    .ledger-row { display: contents; }
+    .ledger-row > .cell {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--grid-line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background-color 220ms ease-out;
+    }
+    .ledger-row > .cell.num { text-align: right; }
+    .ledger-row > .cell.wrap { white-space: normal; }
+
+    .ledger-row[data-settled="true"] > .cell {
+      animation: ledger-pulse var(--motion-fade) ease-out;
+    }
+    @keyframes ledger-pulse {
+      0%   { background-color: color-mix(in oklab, var(--signal) 30%, transparent); }
+      100% { background-color: transparent; }
+    }
+    .ledger-row:hover > .cell {
+      background-color: color-mix(in oklab, var(--signal) 4%, transparent);
+    }
+
+    /* Cell content styling */
+    .c-when     { color: var(--muted); font-size: 11px; }
+    .c-when .rel { display: block; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-rule); margin-top: 2px; }
+
+    .c-route    { color: var(--ink); font-weight: 700; }
+
+    .c-amount   { color: var(--ink); font-weight: 500; }
+    .c-amount .unit { color: var(--muted); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px; }
+
+    .c-payer    { color: var(--muted); }
+
+    .c-seller   {
+      display: inline-flex; align-items: baseline; gap: 8px;
+    }
+    .c-seller .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      align-self: center;
+      animation: led-blink 2s ease-in-out infinite;
+    }
+    .c-seller .led[data-state="signal"] {
+      background: var(--signal); box-shadow: 0 0 6px var(--signal);
+    }
+    .c-seller .codename {
+      font-family: var(--font-mythic); font-weight: 700;
+      font-size: 13px; letter-spacing: 0.02em; color: var(--ink);
+    }
+    .c-seller .paco {
+      color: var(--muted); font-size: 9.5px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+    }
+
+    .c-hash a {
+      color: var(--pale-brass);       /* ← audit fix: brass-gold hashes */
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+    .c-hash a:hover {
+      color: var(--signal);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .c-hash .chop {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 6px 0;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--moss);
+      border: 1px solid var(--moss);
+      border-radius: 2px;
+      transform: rotate(-2deg);
+      vertical-align: middle;
+    }
+    .c-hash .chop[data-verdict="cleared"] {
+      color: var(--pale-brass); border-color: var(--pale-brass);
+    }
+    .c-hash .chop[data-verdict="void"] {
+      color: var(--oxide); border-color: var(--oxide);
+    }
+
+    .c-block    { color: var(--muted); text-align: right; }
+
+    /* ─── Metric strip ─── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grid-line);
+    }
+    .metric { border-left: 2px solid var(--ink); padding-left: 14px; }
+    .metric .k {
+      font-family: var(--font-mono); font-size: 9.5px;
+      text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+    }
+    .metric .v {
+      font-family: var(--font-mono); font-size: 28px; font-weight: 700;
+      color: var(--ink); font-variant-numeric: tabular-nums;
+      line-height: 1; margin-top: 4px; letter-spacing: -0.01em;
+    }
+    .metric .v[data-role="signal"] { color: var(--signal); }
+    .metric .v[data-role="brass"]  { color: var(--pale-brass); }
+    .metric .sub {
+      font-family: var(--font-mono); font-size: 9.5px;
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-top: 6px;
+    }
+
+    /* ─── Controls row ─── */
+    .controls {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .ctrl-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--grid-line);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+    }
+    .ctrl-chip:hover { color: var(--ink); border-color: var(--muted); }
+    .ctrl-chip[aria-pressed="true"] {
+      background: var(--bone-dark);
+      color: var(--signal);
+      border-color: var(--signal);
+    }
+    .ctrl-chip .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted);
+    }
+    .ctrl-chip[aria-pressed="true"] .dot { background: var(--signal); box-shadow: 0 0 6px var(--signal); }
+
+    .live-dot {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: auto;
+      font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .live-dot .led {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--moss); box-shadow: 0 0 6px var(--moss);
+      animation: led-blink 2s ease-in-out infinite;
+    }
+    .live-dot[data-armed="true"] .led {
+      background: var(--signal); box-shadow: 0 0 6px var(--signal);
+    }
+
+    /* Mobile collapse: drop block column, stack when/route */
+    @media (max-width: 1000px) {
+      .ledger-grid { grid-template-columns: 120px 140px 100px 1fr 100px; }
+      .ledger-head > span.col-payer, .ledger-row > .cell.c-payer,
+      .ledger-head > span.col-block, .ledger-row > .cell.c-block { display: none; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ledger-row[data-settled="true"] > .cell { animation: none !important; }
+      .live-dot .led, .c-seller .led, .panel-header .cadence .led { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+<a class="back-nav" href="./index.html" aria-label="Back to Bureau Cover"><span class="arrow">&#9664;</span>&nbsp;Bureau Cover</a>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "filter": "ARGUS",
+      "window": 13,
+      "liveFeed": true,
+      "cadenceMs": 25000,
+      "showChops": false,
+      "showRelative": true
+    }/*EDITMODE-END*/;
+
+    const ARCSCAN = 'https://testnet.arcscan.app';
+    const SELLERS = [
+      { code: 'RADAR',    codename: 'ORACLE',    path: '/api/research' },
+      { code: 'PIXEL',    codename: 'DAEDALUS',  path: '/api/design-review' },
+      { code: 'SENTINEL', codename: 'CERBERUS',  path: '/api/qa' },
+      { code: 'PHANTOM',  codename: 'THANATOS',  path: '/api/security-scan' },
+      { code: 'ARGUS',    codename: 'ARGUS',     path: '/api/audit' },
+    ];
+
+    const REG_ADDR = '0x8004cafe71a9b3d2e5f0983c421b772d49abc9f1';
+
+    /* Seeded RNG so SSR-like initial data is stable */
+    function rand(seed) {
+      let x = seed;
+      return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 0xffffffff; };
+    }
+
+    function makeRow(seed, i, nowMs) {
+      const r = rand(seed + i * 997);
+      const seller = SELLERS[Math.floor(r() * SELLERS.length)];
+      const amount = (0.0015 + r() * 0.004).toFixed(6);
+      const ageSec = Math.floor(r() * 540) + 2 + i * 6;
+      const at = new Date(nowMs - ageSec * 1000);
+      const payer = '0x' + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 12);
+      const hash  = '0x' + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 10)
+                   + Math.floor(r() * 1e16).toString(16).padStart(12, '0').slice(0, 10);
+      const block = 4218900 - Math.floor(r() * 320) - i;
+      const verdict = r() < 0.08 ? 'void' : r() < 0.18 ? 'cleared' : 'verified';
+      return {
+        id: `${seed}-${i}`,
+        at, ageSec,
+        route: seller.path,
+        seller,
+        amount,
+        payer: payer.slice(0, 6) + '…' + payer.slice(-4),
+        hash,
+        hashShort: hash.slice(0, 10) + '…' + hash.slice(-6),
+        block,
+        verdict,
+      };
+    }
+
+    function initialRows(nowMs, n) {
+      return Array.from({ length: n }, (_, i) => makeRow(0x41a3, i, nowMs));
+    }
+
+    function relativeTime(sec) {
+      if (sec < 60) return `${sec}s ago`;
+      if (sec < 3600) return `${Math.floor(sec/60)}m ago`;
+      return `${Math.floor(sec/3600)}h ago`;
+    }
+
+    function MiniMast() {
+      return (
+        <header className="mini-mast">
+          <span className="brand">OBOLARK<span className="dot" aria-hidden>.</span></span>
+          <span className="folio">
+            <span className="status-led" data-state="ok" aria-hidden />
+            Bureau Ledger · Vol. I · No. 1 · 2026-04-23
+          </span>
+          <span>Arc Testnet · chain_id 5042002</span>
+        </header>
+      );
+    }
+
+    function TabStrip() {
+      const tabs = [
+        'I · Front Page', 'II · Tollkeepers', 'III · Ledger',
+        'IV · Agents', 'V · Reputation', 'VI · Archive',
+        'VII · Orchestrations', 'VIII · Oracle',
+      ];
+      return (
+        <nav className="tabstrip">
+          {tabs.map((t, i) => (
+            <button key={t} aria-current={i === 2 ? 'true' : undefined}>[ {t} ]</button>
+          ))}
+        </nav>
+      );
+    }
+
+    function Chop({ verdict }) {
+      const label = verdict === 'verified' ? 'VERIFIED' : verdict === 'cleared' ? 'CLEARED' : 'VOID';
+      return <span className="chop" data-verdict={verdict}>{label}</span>;
+    }
+
+    function LedgerRow({ row, settled, showChops, showRelative }) {
+      return (
+        <div className="ledger-row" data-settled={settled}>
+          <span className="cell c-when">
+            {row.at.toLocaleTimeString('en-US', { hour12: false })}
+            {showRelative && <span className="rel">{relativeTime(row.ageSec)}</span>}
+          </span>
+          <span className="cell c-route" title={row.route}>{row.route}</span>
+          <span className="cell c-amount num">
+            {row.amount}<span className="unit">USDC</span>
+          </span>
+          <span className="cell c-payer" title={row.payer}>{row.payer}</span>
+          <span className="cell c-seller">
+            <span className="led" data-state={settled ? 'signal' : 'ok'} aria-hidden />
+            <span className="codename">{row.seller.codename}</span>
+            <span className="paco">· {row.seller.code}</span>
+          </span>
+          <span className="cell c-hash">
+            <a href={`${ARCSCAN}/tx/${row.hash}`} target="_blank" rel="noreferrer" title={row.hash}>
+              {row.hashShort} ↗
+            </a>
+            {showChops && <Chop verdict={row.verdict} />}
+          </span>
+          <span className="cell c-block num">#{row.block.toLocaleString()}</span>
+        </div>
+      );
+    }
+
+    function Ledger({ t }) {
+      const now = Date.now();
+      const [rows, setRows] = useState(() => initialRows(now, Math.max(t.window, 10)));
+      const [settledIds, setSettledIds] = useState(new Set());
+      const [ageTick, setAgeTick] = useState(0);
+      const seedRef = useRef(0xC0DE);
+
+      const armLiveDot = useRef(false);
+      const [armed, setArmed] = useState(false);
+
+      // Auto-refresh / inject tick
+      useEffect(() => {
+        if (!t.liveFeed) return;
+        const id = setInterval(() => {
+          setArmed(true);
+          setTimeout(() => setArmed(false), 400);
+          const fresh = makeRow(seedRef.current++, 0, Date.now());
+          fresh.ageSec = 0;
+          setRows(prev => [fresh, ...prev].slice(0, Math.max(t.window, 10)));
+          setSettledIds(prev => {
+            const s = new Set(prev); s.add(fresh.id);
+            return s;
+          });
+          setTimeout(() => {
+            setSettledIds(prev => {
+              const s = new Set(prev); s.delete(fresh.id);
+              return s;
+            });
+          }, 500);
+        }, t.cadenceMs);
+        return () => clearInterval(id);
+      }, [t.liveFeed, t.cadenceMs, t.window]);
+
+      // Age tick: advance relative times every second
+      useEffect(() => {
+        const id = setInterval(() => setAgeTick(x => x + 1), 1000);
+        return () => clearInterval(id);
+      }, []);
+
+      const rowsAged = useMemo(() =>
+        rows.map(r => ({ ...r, ageSec: r.ageSec + ageTick }))
+      , [rows, ageTick]);
+
+      const filtered = useMemo(() => {
+        if (t.filter === 'all') return rowsAged;
+        return rowsAged.filter(r => r.seller.code === t.filter);
+      }, [rowsAged, t.filter]);
+
+      // Metrics
+      const totalUsdc = filtered.reduce((s, r) => s + parseFloat(r.amount), 0);
+      const voids = filtered.filter(r => r.verdict === 'void').length;
+      const medianBlock = filtered.length
+        ? filtered[Math.floor(filtered.length/2)].block
+        : 0;
+
+      return (
+        <section className="panel">
+          <div className="panel-header">
+            <span>[ III · LIVE LEDGER · LAST {Math.max(t.window, 10)} CROSSINGS ]</span>
+            <span className="right">
+              <span className="registry">
+                reputation ·{' '}
+                <a
+                  className="addr"
+                  href={`${ARCSCAN}/address/${REG_ADDR}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="ERC-8004 CrossingScores registry"
+                >
+                  {REG_ADDR.slice(0,6)}…{REG_ADDR.slice(-4)} ↗
+                </a>
+              </span>
+              <span className="cadence">
+                <span className="led" aria-hidden />
+                auto-refresh {Math.round(t.cadenceMs/1000)}s
+              </span>
+            </span>
+          </div>
+
+          <div className="controls">
+            <button
+              type="button"
+              className="ctrl-chip"
+              aria-pressed={t.filter === 'all'}
+              onClick={() => document.dispatchEvent(new CustomEvent('obolark:filter', { detail: 'all' }))}
+            >
+              <span className="dot" /> all
+            </button>
+            {SELLERS.map(s => (
+              <button
+                key={s.code}
+                type="button"
+                className="ctrl-chip"
+                aria-pressed={t.filter === s.code}
+                onClick={() => document.dispatchEvent(new CustomEvent('obolark:filter', { detail: s.code }))}
+              >
+                <span className="dot" /> {s.codename}
+              </button>
+            ))}
+            <span className="live-dot" data-armed={armed}>
+              <span className="led" aria-hidden />
+              {t.liveFeed ? 'live feed armed' : 'feed paused'}
+            </span>
+          </div>
+
+          <div className="ledger-grid" role="table" aria-label="Live ledger of crossings">
+            <div className="ledger-head" role="row">
+              <span role="columnheader">When</span>
+              <span role="columnheader">Route</span>
+              <span role="columnheader" className="num">Amount</span>
+              <span role="columnheader" className="col-payer">Payer</span>
+              <span role="columnheader">Tollkeeper</span>
+              <span role="columnheader">Arc tx hash</span>
+              <span role="columnheader" className="col-block num">Block</span>
+            </div>
+            {filtered.length === 0 && (
+              <div className="cell" style={{ gridColumn: '1 / -1', color: 'var(--muted)', padding: '24px 0' }}>
+                no settled calls yet — hit an endpoint with PAYMENT-SIGNATURE to populate.
+              </div>
+            )}
+            {filtered.map(r => (
+              <LedgerRow
+                key={r.id}
+                row={r}
+                settled={settledIds.has(r.id)}
+                showChops={t.showChops}
+                showRelative={t.showRelative}
+              />
+            ))}
+          </div>
+
+          <div className="metrics">
+            <div className="metric">
+              <div className="k">Window</div>
+              <div className="v">{filtered.length.toString().padStart(2, '0')}</div>
+              <div className="sub">crossings on screen</div>
+            </div>
+            <div className="metric">
+              <div className="k">USDC settled</div>
+              <div className="v" data-role="signal">{totalUsdc.toFixed(6)}</div>
+              <div className="sub">sum of window</div>
+            </div>
+            <div className="metric">
+              <div className="k">Voids</div>
+              <div className="v" style={{ color: voids ? 'var(--oxide)' : 'var(--ink)' }}>
+                {voids.toString().padStart(2, '0')}
+              </div>
+              <div className="sub">failed · oxide</div>
+            </div>
+            <div className="metric">
+              <div className="k">Median block</div>
+              <div className="v" data-role="brass">#{medianBlock.toLocaleString()}</div>
+              <div className="sub">arc testnet · #{medianBlock - filtered.length}+</div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      // Bridge filter chip clicks (dispatched via CustomEvent because chips
+      // live inside a memo'd subtree) back to Tweaks state.
+      useEffect(() => {
+        const handler = (e) => setTweak('filter', e.detail);
+        document.addEventListener('obolark:filter', handler);
+        return () => document.removeEventListener('obolark:filter', handler);
+      }, [setTweak]);
+
+      return (
+        <div className="page">
+          <MiniMast />
+          <TabStrip />
+          <Ledger t={t} />
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Feed" />
+            <TweakToggle
+              label="Live feed"
+              value={t.liveFeed}
+              onChange={(v) => setTweak('liveFeed', v)}
+            />
+            <TweakSlider
+              label="Cadence"
+              value={t.cadenceMs}
+              min={2000}
+              max={30000}
+              step={1000}
+              unit="ms"
+              onChange={(v) => setTweak('cadenceMs', v)}
+            />
+            <TweakSlider
+              label="Window size"
+              value={t.window}
+              min={5}
+              max={25}
+              step={1}
+              unit=" rows"
+              onChange={(v) => setTweak('window', v)}
+            />
+
+            <TweakSection label="Row chrome" />
+            <TweakToggle
+              label="Verdict chops"
+              value={t.showChops}
+              onChange={(v) => setTweak('showChops', v)}
+            />
+            <TweakToggle
+              label="Relative time"
+              value={t.showRelative}
+              onChange={(v) => setTweak('showRelative', v)}
+            />
+
+            <TweakSection label="Filter (tollkeeper)" />
+            <TweakRadio
+              label="Keeper"
+              value={t.filter}
+              options={['all', 'RADAR', 'PIXEL', 'SENTINEL', 'PHANTOM', 'ARGUS']}
+              onChange={(v) => setTweak('filter', v)}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
