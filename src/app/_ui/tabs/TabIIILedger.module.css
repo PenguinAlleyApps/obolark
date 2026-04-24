@@ -1,0 +1,136 @@
+/* ══════════════════════════════════════════════════════════════════
+   Tab III · Live Ledger — CSS Module
+   Ported from public/refresh/tab-iii-ledger.html
+   Obsidian swap: background: var(--bone) → background: var(--obsidian)
+   (night-mode default; --bone is already #0E0A08 on obsidian field)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ─── Panel ─── */
+.panel {
+  background: var(--bone);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--grid-line);
+  padding: 24px 32px 32px;
+  position: relative;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--grid-line);
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.panelHeader span {
+  display: contents;
+}
+
+/* ─── Table ─── */
+.ledgerTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.ledgerTable thead tr {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ledgerTable th {
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--grid-line);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ledgerTable td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px dashed var(--grid-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  transition: background-color 220ms ease-out;
+}
+
+.ledgerTable tbody tr:hover td {
+  background-color: color-mix(in oklab, var(--signal) 4%, transparent);
+}
+
+/* Numeric alignment */
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Status LED ─── */
+.statusLed {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  vertical-align: middle;
+  animation: led-blink 2s ease-in-out infinite;
+}
+
+.statusLed[data-state='signal'] {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+/* ─── Tx hash link ─── */
+.txHash {
+  color: var(--pale-brass);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.txHash:hover {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ─── Settlement row flash ─── */
+.settlementPulse td {
+  animation: signal-pulse var(--motion-fade) ease-out;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: 24px 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .settlementPulse td {
+    animation: none !important;
+  }
+  .statusLed {
+    animation: none !important;
+  }
+}

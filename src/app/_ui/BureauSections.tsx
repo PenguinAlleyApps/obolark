@@ -16,6 +16,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
+import TabIIILedger from './tabs/TabIIILedger';
 import ReputationPanel from './ReputationPanel';
 import CrossButton from './CrossButton';
 import OrchestrationsPanel from './OrchestrationsPanel';
@@ -367,15 +368,7 @@ export default function BureauSections({
       )}
 
       {/* ── III · Live Ledger ─────────────────────────────────────────── */}
-      {show('III') && (
-        <section className="panel">
-          <div className="panel-header">
-            <span>[ III · LIVE LEDGER · LAST 10 CROSSINGS ]</span>
-            <span>auto-refresh 15s</span>
-          </div>
-          <LedgerTicker initial={recentCalls} />
-        </section>
-      )}
+      {show('III') && (<TabIIILedger recentCalls={recentCalls} arcscanBase={arcscanBase} />)}
 
       {/* ── IV · Agent roster ─────────────────────────────────────────── */}
       {show('IV') && (
