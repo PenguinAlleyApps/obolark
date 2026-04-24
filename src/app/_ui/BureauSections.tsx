@@ -18,7 +18,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
 import TabIIILedger from './tabs/TabIIILedger';
 import TabVReputation from './tabs/TabVReputation';
-import ReputationPanel from './ReputationPanel';
 import CrossButton from './CrossButton';
 import OrchestrationsPanel from './OrchestrationsPanel';
 import OrchestrationsMarquee from './OrchestrationsMarquee';

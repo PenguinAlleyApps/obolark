@@ -12,7 +12,7 @@ function buildRows(rep: Record<string, SellerReputation>, agents: Agent[]): Row[
     count: r.count,
     avgScore: r.avgScore,
     lastTxHashes: r.lastTxHashes,
-  })).sort((a, b) => b.count - a.count);
+  })).sort((a, b) => b.count - a.count || b.avgScore - a.avgScore);
 }
 
 export default function TabVReputation({ reputation, registryAddress, agents, arcscanBase }: TabVProps) {
@@ -63,14 +63,14 @@ export default function TabVReputation({ reputation, registryAddress, agents, ar
                 </td>
                 <td className={styles.numeric}>{r.count}</td>
                 <td className={styles.numeric}>
-                  {r.avgScore.toFixed(2)}
+                  {(r.avgScore ?? 0).toFixed(2)}
                   <span className={styles.scoreBar}>
                     <span className={styles.fill} style={{ width: `${Math.min(100, r.avgScore * 20)}%` }} />
                   </span>
                 </td>
                 <td>
                   {r.lastTxHashes.slice(0, 3).map((h) => (
-                    <a key={h} href={`${arcscanBase}/tx/${h}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--pale-brass)', marginRight: 6 }}>·</a>
+                    <a key={h} className={styles.trendLink} href={`${arcscanBase}/tx/${h}`} target="_blank" rel="noopener noreferrer">·</a>
                   ))}
                 </td>
               </tr>

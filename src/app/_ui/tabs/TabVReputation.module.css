@@ -134,6 +134,19 @@
   text-transform: uppercase;
 }
 
+/* ─── Trend links (ERC-8004 tx dots) ─── */
+.trendLink {
+  color: var(--pale-brass);
+  margin-right: 6px;
+  text-decoration: none;
+}
+
+.trendLink:hover,
+.trendLink:focus-visible {
+  color: var(--signal);
+  outline: none;
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .fill {
