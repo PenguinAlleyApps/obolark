@@ -16,9 +16,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LedgerTicker from './LedgerTicker';
+import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
 import TabVReputation from './tabs/TabVReputation';
-import CrossButton from './CrossButton';
 import OrchestrationsPanel from './OrchestrationsPanel';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
 import AgentRosterOverlay from './AgentRosterOverlay';
@@ -293,79 +293,7 @@ export default function BureauSections({
       />
 
       {/* ── II · Tollkeepers (endpoint catalog) ───────────────────────── */}
-      {show('II') && (
-        <section className="panel">
-          <div className="panel-header">
-            <span>[ II · ENDPOINT CATALOG · TOLLS AT THE CROSSING ]</span>
-            <span>POST · requires PAYMENT-SIGNATURE</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full font-mono text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-              <thead>
-                <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] text-left">
-                  <th className="py-2 pr-5">Route</th>
-                  <th className="py-2 pr-5">Tollkeeper</th>
-                  <th className="py-2 pr-5 text-right">Base&nbsp;(USDC)</th>
-                  <th className="py-2 pr-5 text-right">Supervision</th>
-                  <th className="py-2 pr-5">Description</th>
-                  <th className="py-2 pl-5 text-right">Cross</th>
-                </tr>
-              </thead>
-              <tbody>
-                {endpoints.map((e) => {
-                  const sellerAgent = agents.find((a) => a.code === e.seller);
-                  const codename = sellerAgent?.codename ?? e.seller;
-                  return (
-                    <tr
-                      key={e.path}
-                      className="border-b border-dashed"
-                      style={{ borderColor: 'var(--grid-line)' }}
-                    >
-                      <td className="py-2 pr-5">
-                        <span className="font-bold">{e.path}</span>
-                      </td>
-                      <td className="py-2 pr-5">
-                        <span className="inline-flex items-baseline gap-2">
-                          <span className="status-led" data-state="signal" />
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mythic)',
-                              fontWeight: 700,
-                              fontSize: 14,
-                              letterSpacing: '0.02em',
-                              color: 'var(--ink)',
-                            }}
-                          >
-                            {codename}
-                          </span>
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                            · {e.seller}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="py-2 pr-5 text-right" data-numeric>
-                        {e.price}
-                      </td>
-                      <td className="py-2 pr-5 text-right" data-numeric>
-                        {e.supervisionFee}
-                      </td>
-                      <td className="py-2 pr-5 text-[var(--muted)]">{e.description}</td>
-                      <td className="py-2 pl-5 text-right" style={{ whiteSpace: 'nowrap' }}>
-                        <CrossButton
-                          endpoint={e.path}
-                          sellerCodename={codename}
-                          sellerCode={e.seller}
-                          price={e.price}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      {show('II') && (<TabIITollkeepers endpoints={endpoints} agents={agents} arcscanBase={arcscanBase} />)}
 
       {/* ── III · Live Ledger ─────────────────────────────────────────── */}
       {show('III') && (<TabIIILedger recentCalls={recentCalls} arcscanBase={arcscanBase} />)}
