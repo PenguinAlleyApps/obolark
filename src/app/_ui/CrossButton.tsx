@@ -149,7 +149,9 @@ export default function CrossButton({
   const dismiss = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const busy = state === 'settling';
-  const label = busy ? '[ SETTLING… ]' : '[ CROSS ]';
+  const done = state === 'success';
+  const label = busy ? 'SETTLING' : done ? 'CLEARED' : 'CROSS';
+  const glyph = busy ? '●' : done ? '✓' : '◆';
 
   return (
     <>
@@ -159,11 +161,12 @@ export default function CrossButton({
         onClick={onClick}
         disabled={busy}
         aria-label={`Cross ${endpoint}, pay ${price} USDC to ${sellerCodename}`}
-        className="stamp-button cross-button"
-        data-accent="signal"
+        className="cross-button"
         data-busy={busy ? 'true' : 'false'}
+        data-done={done ? 'true' : 'false'}
       >
-        {label}
+        <span className="cross-button-glyph" aria-hidden>{glyph}</span>
+        <span>{label}</span>
       </button>
 
       {/* +1 ghost numeral — floats up over the button on success. */}

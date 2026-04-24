@@ -1,7 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import styles from './TabVIArchive.module.css';
-import type { TabVIProps } from './types';
+import type { TabVIProps, ArchiveEntry, Endpoint, Agent } from './types';
+
+const PAGE_SIZE = 14;
 
 function truncHash(h: string) {
   return !h || h.length < 14 ? h || '' : `${h.slice(0, 10)}…${h.slice(-6)}`;
@@ -18,75 +20,225 @@ function formatUsdc(raw: string): string {
   return (n / 1_000_000).toFixed(6);
 }
 
-function formatAt(at: string): string {
-  const d = new Date(at);
-  return Number.isFinite(d.getTime()) ? d.toLocaleString() : at;
+function formatDate(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return { date: iso, time: '' };
+  return {
+    date: d.toLocaleDateString('en-CA'),
+    time: d.toLocaleTimeString([], { hour12: false }),
+  };
 }
 
-export default function TabVIArchive({ archive, arcscanBase }: TabVIProps) {
+function sellerForEndpoint(
+  endpoint: string,
+  endpoints: Endpoint[],
+  agents: Agent[],
+): { code: string; codename: string } {
+  const ep = endpoints.find((e) => e.path === endpoint);
+  const code = ep?.seller ?? '—';
+  const codename = agents.find((a) => a.code === code)?.codename ?? code;
+  return { code, codename };
+}
+
+export default function TabVIArchive({ archive, endpoints, agents, arcscanBase }: TabVIProps) {
   const sources = useMemo(
-    () => ['all', ...Array.from(new Set(archive.map((a) => a.source))).sort()],
+    () => Array.from(new Set(archive.map((a) => a.source))).sort(),
     [archive],
   );
-  const [active, setActive] = useState('all');
-  const filtered = useMemo(
-    () => (active === 'all' ? archive : archive.filter((a) => a.source === active)),
-    [archive, active],
-  );
+  const [source, setSource] = useState<string>('all');
+  const [query, setQuery] = useState<string>('');
+  const [page, setPage] = useState<number>(0);
+
+  const filtered = useMemo<ArchiveEntry[]>(() => {
+    let rows = archive;
+    if (source !== 'all') rows = rows.filter((r) => r.source === source);
+    if (query.trim()) {
+      const s = query.trim().toLowerCase();
+      rows = rows.filter((r) => {
+        const sel = sellerForEndpoint(r.endpoint, endpoints, agents);
+        return (
+          r.endpoint.toLowerCase().includes(s) ||
+          sel.code.toLowerCase().includes(s) ||
+          sel.codename.toLowerCase().includes(s) ||
+          r.receipt.transactionHash.toLowerCase().includes(s) ||
+          r.receipt.payer.toLowerCase().includes(s)
+        );
+      });
+    }
+    return rows;
+  }, [archive, source, query, endpoints, agents]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageClamped = Math.min(page, totalPages - 1);
+  const visible = filtered.slice(pageClamped * PAGE_SIZE, (pageClamped + 1) * PAGE_SIZE);
+
+  function setSourceAndReset(s: string) {
+    setSource(s);
+    setPage(0);
+  }
 
   return (
     <section className={styles.panel} id="archive">
       <div className={styles.panelHeader}>
-        <span>[ VI · ARCHIVE · SETTLED CROSSINGS ON RECORD ]</span>
-        <span>{archive.length} entries · all logs</span>
+        <span>[ VI · ARCHIVE · {archive.length.toLocaleString()} CROSSINGS ON RECORD ]</span>
+        <span className={styles.panelHeaderRight}>
+          <span className={styles.cadence}>
+            <span className={styles.led} aria-hidden />
+            mirror of arc-testnet · indexer
+          </span>
+        </span>
       </div>
 
-      <div className={styles.filterRow}>
-        {sources.map((src) => (
+      <div className={styles.controls}>
+        <span className={styles.ctrlGroup}>
+          <span className={styles.label}>Source</span>
           <button
-            key={src}
             type="button"
-            className={styles.filterChip}
-            aria-pressed={active === src}
-            onClick={() => setActive(src)}
+            className={styles.ctrlChip}
+            aria-pressed={source === 'all'}
+            onClick={() => setSourceAndReset('all')}
           >
-            {src}
+            <span className={styles.dot} /> all
           </button>
-        ))}
+          {sources.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={styles.ctrlChip}
+              aria-pressed={source === s}
+              onClick={() => setSourceAndReset(s)}
+            >
+              <span className={styles.dot} /> {s}
+            </button>
+          ))}
+        </span>
+        <span className={styles.search}>
+          <span className={styles.prefix}>query</span>
+          <input
+            type="text"
+            placeholder="route · codename · hash · payer"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
+            aria-label="Search archive"
+          />
+        </span>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className={styles.emptyState}>no crossings filed · archive awaits first settlement</div>
-      ) : (
-        <table className={styles.archiveTable}>
-          <thead>
-            <tr>
-              <th>Endpoint</th>
-              <th>Source</th>
-              <th className={styles.numeric}>Amount (USDC)</th>
-              <th>Payer</th>
-              <th>Tx Hash</th>
-              <th>At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r) => (
-              <tr key={`${r.source}-${r.receipt.transactionHash}`}>
-                <td>{r.endpoint}</td>
-                <td className={styles.sourceCell}>{r.source}</td>
-                <td className={styles.numeric}>{formatUsdc(r.receipt.amount)}</td>
-                <td className={styles.payerCell} title={r.receipt.payer}>{truncAddr(r.receipt.payer)}</td>
-                <td>
-                  <a className={styles.txHash} href={`${arcscanBase}/tx/${r.receipt.transactionHash}`} target="_blank" rel="noopener noreferrer">
-                    {truncHash(r.receipt.transactionHash)}
+      <div className={styles.arcGrid} role="table" aria-label="Archived crossings">
+        <div className={styles.arcHead} role="row">
+          <span role="columnheader">when</span>
+          <span role="columnheader">route</span>
+          <span role="columnheader" className={styles.numHead}>
+            amount
+          </span>
+          <span role="columnheader" className={styles.colPayer}>
+            payer
+          </span>
+          <span role="columnheader">tollkeeper</span>
+          <span role="columnheader" className={styles.colSource}>
+            source
+          </span>
+          <span role="columnheader">tx hash</span>
+        </div>
+
+        {visible.length === 0 ? (
+          <div className={styles.empty}>
+            no archived crossings — hit an endpoint with PAYMENT-SIGNATURE to populate.
+          </div>
+        ) : (
+          visible.map((r) => {
+            const seller = sellerForEndpoint(r.endpoint, endpoints, agents);
+            const when = formatDate(r.at);
+            const rowKey = `${r.source}-${r.receipt.transactionHash}`;
+            return (
+              <div className={styles.arcRow} key={rowKey}>
+                <span className={`${styles.cell} ${styles.cWhen}`}>
+                  <span className={styles.date}>{when.date}</span>
+                  <span className={styles.time}>{when.time}</span>
+                </span>
+                <span className={`${styles.cell} ${styles.cRoute}`} title={r.endpoint}>
+                  {r.endpoint}
+                </span>
+                <span className={`${styles.cell} ${styles.cAmount} ${styles.num}`}>
+                  {formatUsdc(r.receipt.amount)}
+                  <span className={styles.unit}>USDC</span>
+                </span>
+                <span
+                  className={`${styles.cell} ${styles.cPayer}`}
+                  title={r.receipt.payer}
+                >
+                  {truncAddr(r.receipt.payer)}
+                </span>
+                <span className={`${styles.cell} ${styles.cSeller}`}>
+                  <span className={styles.codename}>{seller.codename}</span>
+                  <span className={styles.paco}>· {seller.code}</span>
+                </span>
+                <span className={`${styles.cell} ${styles.cSource}`}>{r.source}</span>
+                <span className={`${styles.cell} ${styles.cHash}`}>
+                  <a
+                    href={`${arcscanBase}/tx/${r.receipt.transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={r.receipt.transactionHash}
+                  >
+                    {truncHash(r.receipt.transactionHash)} ↗
                   </a>
-                </td>
-                <td>{formatAt(r.at)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className={styles.pagination}>
+        <span className={styles.count}>
+          {filtered.length === 0
+            ? '00 of 00'
+            : `${(pageClamped * PAGE_SIZE + 1)
+                .toString()
+                .padStart(2, '0')}–${Math.min(
+                (pageClamped + 1) * PAGE_SIZE,
+                filtered.length,
+              )
+                .toString()
+                .padStart(2, '0')} of ${filtered.length.toString().padStart(3, '0')}`}
+        </span>
+        <span className={styles.spacer} />
+        <button
+          type="button"
+          className={styles.pageBtn}
+          disabled={pageClamped === 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+        >
+          ← prev
+        </button>
+        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+          const start = Math.max(0, Math.min(pageClamped - 2, totalPages - 5));
+          const idx = start + i;
+          if (idx >= totalPages) return null;
+          return (
+            <button
+              key={idx}
+              type="button"
+              className={`${styles.pageBtn} ${idx === pageClamped ? styles.current : ''}`}
+              onClick={() => setPage(idx)}
+            >
+              {(idx + 1).toString().padStart(2, '0')}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          className={styles.pageBtn}
+          disabled={pageClamped >= totalPages - 1}
+          onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+        >
+          next →
+        </button>
+      </div>
     </section>
   );
 }

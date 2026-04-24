@@ -432,39 +432,62 @@ pre,
 
 /* ══════════════════════════════════════════════════════════════════════════
    Interactive CROSS button — inline in each Tollkeeper row.
-   Pairs with _ui/CrossButton.tsx.
+   Claude Design v2 spec: ember border idle · brass-gold fill on hover ·
+   signal-gold fill on cleared. Pairs with _ui/CrossButton.tsx.
    ══════════════════════════════════════════════════════════════════════════ */
 
-.stamp-button.cross-button {
-  position: relative;
-  padding: 5px 12px;
+.cross-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--ember);
+  border: 1px solid var(--ember);
+  border-radius: var(--radius-sharp);
+  font-family: var(--font-mono);
   font-size: 10.5px;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease-out,
+    color 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 120ms ease-out;
+  font-variant-numeric: tabular-nums;
+  min-width: 104px;
+  justify-content: center;
+  position: relative;
 }
-.stamp-button.cross-button:focus-visible {
+.cross-button .cross-button-glyph { font-size: 11px; line-height: 1; }
+.cross-button:hover:not([disabled]),
+.cross-button:focus-visible:not([disabled]) {
+  background: var(--pale-brass);
+  color: #0D0D0D;
+  border-color: var(--pale-brass);
+  outline: none;
+}
+.cross-button:active { transform: translateY(1px); }
+.cross-button:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
-/* Settling state: indeterminate 1px underline (no spinner per bureau aesthetic). */
-.stamp-button.cross-button[data-busy="true"] {
+.cross-button[data-busy="true"] {
   cursor: progress;
-  opacity: 0.85;
+  border-style: dashed;
+  color: var(--signal);
+  border-color: var(--signal);
+  background: transparent;
 }
-.stamp-button.cross-button[data-busy="true"]::after {
-  content: "";
-  position: absolute;
-  left: 6px; right: 6px; bottom: 2px;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    currentColor 40%,
-    currentColor 60%,
-    transparent 100%);
-  animation: cross-underline 1100ms linear infinite;
+.cross-button[data-busy="true"] .cross-button-glyph {
+  animation: led-blink 1200ms ease-in-out infinite;
 }
-@keyframes cross-underline {
-  0%   { transform: translateX(-40%); }
-  100% { transform: translateX( 40%); }
+.cross-button[data-done="true"] {
+  background: var(--signal);
+  color: #0D0D0D;
+  border-color: var(--signal);
 }
 
 /* +1 ghost numeral floating up on success. 800ms rise + fade. */
@@ -524,7 +547,7 @@ pre,
   to   { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stamp-button.cross-button[data-busy="true"]::after,
+  .cross-button[data-busy="true"] .cross-button-glyph,
   .cross-plus-one,
   .cross-toast {
     animation: none !important;

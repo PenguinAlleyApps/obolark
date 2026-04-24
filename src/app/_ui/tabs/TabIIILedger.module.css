@@ -1,11 +1,12 @@
 /* ══════════════════════════════════════════════════════════════════
    Tab III · Live Ledger — CSS Module
-   Ported from public/refresh/tab-iii-ledger.html
-   Obsidian swap: background: var(--bone) → background: var(--obsidian)
-   (night-mode default; --bone is already #0E0A08 on obsidian field)
+   Ported from Claude Design v2 refresh (`Tab III Ledger.html`).
+
+   Layout: display:grid with display:contents rows (so dashed hairlines
+   paint across full width · columns stay aligned · tabular-nums).
+   Verdict chops slightly rotated; hashes pale-brass, hover signal.
    ══════════════════════════════════════════════════════════════════ */
 
-/* ─── Panel ─── */
 .panel {
   background: var(--bone);
   border-top: 2px solid var(--ink);
@@ -30,107 +31,411 @@
   color: var(--muted);
 }
 
-.panelHeader span {
-  display: contents;
+.panelHeader .right {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
-/* ─── Table ─── */
-.ledgerTable {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
-
-.ledgerTable thead tr {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.cadence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
 }
 
-.ledgerTable th {
-  padding: 8px 12px 8px 0;
-  border-bottom: 1px solid var(--grid-line);
-  font-weight: 500;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.ledgerTable td {
-  padding: 10px 12px 10px 0;
-  border-bottom: 1px dashed var(--grid-line);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-  transition: background-color 220ms ease-out;
-}
-
-.ledgerTable tbody tr:hover td {
-  background-color: color-mix(in oklab, var(--signal) 4%, transparent);
-}
-
-/* Numeric alignment */
-.numeric {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ─── Status LED ─── */
-.statusLed {
-  display: inline-block;
+.cadence .led {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--moss);
   box-shadow: 0 0 6px var(--moss);
-  vertical-align: middle;
   animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
 }
 
-.statusLed[data-state='signal'] {
+.registry {
+  color: var(--muted);
+}
+
+.registryLink {
+  color: var(--pale-brass);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 10.5px;
+}
+
+.registryLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--signal);
+}
+
+/* ─── Controls row (filter chips + live-dot) ─── */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.ctrlChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--grid-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 180ms ease-out,
+    border-color 180ms ease-out,
+    background 180ms ease-out;
+}
+
+.ctrlChip:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.ctrlChip[aria-pressed='true'] {
+  background: var(--bone-dark);
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.ctrlDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+  flex: none;
+}
+
+.ctrlChip[aria-pressed='true'] .ctrlDot {
   background: var(--signal);
   box-shadow: 0 0 6px var(--signal);
 }
 
-/* ─── Tx hash link ─── */
-.txHash {
+.liveDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.liveDot .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
+}
+
+.liveDot[data-armed='true'] .led {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+/* ─── Ledger grid ──────────────────────────────────────────── */
+.ledgerGrid {
+  display: grid;
+  grid-template-columns:
+    150px /* when */
+    150px /* route */
+    110px /* amount */
+    130px /* payer */
+    130px /* tollkeeper */
+    1fr; /* tx hash */
+  column-gap: 16px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.ledgerHead {
+  display: contents;
+}
+
+.ledgerHead > span {
+  padding: 8px 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--grid-line);
+  white-space: nowrap;
+}
+
+.ledgerHead > span.num {
+  text-align: right;
+}
+
+.ledgerRow {
+  display: contents;
+}
+
+.ledgerRow > .cell {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--grid-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 220ms ease-out;
+  display: flex;
+  align-items: center;
+}
+
+.ledgerRow > .cell.num {
+  justify-content: flex-end;
+}
+
+.ledgerRow[data-settled='true'] > .cell {
+  animation: ledgerPulse var(--motion-fade) ease-out;
+}
+
+@keyframes ledgerPulse {
+  0% {
+    background-color: color-mix(in oklab, var(--signal) 30%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.ledgerRow:hover > .cell {
+  background-color: color-mix(in oklab, var(--signal) 4%, transparent);
+}
+
+/* Cell content styling */
+.cWhen {
+  color: var(--muted);
+  font-size: 11px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.cWhen .rel {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-rule);
+  margin-top: 2px;
+}
+
+.cRoute {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.cAmount {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.cAmount .unit {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.cPayer {
+  color: var(--muted);
+}
+
+.cSeller {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cSeller .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  align-self: center;
+  animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
+}
+
+.cSeller .led[data-state='signal'] {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+.cSeller .codename {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.cSeller .paco {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cHash {
+  align-items: baseline !important;
+}
+
+.cHash a {
   color: var(--pale-brass);
   text-decoration: none;
   letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
 }
 
-.txHash:hover {
+.cHash a:hover {
   color: var(--signal);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* ─── Settlement row flash ─── */
-.settlementPulse td {
-  animation: signal-pulse var(--motion-fade) ease-out;
+.chop {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pale-brass);
+  border: 1px solid var(--pale-brass);
+  border-radius: 2px;
+  transform: rotate(-2deg);
+  vertical-align: middle;
+}
+
+.chop[data-verdict='verified'] {
+  color: var(--moss);
+  border-color: var(--moss);
+}
+
+.chop[data-verdict='void'] {
+  color: var(--oxide);
+  border-color: var(--oxide);
 }
 
 /* ─── Empty state ─── */
 .emptyState {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  grid-column: 1 / -1;
+  padding: 36px 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  text-transform: lowercase;
   color: var(--muted);
-  padding: 24px 0;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  font-size: 13px;
 }
 
-/* ─── Reduced motion ─── */
+/* ─── Metric strip ─── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--grid-line);
+}
+
+.metric {
+  border-left: 2px solid var(--ink);
+  padding-left: 14px;
+}
+
+.metricKey {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+.metricValue[data-role='signal'] {
+  color: var(--signal);
+}
+
+.metricValue[data-role='brass'] {
+  color: var(--pale-brass);
+}
+
+.metricValue[data-role='alert'] {
+  color: var(--oxide);
+}
+
+.metricSub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* ─── Mobile collapse ─── */
+@media (max-width: 1000px) {
+  .ledgerGrid {
+    grid-template-columns: 120px 140px 100px 1fr;
+  }
+  .ledgerHead > span.colPayer,
+  .ledgerRow > .cell.cPayer,
+  .ledgerHead > span.colTollkeeper,
+  .ledgerRow > .cell.cSeller {
+    display: none;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .settlementPulse td {
+  .ledgerRow[data-settled='true'] > .cell {
     animation: none !important;
   }
-  .statusLed {
+  .liveDot .led,
+  .cSeller .led,
+  .cadence .led {
     animation: none !important;
   }
 }

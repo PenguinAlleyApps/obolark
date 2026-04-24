@@ -9,9 +9,17 @@ export type CeremonyArgs = { agentCode: string; serviceLabel: string; scope: 'ro
 export type UnfurlArgs = { code: string; codename: string; anchor: HTMLElement };
 
 export type TabIIProps = { endpoints: Endpoint[]; agents: Agent[]; arcscanBase: string };
-export type TabIIIProps = { recentCalls: Receipt[]; arcscanBase: string };
+export type TabIIIProps = {
+  recentCalls: Receipt[];
+  endpoints: Endpoint[];
+  agents: Agent[];
+  registryAddress: string | null;
+  arcscanBase: string;
+};
 export type TabIVProps = {
   agents: Agent[];
+  endpoints: Endpoint[];
+  reputation: Record<string, SellerReputation>;
   deptGroups: Array<[string, Agent[]]>;
   sellerCodes: Set<string>;
   rosterRef: RefObject<HTMLDivElement | null>;
@@ -22,8 +30,19 @@ export type TabIVProps = {
   onCeremonyClear: (code: string) => void;
   serviceLabelFor: (code: string) => string;
 };
-export type TabVProps = { reputation: Record<string, SellerReputation>; registryAddress: string | null; agents: Agent[]; arcscanBase: string };
-export type TabVIProps = { archive: ArchiveEntry[]; arcscanBase: string };
+export type TabVProps = {
+  reputation: Record<string, SellerReputation>;
+  registryAddress: string | null;
+  agents: Agent[];
+  endpoints: Endpoint[];
+  arcscanBase: string;
+};
+export type TabVIProps = {
+  archive: ArchiveEntry[];
+  endpoints: Endpoint[];
+  agents: Agent[];
+  arcscanBase: string;
+};
 // TabVII + TabVIII use local Props definitions (OrchestrationFeed + arcscanBase
 // respectively) — moved-in-place from standalone components, not ported to the
 // scaffolded TabXxxProps shape.

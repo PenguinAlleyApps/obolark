@@ -1,0 +1,601 @@
+/* ══════════════════════════════════════════════════════════════════
+   Tab VII · Orchestrations — CSS Module
+   Ported from Claude Design v2 refresh (`Tab VII Orchestrations.html`).
+
+   Marquee strip (horizontal ticker) + 3 chain cards with dashed flow
+   nodes + pale-brass amount labels + debounced ceremony overlay on
+   settled runs. Chain cards expose idle/active/cleared/void states
+   via data-state on each flow-node.
+   ══════════════════════════════════════════════════════════════════ */
+
+.panel {
+  background: var(--bone);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--grid-line);
+  padding: 24px 32px 32px;
+  position: relative;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--grid-line);
+  margin-bottom: 22px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.cadence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cadence .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
+}
+
+.pausedChip {
+  border: 1px solid var(--oxide);
+  padding: 2px 8px;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  color: var(--oxide);
+  text-transform: uppercase;
+}
+
+/* ─── Marquee strip ─── */
+.marquee {
+  border-top: 1px solid var(--grid-line);
+  border-bottom: 1px solid var(--grid-line);
+  background: var(--bone-dark);
+  overflow: hidden;
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  margin-bottom: 22px;
+}
+
+.marqueeInner {
+  display: inline-flex;
+  gap: 40px;
+  padding: 10px 0;
+  white-space: nowrap;
+  animation: ticker-scroll 36s linear infinite;
+}
+
+.marqueeItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.marqueeItem .led {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 5px var(--moss);
+  display: inline-block;
+  flex: none;
+}
+
+.marqueeItem .led[data-state='signal'] {
+  background: var(--signal);
+  box-shadow: 0 0 5px var(--signal);
+}
+
+.marqueeItem .cname {
+  font-family: var(--font-mythic);
+  font-size: 12px;
+  color: var(--ink);
+  letter-spacing: 0.015em;
+}
+
+.marqueeItem .sep {
+  color: var(--brand-rule);
+}
+
+.marqueeItem .amt {
+  color: var(--pale-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Chains wrapper ─── */
+.chains {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--grid-line);
+  border: 1px solid var(--grid-line);
+}
+
+.chainCard {
+  background: var(--bone);
+  padding: 20px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  row-gap: 14px;
+  column-gap: 16px;
+  position: relative;
+}
+
+.chainHead {
+  grid-column: 1 / span 2;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--grid-line);
+}
+
+.chainTitle {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.015em;
+  color: var(--ink);
+}
+
+.chainMotto {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chainRuns {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chainRuns .n {
+  color: var(--pale-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Flow: nodes + edges */
+.flow {
+  grid-column: 1 / span 2;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  align-items: center;
+  position: relative;
+}
+
+.flowNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 1px dashed var(--grid-line);
+  border-radius: 2px;
+  background: var(--bone);
+  position: relative;
+  text-align: center;
+  min-width: 0;
+}
+
+.flowNode[data-state='cleared'] {
+  border-style: solid;
+  border-color: var(--moss);
+}
+
+.flowNode[data-state='active'] {
+  border-style: solid;
+  border-color: var(--signal);
+}
+
+.flowNode[data-state='void'] {
+  border-style: dashed;
+  border-color: var(--oxide);
+}
+
+.flowNode .ring {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--ember);
+}
+
+.flowNode .ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.flowNode .codename {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0.015em;
+  line-height: 1;
+}
+
+.flowNode .meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.flowNode .meta.amt {
+  color: var(--pale-brass);
+}
+
+.flowEdge {
+  height: 1px;
+  background: transparent;
+  border-top: 1px dashed var(--grid-line);
+  position: relative;
+  margin: 0 -4px;
+  align-self: center;
+}
+
+.flowEdge::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--grid-line);
+}
+
+.flowEdge[data-armed='true'] {
+  border-top-color: var(--signal);
+}
+
+.flowEdge[data-armed='true']::after {
+  border-left-color: var(--signal);
+}
+
+/* Run log strip */
+.runsStrip {
+  grid-column: 1 / span 2;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px dashed var(--grid-line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.runsStrip .k {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.runsStrip .val {
+  color: var(--ink);
+}
+
+.runsStrip .hash {
+  color: var(--pale-brass);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.runsStrip .hash:hover {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.runsStrip .dim {
+  color: var(--brand-rule);
+}
+
+/* Ceremony overlay */
+.ceremony {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.ceremony[data-fire='true'] {
+  animation: ceremonyFade 1600ms ease-out;
+}
+
+@keyframes ceremonyFade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.ceremony .edge {
+  position: absolute;
+  background: var(--signal);
+  box-shadow: 0 0 12px var(--signal);
+}
+
+.ceremony .edge.t,
+.ceremony .edge.b {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.ceremony .edge.t {
+  top: 0;
+}
+
+.ceremony .edge.b {
+  bottom: 0;
+}
+
+.ceremony .edge.l,
+.ceremony .edge.r {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.ceremony .edge.l {
+  left: 0;
+}
+
+.ceremony .edge.r {
+  right: 0;
+}
+
+.ceremony .label {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--signal);
+  padding: 3px 10px;
+  background: var(--bone-dark);
+  border: 1px solid var(--signal);
+  border-radius: 2px;
+}
+
+/* Summary strip */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--grid-line);
+}
+
+.summary .m {
+  border-left: 2px solid var(--ink);
+  padding-left: 14px;
+}
+
+.summary .k {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.summary .v {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+.summary .v[data-role='signal'] {
+  color: var(--signal);
+}
+
+.summary .v[data-role='brass'] {
+  color: var(--pale-brass);
+}
+
+.summary .v[data-role='moss'] {
+  color: var(--moss);
+}
+
+.summary .sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* ─── History strip (compact recent-runs list) ─── */
+.history {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--grid-line);
+}
+
+.historyTitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 86px 24px 1fr 110px 130px 28px;
+  align-items: baseline;
+  column-gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--grid-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: opacity 400ms linear;
+}
+
+.historyRow .time {
+  color: var(--muted);
+}
+
+.historyRow .codes {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.historyRow .codes .cn {
+  font-family: var(--font-mythic);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.historyRow .codes .arrow {
+  color: var(--ember);
+}
+
+.historyRow .codes .ep {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.historyRow .amt {
+  text-align: right;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyRow .hash a {
+  color: var(--pale-brass);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  font-size: 11px;
+}
+
+.historyRow .hash a:hover {
+  color: var(--signal);
+  text-decoration: underline;
+}
+
+.historyRow .status {
+  text-align: right;
+  font-weight: 700;
+}
+
+.historyRow[data-stale='true'] {
+  opacity: 0.6;
+}
+
+.historyRow[data-verdict='failed'] .status {
+  color: var(--oxide);
+}
+
+.historyEmpty {
+  padding: 32px 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  text-transform: lowercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .flow {
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+  }
+  .flowEdge {
+    display: none;
+  }
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .historyRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .historyRow > * {
+    grid-column: span 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cadence .led,
+  .marqueeInner,
+  .marqueeItem .led {
+    animation: none !important;
+  }
+  .ceremony[data-fire='true'] {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

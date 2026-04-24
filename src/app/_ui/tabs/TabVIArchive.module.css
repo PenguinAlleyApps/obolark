@@ -1,17 +1,12 @@
 /* ══════════════════════════════════════════════════════════════════
    Tab VI · Archive — CSS Module
-   Ported from public/refresh/tab-vi-archive.html
-   Night-mode default: var(--bone) is #0E0A08 (obsidian). Keep as-is.
+   Ported from Claude Design v2 refresh (`Tab VI Archive.html`).
 
-   Audit-driven rules:
-   · Active filter chip uses bone-dark bg + signal text + signal border
-     (no page-inversion; the bone-on-ink stamp pattern stays on Tab II only)
-   · Source column is var(--muted) for ALL sources (no moss/signal/pale-brass
-     collision; role encoded via small-caps text)
-   · Empty state: bureau forensic voice — lowercase, italic, display font
+   Mirror of arc-testnet ledger: controls row with filter chips +
+   query search input, tabular grid with dashed row rules, paginated
+   footer. Source column neutral muted (role encoded in text only).
    ══════════════════════════════════════════════════════════════════ */
 
-/* ─── Panel ─── */
 .panel {
   background: var(--bone);
   border-top: 2px solid var(--ink);
@@ -36,19 +31,59 @@
   color: var(--muted);
 }
 
-/* ─── Filter chips row ─── */
-.filterRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--grid-line);
-}
-
-.filterChip {
+.panelHeaderRight {
   display: inline-flex;
   align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cadence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cadence .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
+}
+
+/* ─── Controls row ─── */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.ctrlGroup {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ctrlGroup .label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.ctrlChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 5px 12px;
   background: transparent;
   color: var(--muted);
@@ -59,95 +94,219 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+  transition:
+    color 180ms ease-out,
+    border-color 180ms ease-out,
+    background 180ms ease-out;
 }
 
-.filterChip:hover {
+.ctrlChip:hover {
   color: var(--ink);
   border-color: var(--muted);
 }
 
-/* Audit fix: active state uses bone-dark bg + signal text + signal border.
-   Must NOT invert to bone-on-ink (that stamp pattern is reserved for Tab II). */
-.filterChip[aria-pressed="true"] {
+.ctrlChip[aria-pressed='true'] {
   background: var(--bone-dark);
   color: var(--signal);
   border-color: var(--signal);
 }
 
+.ctrlChip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+  flex: none;
+}
+
+.ctrlChip[aria-pressed='true'] .dot {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal);
+}
+
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bone-dark);
+  border: 1px solid var(--grid-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  min-width: 260px;
+}
+
+.search:focus-within {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 1px var(--signal);
+}
+
+.search .prefix {
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 9.5px;
+}
+
+.search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.search input::placeholder {
+  color: var(--muted);
+}
+
 /* ─── Archive table ─── */
-.archiveTable {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+.arcGrid {
+  display: grid;
+  grid-template-columns:
+    150px /* when */
+    150px /* route */
+    110px /* amount */
+    130px /* payer */
+    140px /* tollkeeper */
+    110px /* source */
+    1fr; /* tx hash */
+  column-gap: 16px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
 }
 
-.archiveTable thead tr {
+.arcHead {
+  display: contents;
+}
+
+.arcHead > span {
+  padding: 8px 0;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-}
-
-.archiveTable th {
-  padding: 8px 12px 8px 0;
   border-bottom: 1px solid var(--grid-line);
-  font-weight: 500;
-  text-align: left;
   white-space: nowrap;
 }
 
-.archiveTable td {
-  padding: 10px 12px 10px 0;
+.arcHead > span.numHead {
+  text-align: right;
+}
+
+.arcRow {
+  display: contents;
+}
+
+.arcRow > .cell {
+  padding: 10px 0;
   border-bottom: 1px dashed var(--grid-line);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
 }
 
-.archiveTable tbody tr:hover td {
+.arcRow > .cell.num {
+  justify-content: flex-end;
+}
+
+.arcRow:hover > .cell {
   background-color: color-mix(in oklab, var(--signal) 4%, transparent);
 }
 
-/* ─── Numeric cells ─── */
-.numeric {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.cWhen {
+  color: var(--muted);
+  font-size: 11px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-/* ─── Source cell (audit fix: muted for ALL sources, no colour-coded labels) ─── */
-.sourceCell {
+.cWhen .date {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.cWhen .time {
   color: var(--muted);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-/* ─── Payer cell (muted, same family as source) ─── */
-.payerCell {
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.02em;
+.cRoute {
+  color: var(--ink);
+  font-weight: 700;
 }
 
-/* ─── Tx hash link (pale-brass, hover signal) ─── */
-.txHash {
+.cAmount {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.cAmount .unit {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.cPayer {
+  color: var(--muted);
+}
+
+.cSeller {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cSeller .codename {
+  font-family: var(--font-mythic);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.cSeller .paco {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cSource {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cHash a {
   color: var(--pale-brass);
   text-decoration: none;
   letter-spacing: 0.02em;
 }
 
-.txHash:hover {
+.cHash a:hover {
   color: var(--signal);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* ─── Empty state (forensic bureau voice) ─── */
-.emptyState {
+.empty {
+  grid-column: 1 / -1;
   padding: 48px 0;
   text-align: center;
   font-family: var(--font-display);
@@ -158,19 +317,78 @@
   letter-spacing: 0.04em;
 }
 
-/* ─── Responsive: hide source + payer columns on narrow viewports ─── */
+/* ─── Pagination ─── */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--grid-line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.pagination .count {
+  color: var(--ink);
+}
+
+.pagination .spacer {
+  flex: 1;
+}
+
+.pageBtn {
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--grid-line);
+  border-radius: 2px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition:
+    color 180ms ease-out,
+    border-color 180ms ease-out;
+}
+
+.pageBtn:hover:not([disabled]) {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.pageBtn[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pageBtn.current {
+  color: var(--signal);
+  border-color: var(--signal);
+  background: var(--bone-dark);
+}
+
 @media (max-width: 1100px) {
-  .archiveTable th:nth-child(2),
-  .archiveTable td:nth-child(2),
-  .archiveTable th:nth-child(4),
-  .archiveTable td:nth-child(4) {
+  .arcGrid {
+    grid-template-columns: 120px 140px 100px 130px 1fr;
+  }
+  .arcHead > span.colPayer,
+  .arcRow > .cell.cPayer,
+  .arcHead > span.colSource,
+  .arcRow > .cell.cSource {
     display: none;
   }
 }
 
-/* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
-  .filterChip {
+  .cadence .led {
+    animation: none !important;
+  }
+  .ctrlChip {
     transition: none !important;
   }
 }

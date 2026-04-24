@@ -247,12 +247,22 @@ export default function BureauSections({
       {show('II') && (<TabIITollkeepers endpoints={endpoints} agents={agents} arcscanBase={arcscanBase} />)}
 
       {/* ── III · Live Ledger ─────────────────────────────────────────── */}
-      {show('III') && (<TabIIILedger recentCalls={recentCalls} arcscanBase={arcscanBase} />)}
+      {show('III') && (
+        <TabIIILedger
+          recentCalls={recentCalls}
+          endpoints={endpoints}
+          agents={agents}
+          registryAddress={registryAddress}
+          arcscanBase={arcscanBase}
+        />
+      )}
 
       {/* ── IV · Agent roster ─────────────────────────────────────────── */}
       {show('IV') && (
         <TabIVAgents
           agents={agents}
+          endpoints={endpoints}
+          reputation={reputation}
           deptGroups={deptGroups}
           sellerCodes={sellerCodes}
           rosterRef={rosterRef}
@@ -267,11 +277,24 @@ export default function BureauSections({
 
       {/* ── V · Reputation ────────────────────────────────────────────── */}
       {show('V') && (
-        <TabVReputation reputation={reputation} registryAddress={registryAddress} agents={agents} arcscanBase={arcscanBase} />
+        <TabVReputation
+          reputation={reputation}
+          registryAddress={registryAddress}
+          agents={agents}
+          endpoints={endpoints}
+          arcscanBase={arcscanBase}
+        />
       )}
 
       {/* ── VI · Archive ──────────────────────────────────────────────── */}
-      {show('VI') && (<TabVIArchive archive={archive} arcscanBase={arcscanBase} />)}
+      {show('VI') && (
+        <TabVIArchive
+          archive={archive}
+          endpoints={endpoints}
+          agents={agents}
+          arcscanBase={arcscanBase}
+        />
+      )}
 
       {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
       {(tab === 'I' || tab === 'VII') && (

@@ -1,10 +1,12 @@
 /* ══════════════════════════════════════════════════════════════════
    Tab V · Reputation — CSS Module
-   Ported from public/refresh/tab-v-reputation.html
-   Night-mode default: var(--bone) is #0E0A08 (obsidian). Keep as-is.
+   Ported from Claude Design v2 refresh (`Tab V Reputation.html`).
+
+   Registry card: pale-brass left border · address in brass-gold.
+   Scores grid: 7 columns; gauge tint encodes tier (moss/brass/oxide);
+   tier chip colour matches gauge fill; delta arrow reserved for ±score.
    ══════════════════════════════════════════════════════════════════ */
 
-/* ─── Panel ─── */
 .panel {
   background: var(--bone);
   border-top: 2px solid var(--ink);
@@ -29,68 +31,160 @@
   color: var(--muted);
 }
 
-/* ─── Registry link (pale-brass, dotted underline) ─── */
-.registryLink {
+.panelHeaderRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cadence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cadence .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--moss);
+  box-shadow: 0 0 6px var(--moss);
+  animation: led-blink 2s ease-in-out infinite;
+  display: inline-block;
+  flex: none;
+}
+
+/* ─── Registry card ─── */
+.registryCard {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 32px;
+  align-items: baseline;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  background: var(--bone-dark);
+  border: 1px solid var(--grid-line);
+  border-left: 2px solid var(--pale-brass);
+}
+
+.registryCard .k {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.registryCard .addr {
+  font-family: var(--font-mono);
+  font-size: 13px;
   color: var(--pale-brass);
   text-decoration: none;
-  border-bottom: 1px dotted var(--pale-brass);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.registryCard .addr:hover {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.registryCard .v {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  transition: color 160ms ease-out;
 }
 
-.registryLink:hover {
-  color: var(--signal);
-  border-bottom-color: var(--signal);
+.registryCard .v.brass {
+  color: var(--pale-brass);
 }
 
-/* ─── Scores table ─── */
-.scoreTable {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+@media (max-width: 1100px) {
+  .registryCard {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ─── Scores grid ─── */
+.scoresGrid {
+  display: grid;
+  grid-template-columns:
+    180px /* warden */
+    70px /* score */
+    1fr /* gauge */
+    90px /* crossings */
+    100px /* settled */
+    90px; /* tier */
+  column-gap: 16px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
 }
 
-.scoreTable thead tr {
+.scoresHead {
+  display: contents;
+}
+
+.scoresHead > span {
+  padding: 8px 0;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-}
-
-.scoreTable th {
-  padding: 8px 12px 8px 0;
   border-bottom: 1px solid var(--grid-line);
-  font-weight: 500;
-  text-align: left;
   white-space: nowrap;
 }
 
-.scoreTable td {
-  padding: 10px 12px 10px 0;
+.scoresHead > span.numHead {
+  text-align: right;
+}
+
+.scoresRow {
+  display: contents;
+}
+
+.scoresRow > .cell {
+  padding: 12px 0;
   border-bottom: 1px dashed var(--grid-line);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
 }
 
-/* ─── Numeric cells ─── */
-.numeric {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.scoresRow > .cell.num {
+  justify-content: flex-end;
 }
 
-/* ─── Seller cell ─── */
-.seller {
-  display: inline-flex;
+.scoresRow[data-flash='true'] > .cell {
+  animation: reputationPulse 600ms ease-out;
+}
+
+@keyframes reputationPulse {
+  0% {
+    background-color: color-mix(in oklab, var(--signal) 28%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.cWarden {
+  display: flex;
   align-items: baseline;
   gap: 8px;
+  min-width: 0;
 }
 
-.codename {
+.cWarden .codename {
   font-family: var(--font-mythic);
   font-weight: 700;
   font-size: 15px;
@@ -98,7 +192,7 @@
   color: var(--ink);
 }
 
-.code {
+.cWarden .paco {
   font-family: var(--font-mono);
   font-size: 9.5px;
   letter-spacing: 0.18em;
@@ -106,50 +200,176 @@
   color: var(--muted);
 }
 
-/* ─── Score bar (80px track, ember fill) ─── */
-.scoreBar {
-  display: inline-block;
-  width: 80px;
-  height: 4px;
-  background: color-mix(in oklab, var(--ember) 12%, transparent);
-  vertical-align: middle;
-  margin-left: 8px;
+.cScore {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.gauge {
+  width: 100%;
+  height: 6px;
+  background: var(--bone-dark);
+  border: 1px solid var(--grid-line);
   position: relative;
   overflow: hidden;
 }
 
-.fill {
-  height: 100%;
-  background: var(--ember);
+.gauge .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--moss);
   transition: width 400ms ease-out;
+}
+
+.gauge .fill[data-tier='high'] {
+  background: var(--moss);
+}
+
+.gauge .fill[data-tier='mid'] {
+  background: var(--pale-brass);
+}
+
+.gauge .fill[data-tier='low'] {
+  background: var(--oxide);
+}
+
+.cCrossings,
+.cSettled {
+  color: var(--ink);
+}
+
+.cSettled .unit {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.cTier {
+  justify-content: flex-start;
+}
+
+.tierChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 2px;
+  border: 1px solid var(--grid-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+}
+
+.tierChip[data-tier='high'] {
+  color: var(--moss);
+  border-color: var(--moss);
+}
+
+.tierChip[data-tier='mid'] {
+  color: var(--pale-brass);
+  border-color: var(--pale-brass);
+}
+
+.tierChip[data-tier='low'] {
+  color: var(--oxide);
+  border-color: var(--oxide);
 }
 
 /* ─── Empty state ─── */
 .emptyState {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  grid-column: 1 / -1;
+  padding: 36px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  text-transform: lowercase;
   color: var(--muted);
-  padding: 24px 0;
+  letter-spacing: 0.04em;
+  font-size: 13px;
+}
+
+/* ─── Summary strip ─── */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--grid-line);
+}
+
+.summary .m {
+  border-left: 2px solid var(--ink);
+  padding-left: 14px;
+}
+
+.summary .k {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.summary .v {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+.summary .v[data-role='signal'] {
+  color: var(--signal);
+}
+
+.summary .v[data-role='brass'] {
+  color: var(--pale-brass);
+}
+
+.summary .v[data-role='moss'] {
+  color: var(--moss);
+}
+
+.summary .sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  margin-top: 6px;
 }
 
-/* ─── Trend links (ERC-8004 tx dots) ─── */
-.trendLink {
-  color: var(--pale-brass);
-  margin-right: 6px;
-  text-decoration: none;
+@media (max-width: 760px) {
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .scoresGrid {
+    grid-template-columns: 140px 60px 1fr 80px 90px;
+  }
+  .scoresHead > span:nth-child(6),
+  .scoresRow > .cell:nth-child(6) {
+    display: none;
+  }
 }
 
-.trendLink:hover,
-.trendLink:focus-visible {
-  color: var(--signal);
-  outline: none;
-}
-
-/* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
-  .fill {
+  .cadence .led {
+    animation: none !important;
+  }
+  .scoresRow[data-flash='true'] > .cell {
+    animation: none !important;
+  }
+  .gauge .fill {
     transition: none !important;
   }
 }
