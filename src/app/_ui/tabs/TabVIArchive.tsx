@@ -7,6 +7,22 @@ function truncHash(h: string) {
   return !h || h.length < 14 ? h || '' : `${h.slice(0, 10)}…${h.slice(-6)}`;
 }
 
+function truncAddr(a: string): string {
+  if (!a || a.length < 10) return a || '';
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
+function formatUsdc(raw: string): string {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return '—';
+  return (n / 1_000_000).toFixed(6);
+}
+
+function formatAt(at: string): string {
+  const d = new Date(at);
+  return Number.isFinite(d.getTime()) ? d.toLocaleString() : at;
+}
+
 export default function TabVIArchive({ archive, arcscanBase }: TabVIProps) {
   const sources = useMemo(
     () => ['all', ...Array.from(new Set(archive.map((a) => a.source))).sort()],
@@ -48,6 +64,7 @@ export default function TabVIArchive({ archive, arcscanBase }: TabVIProps) {
               <th>Endpoint</th>
               <th>Source</th>
               <th className={styles.numeric}>Amount (USDC)</th>
+              <th>Payer</th>
               <th>Tx Hash</th>
               <th>At</th>
             </tr>
@@ -57,13 +74,14 @@ export default function TabVIArchive({ archive, arcscanBase }: TabVIProps) {
               <tr key={`${r.source}-${r.receipt.transactionHash}`}>
                 <td>{r.endpoint}</td>
                 <td className={styles.sourceCell}>{r.source}</td>
-                <td className={styles.numeric}>{r.receipt.amount}</td>
+                <td className={styles.numeric}>{formatUsdc(r.receipt.amount)}</td>
+                <td className={styles.payerCell} title={r.receipt.payer}>{truncAddr(r.receipt.payer)}</td>
                 <td>
                   <a className={styles.txHash} href={`${arcscanBase}/tx/${r.receipt.transactionHash}`} target="_blank" rel="noopener noreferrer">
                     {truncHash(r.receipt.transactionHash)}
                   </a>
                 </td>
-                <td>{r.at}</td>
+                <td>{formatAt(r.at)}</td>
               </tr>
             ))}
           </tbody>

@@ -126,6 +126,13 @@
   text-transform: uppercase;
 }
 
+/* ─── Payer cell (muted, same family as source) ─── */
+.payerCell {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
 /* ─── Tx hash link (pale-brass, hover signal) ─── */
 .txHash {
   color: var(--pale-brass);
@@ -154,7 +161,9 @@
 /* ─── Responsive: hide source + payer columns on narrow viewports ─── */
 @media (max-width: 1100px) {
   .archiveTable th:nth-child(2),
-  .archiveTable td:nth-child(2) {
+  .archiveTable td:nth-child(2),
+  .archiveTable th:nth-child(4),
+  .archiveTable td:nth-child(4) {
     display: none;
   }
 }
