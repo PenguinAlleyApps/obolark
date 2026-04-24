@@ -19,6 +19,7 @@ import LedgerTicker from './LedgerTicker';
 import TabIITollkeepers from './tabs/TabIITollkeepers';
 import TabIIILedger from './tabs/TabIIILedger';
 import TabVReputation from './tabs/TabVReputation';
+import TabVIArchive from './tabs/TabVIArchive';
 import OrchestrationsPanel from './OrchestrationsPanel';
 import OrchestrationsMarquee from './OrchestrationsMarquee';
 import AgentRosterOverlay from './AgentRosterOverlay';
@@ -117,10 +118,6 @@ function truncAddr(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
 
-function truncHash(h: string): string {
-  if (!h || h.length < 14) return h || '';
-  return `${h.slice(0, 10)}…${h.slice(-6)}`;
-}
 
 type TabId = 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII';
 const TABS: Array<{ id: TabId; label: string }> = [
@@ -450,17 +447,7 @@ export default function BureauSections({
       )}
 
       {/* ── VI · Archive ──────────────────────────────────────────────── */}
-      {show('VI') && (
-        <section className="panel" id="archive">
-          <div className="panel-header">
-            <span>[ VI · ARCHIVE · ALL CROSSINGS ON RECORD ]</span>
-            <span>
-              {archive.length} tx &middot; chronological · newest first
-            </span>
-          </div>
-          <ArchiveTable archive={archive} arcscanBase={arcscanBase} />
-        </section>
-      )}
+      {show('VI') && (<TabVIArchive archive={archive} arcscanBase={arcscanBase} />)}
 
       {/* ── VII · Orchestrations (also rendered on Front Page) ──────── */}
       {(tab === 'I' || tab === 'VII') && (
@@ -550,136 +537,6 @@ function MetricsRow({
         </div>
       </div>
     </section>
-  );
-}
-
-function ArchiveTable({
-  archive,
-  arcscanBase,
-}: {
-  archive: ArchiveEntry[];
-  arcscanBase: string;
-}) {
-  const [filter, setFilter] = useState<string>('all');
-  const sources = useMemo(() => {
-    const set = new Set(archive.map((e) => e.source));
-    return ['all', ...Array.from(set).sort()];
-  }, [archive]);
-  const filtered = useMemo(
-    () => (filter === 'all' ? archive : archive.filter((e) => e.source === filter)),
-    [archive, filter],
-  );
-
-  if (archive.length === 0) {
-    return (
-      <div className="font-mono text-sm text-[var(--muted)] py-6">
-        Archive is empty. Run a crossing to populate history.
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col">
-      {/* Source filter chips */}
-      <div
-        className="flex flex-wrap gap-2 pb-3 mb-2 border-b"
-        style={{ borderColor: 'var(--grid-line)' }}
-      >
-        {sources.map((s) => {
-          const active = filter === s;
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setFilter(s)}
-              style={{
-                background: active ? 'var(--ink)' : 'transparent',
-                color: active ? 'var(--bone)' : 'var(--muted)',
-                border: '1px solid var(--grid-line)',
-                padding: '4px 10px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                borderRadius: 2,
-              }}
-            >
-              {s}
-            </button>
-          );
-        })}
-      </div>
-
-      <div
-        className="grid font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] py-1 border-b"
-        style={{
-          gridTemplateColumns: '128px 140px 110px 130px 1fr 100px',
-          borderColor: 'var(--grid-line)',
-          columnGap: '14px',
-        }}
-      >
-        <span>When</span>
-        <span>Route / note</span>
-        <span className="text-right">Amount</span>
-        <span>Payer</span>
-        <span>Arc Tx Hash</span>
-        <span className="text-right">Source</span>
-      </div>
-      <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-        {filtered.map((row, i) => {
-          const base = Number(row.receipt.amount) / 1_000_000;
-          const time = row.at ? new Date(row.at) : null;
-          const t = time ? time.toLocaleString() : '—';
-          return (
-            <div
-              key={`${row.receipt.transactionHash}-${i}`}
-              className="grid items-baseline font-mono text-[12px] py-2 border-b border-dashed"
-              style={{
-                gridTemplateColumns: '128px 140px 110px 130px 1fr 100px',
-                borderColor: 'var(--grid-line)',
-                columnGap: '14px',
-              }}
-            >
-              <span className="text-[var(--muted)] text-[11px]">{t}</span>
-              <span className="font-bold truncate" title={row.endpoint}>
-                {row.endpoint}
-              </span>
-              <span className="text-right" data-numeric>
-                {Number.isFinite(base) && base > 0 ? base.toFixed(6) : '—'}
-              </span>
-              <span className="truncate" title={row.receipt.payer}>
-                {truncAddr(row.receipt.payer)}
-              </span>
-              <a
-                href={`${arcscanBase}/tx/${row.receipt.transactionHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="truncate text-[var(--muted)] underline-offset-2 hover:underline"
-                title={row.receipt.transactionHash}
-              >
-                {truncHash(row.receipt.transactionHash)}
-              </a>
-              <span
-                className="text-right font-mono uppercase"
-                style={{
-                  fontSize: 9,
-                  letterSpacing: '0.14em',
-                  color:
-                    row.source === 'reputation'
-                      ? 'var(--moss)'
-                      : row.source === 'endpoints'
-                        ? 'var(--signal)'
-                        : 'var(--pale-brass)',
-                }}
-              >
-                {row.source}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 
