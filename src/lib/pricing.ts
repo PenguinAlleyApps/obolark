@@ -7,6 +7,7 @@
  * routed to the PA·co treasury per CEO-confirmed Option A.
  */
 import { TREASURY_AGENT } from '@/agents/registry';
+import { BUREAU_PRICING, type BureauKey } from './pricing-bureau';
 
 export type EndpointKey =
   | 'research'
@@ -19,7 +20,10 @@ export type EndpointKey =
   // + structured output, but still 402-gated via x402-gateway.
   | 'gemini-oracle'
   | 'featherless-route'
-  | 'aisa-data';
+  | 'aisa-data'
+  // 16 Bureau warden services (lore-accurate sub-cent crossings).
+  // Defined in pricing-bureau.ts; merged into PRICING below.
+  | BureauKey;
 
 export type EndpointPricing = {
   /** Seller agent code — receives the primary payment */
@@ -35,6 +39,7 @@ export type EndpointPricing = {
 };
 
 export const PRICING: Record<EndpointKey, EndpointPricing> = {
+  ...BUREAU_PRICING,
   'research': {
     seller: 'RADAR',
     price: '0.003',
