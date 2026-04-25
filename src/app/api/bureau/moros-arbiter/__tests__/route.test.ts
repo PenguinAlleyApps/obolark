@@ -7,7 +7,7 @@ vi.mock('@/lib/x402-gateway', () => ({
   requirePayment: vi.fn().mockResolvedValue({ kind: 'settled', receipt: { network: 'arc', payer: '0xP', transactionHash: '0xT', amount: '0.009' }, requirements: {} }),
   encodeReceipt: vi.fn().mockReturnValue('e'),
 }));
-vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock }));
+vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock, callGeminiMultimodalWithFallback: geminiMock }));
 
 import { POST } from '../route';
 
@@ -23,7 +23,7 @@ describe('POST /api/bureau/moros-arbiter', () => {
     const res = await POST(req);
     const json = await res.json();
     expect(json.artifact.body.arbitrated).toHaveLength(2);
-    expect(geminiMock).toHaveBeenCalledWith(expect.objectContaining({ thinkingBudget: expect.any(Number) }));
+    expect(geminiMock).toHaveBeenCalledWith(expect.objectContaining({ thinkingBudget: expect.any(Number) }), expect.any(String));
     expect(json.deep_think).toBe(true);
   });
 });

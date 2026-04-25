@@ -10,8 +10,8 @@ vi.mock('@/lib/x402-gateway', () => ({
   encodeReceipt: vi.fn().mockReturnValue('encoded'),
 }));
 
-vi.mock('@/lib/providers/gemini-multimodal', () => ({
-  callGeminiMultimodal: vi.fn().mockResolvedValue({
+vi.mock('@/lib/providers/gemini-multimodal', () => {
+  const result = {
     json: {
       verdict: 'truthful',
       observations: [
@@ -25,8 +25,12 @@ vi.mock('@/lib/providers/gemini-multimodal', () => ({
     usedModel: 'gemini-3-flash-preview',
     groundingSources: [],
     functionCall: null,
-  }),
-}));
+  };
+  return {
+    callGeminiMultimodal: vi.fn().mockResolvedValue(result),
+    callGeminiMultimodalWithFallback: vi.fn().mockResolvedValue(result),
+  };
+});
 
 import { POST } from '../route';
 

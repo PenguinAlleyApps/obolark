@@ -14,7 +14,16 @@ vi.mock('@google/genai', () => {
 });
 
 describe('callGeminiMultimodal', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // The helper now fetches HTTPS image URIs and inlines them as base64.
+    // Mock global fetch so the test does not hit the network.
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => new ArrayBuffer(8),
+      headers: { get: () => 'image/jpeg' },
+    }) as unknown as typeof fetch;
+  });
 
   it('returns parsed JSON when text+image inputs given', async () => {
     const out = await callGeminiMultimodal({

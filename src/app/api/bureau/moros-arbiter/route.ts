@@ -5,7 +5,7 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
-import { callGeminiMultimodal } from '@/lib/providers/gemini-multimodal';
+import { callGeminiMultimodalWithFallback } from '@/lib/providers/gemini-multimodal';
 import { BUREAU_PERSONAS } from '@/lib/providers/personas-bureau';
 import { validateArtifact } from '@/lib/providers/artifact-schemas';
 import { silenceArtifact } from '@/lib/providers/artifact-provider';
@@ -58,21 +58,22 @@ export async function POST(req: NextRequest) {
   }
 
   const persona = BUREAU_PERSONAS[KEY];
-  const model = process.env.GEMINI_MODEL_PRO ?? 'gemini-3-pro';
+  const model = process.env.GEMINI_MODEL_PRO ?? 'gemini-3-pro-preview';
+  const fallback = process.env.GEMINI_MODEL_PRO_FALLBACK ?? 'gemini-3-flash-preview';
 
   const claimsBlock = parsed.data.claims.map((c, i) => `${i + 1}. ${c.warden}: "${c.claim}"`).join('\n');
-  const userText = `${parsed.data.subject}\n\nClaims to arbitrate:\n${claimsBlock}\n\nNow pronounce.`;
+  const userText = `${parsed.data.subject}\n\nClaims to arbitrate:\n${claimsBlock}\n\nReturn STRICT JSON ONLY (no prose, no markdown). Required shape:\n{\n  "arbitrated": [\n    ${parsed.data.claims.map((c) => `{ "warden": "${c.warden}", "claim": "<≤220 chars: your re-statement>" }`).join(',\n    ')}\n  ],\n  "fate": "<≤440 chars: final pronouncement, mythic register>",\n  "binding_clause": "<≤220 chars: the rule this fate establishes>"\n}`;
 
   let outcome;
   try {
-    outcome = await callGeminiMultimodal({
+    outcome = await callGeminiMultimodalWithFallback({
       apiKey,
       model,
       systemInstruction: persona,
       userText,
       thinkingBudget: 16_000,
       maxOutputTokens: 1400,
-    });
+    }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
   }
