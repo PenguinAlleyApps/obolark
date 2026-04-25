@@ -21,6 +21,7 @@ import AgentRosterOverlay from '../AgentRosterOverlay';
 import EmberGlyph from '../EmberGlyph';
 import type { FeatherlessBinding } from '../ModelCardUnfurl';
 import { AgentCeremonyOverlay, AGENT_REGISTRY } from '../AgentVFX';
+import { ENDPOINT_KEY_BY_CODE } from '../bureau-endpoint-map';
 import type { TabIVProps, Agent } from './types';
 
 // IV-specific Featherless model bindings — kept in sync with BureauSections.
@@ -129,12 +130,13 @@ export default function TabIVAgents(p: TabIVProps) {
             <div className={styles.rosterGrid}>
               {list.map((a) => {
                 const isSeller = p.sellerCodes.has(a.code);
-                const ledState = isSeller
+                const hasService = Boolean(ENDPOINT_KEY_BY_CODE[a.code]);
+                const ledState = isSeller || hasService
                   ? 'signal'
                   : a.code === 'BUYER-EOA'
                   ? 'ok'
                   : 'idle';
-                const hasCeremony = Boolean(AGENT_REGISTRY[a.code]);
+                const hasCeremony = Boolean(AGENT_REGISTRY[a.code]) && hasService;
                 const cardCeremony =
                   p.ceremony?.scope === 'roster' && p.ceremony.agentCode === a.code
                     ? p.ceremony
@@ -163,6 +165,20 @@ export default function TabIVAgents(p: TabIVProps) {
                             })
                           }
                         />
+                      ) : AGENT_REGISTRY[a.code]?.sigilId ? (
+                        <svg
+                          viewBox="0 0 32 32"
+                          aria-hidden
+                          style={{
+                            color:
+                              AGENT_REGISTRY[a.code].accent === 'ember' ? 'var(--ember)'
+                              : AGENT_REGISTRY[a.code].accent === 'brass' ? 'var(--pale-brass)'
+                              : 'var(--signal)',
+                            filter: 'drop-shadow(0 0 3px currentColor)',
+                          }}
+                        >
+                          <use href={`#${AGENT_REGISTRY[a.code].sigilId}`} stroke="currentColor" strokeWidth="1.4" fill="none" />
+                        </svg>
                       ) : (
                         <svg viewBox="-22 -22 44 44" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.1">
                           <circle r="10" />

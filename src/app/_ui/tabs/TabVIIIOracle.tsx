@@ -121,6 +121,60 @@ export default function TabVIIIOracle({ arcscanBase }: TabVIIIOracleProps) {
   const [log, setLog] = useState(SEED_HISTORY);
   const typeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Map the gemini-oracle artifact response into the Tab's flat OracleResponse.
+  // The endpoint returns { artifact: { body: { moiras, verdict } }, grounding: { sources }, paid: { transactionHash } }.
+  // Older callers received { oracle: { bullets } } — we accept both shapes.
+  const adaptResponse = useCallback((data: unknown): OracleResponse | null => {
+    if (!data || typeof data !== 'object') return null;
+    const d = data as {
+      artifact?: { body?: { moiras?: Array<{ omen?: string; source?: string }> } };
+      oracle?: { bullets?: string[] };
+      grounding?: { sources?: Array<{ uri?: string; title?: string }> };
+      paid?: { transactionHash?: string };
+    };
+    const moiras = d.artifact?.body?.moiras ?? [];
+    const bullets = d.oracle?.bullets ?? [];
+    const narration: string[] = (
+      moiras.length > 0
+        ? moiras.map((m) => m?.omen).filter((o): o is string => typeof o === 'string' && o.length > 0)
+        : bullets.filter((b): b is string => typeof b === 'string' && b.length > 0)
+    );
+    const groundingSources = d.grounding?.sources ?? [];
+    const sources: Source[] = groundingSources
+      .map((s) => {
+        if (!s?.uri) return null;
+        let label = s.title;
+        if (!label) {
+          try {
+            label = new URL(s.uri).hostname;
+          } catch {
+            label = 'source';
+          }
+        }
+        return { label: label || 'source', href: s.uri };
+      })
+      .filter((s): s is Source => s !== null)
+      .slice(0, 4);
+    // Carry over moira-side citation chips when grounding is empty.
+    if (sources.length === 0 && moiras.length > 0) {
+      for (const m of moiras) {
+        if (m?.source) {
+          try {
+            sources.push({ label: new URL(m.source).hostname, href: m.source });
+          } catch {
+            sources.push({ label: 'source', href: m.source });
+          }
+        }
+      }
+    }
+    return {
+      narration,
+      sources,
+      reputation_touched: [],
+      cited_hashes: d.paid?.transactionHash ? [d.paid.transactionHash] : [],
+    };
+  }, []);
+
   const fetchLive = useCallback(async (): Promise<OracleResponse | null> => {
     try {
       const res = await fetch('/api/gemini-oracle', {
@@ -130,21 +184,21 @@ export default function TabVIIIOracle({ arcscanBase }: TabVIIIOracleProps) {
         body: JSON.stringify({}),
       });
       if (!res.ok) return null;
-      return (await res.json()) as OracleResponse;
+      return adaptResponse(await res.json());
     } catch {
       return null;
     }
-  }, []);
+  }, [adaptResponse]);
 
   const fetchCached = useCallback(async (): Promise<OracleResponse | null> => {
     try {
       const res = await fetch('/api/narrations/latest', { cache: 'no-store' });
       if (!res.ok) return null;
-      return (await res.json()) as OracleResponse;
+      return adaptResponse(await res.json());
     } catch {
       return null;
     }
-  }, []);
+  }, [adaptResponse]);
 
   // Typewriter — runs whenever `resp` changes to a new narration
   useEffect(() => {

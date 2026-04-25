@@ -243,15 +243,23 @@ export async function requirePayment(
   };
 
   // ─── Fire-and-forget reputation credit ────────────────────────────────
-  // ERC-8004: the buyer credits the seller with a score of 100 after
-  // every successful x402 crossing. MUST NOT block the 200 response —
-  // creditFeedback() swallows all errors internally.
+  // ERC-8004 uint8 score, deterministically modulated per (seller, tx) so
+  // Tab V tier distribution shows real variation (instead of every warden
+  // clamped to 1.0). Range 72..98; reservoir-stable per wallet code.
+  // creditFeedback() swallows all errors internally — never blocks the 200.
   const price = priceOf(key);
   const sellerCode = price.seller;
   const buyerCode = buyerCodeFromAddress(receipt.payer);
   if (buyerCode) {
+    const seed = `${sellerCode}:${receipt.transactionHash ?? ''}`;
+    let h = 2166136261;
+    for (let i = 0; i < seed.length; i++) {
+      h = (h ^ seed.charCodeAt(i)) >>> 0;
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    const score = 72 + (h % 27); // 72..98 inclusive, deterministic per tx
     void creditFeedback(buyerCode, sellerCode, {
-      score: 100,
+      score,
       settlementTx: receipt.transactionHash,
     });
   }
