@@ -376,6 +376,7 @@ function buildResponse(args: BuildArgs) {
   return {
     ok: true,
     agent: 'ORACLE',
+    provider: 'gemini' as const,
     persona: 'Oracle of Delphi',
     seller: { address: args.seller.address, walletId: args.seller.walletId, code: args.price.seller },
     paid: {
