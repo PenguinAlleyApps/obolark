@@ -66,9 +66,9 @@ export const daedalusBody = z.object({
 // ── New 16 wardens ───────────────────────────────────────────────────────
 export const atlasBody = z.object({
   loads: z.tuple([
-    z.object({ stratum: z.literal('FOUNDATION'),    weight: z.string().max(60), bearing: z.string().max(180) }),
-    z.object({ stratum: z.literal('SUPERSTRUCTURE'),weight: z.string().max(60), bearing: z.string().max(180) }),
-    z.object({ stratum: z.literal('CROWNING'),      weight: z.string().max(60), bearing: z.string().max(180) }),
+    z.object({ stratum: z.literal('FOUNDATION'),    weight: z.string().max(80), bearing: z.string().max(260) }),
+    z.object({ stratum: z.literal('SUPERSTRUCTURE'),weight: z.string().max(80), bearing: z.string().max(260) }),
+    z.object({ stratum: z.literal('CROWNING'),      weight: z.string().max(80), bearing: z.string().max(260) }),
   ]),
 }).passthrough();
 
@@ -80,7 +80,7 @@ export const hermesBody = z.object({
 export const irisBody = z.object({
   fragments: z.array(z.object({
     band: z.enum(['stoa','agora','symposium','altar','crossroads','market','sea']),
-    proclamation: z.string().max(180),
+    proclamation: z.string().max(260),
   })).length(7),
 }).passthrough();
 
@@ -92,11 +92,11 @@ export const artemisBody = z.object({
 
 export const uraniaBody = z.object({
   houses: z.tuple([
-    z.object({ position: z.literal('FIRST'),  body: z.string().max(180), timing: z.string().max(80) }),
-    z.object({ position: z.literal('MIDDLE'), body: z.string().max(180), timing: z.string().max(80) }),
-    z.object({ position: z.literal('LAST'),   body: z.string().max(180), timing: z.string().max(80) }),
+    z.object({ position: z.literal('FIRST'),  body: z.string().max(260), timing: z.string().max(120) }),
+    z.object({ position: z.literal('MIDDLE'), body: z.string().max(260), timing: z.string().max(120) }),
+    z.object({ position: z.literal('LAST'),   body: z.string().max(260), timing: z.string().max(120) }),
   ]),
-  constellation: z.string().max(120),
+  constellation: z.string().max(160),
 }).passthrough();
 
 export const plutusBody = z.object({
@@ -116,10 +116,10 @@ export const poseidonBody = z.object({
 
 export const heliosBody = z.object({
   hours: z.tuple([
-    z.object({ cardinal: z.literal('DAWN'),  shines: z.string().max(140), hides: z.string().max(140) }),
-    z.object({ cardinal: z.literal('NOON'),  shines: z.string().max(140), hides: z.string().max(140) }),
-    z.object({ cardinal: z.literal('DUSK'),  shines: z.string().max(140), hides: z.string().max(140) }),
-    z.object({ cardinal: z.literal('NIGHT'), shines: z.string().max(140), hides: z.string().max(140) }),
+    z.object({ cardinal: z.literal('DAWN'),  shines: z.string().max(200), hides: z.string().max(200) }),
+    z.object({ cardinal: z.literal('NOON'),  shines: z.string().max(200), hides: z.string().max(200) }),
+    z.object({ cardinal: z.literal('DUSK'),  shines: z.string().max(200), hides: z.string().max(200) }),
+    z.object({ cardinal: z.literal('NIGHT'), shines: z.string().max(200), hides: z.string().max(200) }),
   ]),
 }).passthrough();
 
@@ -144,9 +144,9 @@ export const apolloBody = z.object({
 }).passthrough();
 
 export const calliopeBody = z.object({
-  joins: z.array(z.string().max(180)).min(1).max(4),
-  cuts: z.array(z.string().max(180)).min(0).max(3),
-  refrain: z.string().max(180),
+  joins: z.array(z.string().max(260)).min(1).max(4),
+  cuts: z.array(z.string().max(220)).min(0).max(3),
+  refrain: z.string().max(220),
 }).passthrough();
 
 export const themisBody = z.object({

@@ -79,6 +79,7 @@ export function createBureauRoute(opts: BureauRouteOpts) {
     let latencyMs = 0;
     let degraded = false;
     let degradedReason: string | undefined;
+    let degradedDetail: string | null = null;
     try {
       const outcome = await runArtifactProvider({
         key: opts.key,
@@ -93,6 +94,7 @@ export function createBureauRoute(opts: BureauRouteOpts) {
       if (outcome.degraded) {
         degraded = true;
         degradedReason = outcome.reason;
+        degradedDetail = outcome.detail ?? null;
         artifact = silenceArtifact({
           warden: opts.warden,
           artifactKind: opts.artifactKind,
@@ -105,6 +107,7 @@ export function createBureauRoute(opts: BureauRouteOpts) {
       // Final safety: NEVER throw post-settlement. Emit silence.
       degraded = true;
       degradedReason = 'provider_error';
+      degradedDetail = (err as Error).message?.slice(0, 200) ?? null;
       artifact = silenceArtifact({
         warden: opts.warden,
         artifactKind: opts.artifactKind,
@@ -139,7 +142,7 @@ export function createBureauRoute(opts: BureauRouteOpts) {
         model,
         latencyMs,
         preview: isPreview,
-        ...(degraded ? { degraded: true, degradedReason } : { degraded: false }),
+        ...(degraded ? { degraded: true, degradedReason, degradedDetail } : { degraded: false }),
         at: new Date().toISOString(),
       },
       { status: 200, headers },
