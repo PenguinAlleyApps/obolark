@@ -55,6 +55,8 @@ export const WARDEN_PROVIDER_MAP: Record<EndpointKey, ProviderTarget> = {
   'bureau/argos-vision': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
   // Gemini multimodal + FC passthrough — dispatched directly in bureau/themis-ledger/route.ts
   'bureau/themis-ledger': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
+  // Gemini Flash FC passthrough — dispatched directly in bureau/hermes-emissary/route.ts
+  'bureau/hermes-emissary': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
 };
 
 export type ArtifactOutcome =

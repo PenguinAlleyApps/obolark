@@ -196,6 +196,15 @@ export const themisLedgerBody = z.object({
   }),
 }).passthrough();
 
+export const hermesEmissaryBody = z.object({
+  query_kind: z.enum(['balance', 'tx_status', 'recent_txs']),
+  findings: z.array(z.object({
+    sigil: z.string().max(60),
+    speaks: z.string().max(220),
+  })).min(1).max(5),
+  treacherous: z.string().max(220),
+}).passthrough();
+
 // ── Schema registry ──────────────────────────────────────────────────────
 export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> = {
   'research':            baseArtifact.extend({ body: oracleBody }),
@@ -222,6 +231,7 @@ export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> 
   'bureau/hestia':       baseArtifact.extend({ body: hestiaBody }),
   'bureau/argos-vision': baseArtifact.extend({ body: argosVisionBody }),
   'bureau/themis-ledger': baseArtifact.extend({ body: themisLedgerBody }),
+  'bureau/hermes-emissary': baseArtifact.extend({ body: hermesEmissaryBody }),
 };
 
 export function validateArtifact(key: EndpointKey, payload: unknown):
