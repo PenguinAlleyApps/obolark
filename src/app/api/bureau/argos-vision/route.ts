@@ -66,7 +66,27 @@ export async function POST(req: NextRequest) {
       systemInstruction: persona + `\n\nReturn STRICT JSON ONLY (no prose, no markdown fences). Required shape:\n{\n  "verdict": "truthful" | "staged" | "inconclusive",\n  "observations": [\n    { "eye": <1..100>, "sees": "<≤220 chars mythic prose>", "weight": "confirming"|"troubling"|"damning" },\n    { "eye": <1..100>, "sees": "...", "weight": "..." },\n    { "eye": <1..100>, "sees": "...", "weight": "..." }\n  ],\n  "image_count": ${parsed.data.image_uris.length}\n}\nThe observations array MUST contain EXACTLY 3 items.`,
       userText: parsed.data.subject,
       imageUris: parsed.data.image_uris,
-      maxOutputTokens: 800,
+      maxOutputTokens: 1600,
+      responseSchema: {
+        type: 'object',
+        properties: {
+          verdict: { type: 'string', enum: ['truthful', 'staged', 'inconclusive'] },
+          observations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                eye: { type: 'integer' },
+                sees: { type: 'string' },
+                weight: { type: 'string', enum: ['confirming', 'troubling', 'damning'] },
+              },
+              required: ['eye', 'sees', 'weight'],
+            },
+          },
+          image_count: { type: 'integer' },
+        },
+        required: ['verdict', 'observations', 'image_count'],
+      },
     }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });

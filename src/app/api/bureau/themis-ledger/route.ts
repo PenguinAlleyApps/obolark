@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       userText,
       imageUris: parsed.data.image_uris,
       tools: [REFUND_TOOL],
-      maxOutputTokens: 800,
+      maxOutputTokens: 1600,
     }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });

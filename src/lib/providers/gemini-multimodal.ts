@@ -101,8 +101,17 @@ export async function callGeminiMultimodal(opts: GeminiCallOpts): Promise<Gemini
     try { json = JSON.parse(clean); }
     catch {
       const m = clean.match(/\{[\s\S]*\}/);
-      if (m) json = JSON.parse(m[0]);
+      if (m) {
+        try { json = JSON.parse(m[0]); }
+        catch (e2) {
+          console.warn(`[gemini ${opts.model}] JSON parse failed even after regex extract; rawText[0..200]=${clean.slice(0, 200)}`);
+        }
+      } else {
+        console.warn(`[gemini ${opts.model}] no JSON object found in response; rawText[0..200]=${clean.slice(0, 200)}`);
+      }
     }
+  } else {
+    console.warn(`[gemini ${opts.model}] empty response text (finishReason may be MAX_TOKENS or SAFETY)`);
   }
 
   const candidates = (response as unknown as {
