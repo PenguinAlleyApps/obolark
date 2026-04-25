@@ -16,7 +16,8 @@ export type BureauKey =
   | 'bureau/themis'     | 'bureau/proteus'   | 'bureau/hephaestus'| 'bureau/hestia'
   | 'bureau/argos-vision'
   | 'bureau/themis-ledger'
-  | 'bureau/hermes-emissary';
+  | 'bureau/hermes-emissary'
+  | 'bureau/moros-arbiter';
 
 export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
   'bureau/atlas':       { seller: 'ATLAS',     price: '0.003', supervisionFee: '0.0005', description: 'ATLAS — Titan that bears the build. Burden Apportionment: 3 loads + bearings.',         maxTimeoutSeconds: 60 },
@@ -56,6 +57,13 @@ export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
     description: 'HERMES-EMISSARY — Argeiphontes ferries Circle ledger reads. Queries balance/tx-status/recent-txs and returns a parchment narrating the wallet\'s present state.',
     maxTimeoutSeconds: 60,
   },
+  'bureau/moros-arbiter': {
+    seller: 'COMPASS',
+    price: '0.009',
+    supervisionFee: '0.0008',
+    description: 'MOROS-ARBITER — daimon of inevitable doom, deep-thinking arbiter. Receives 2+ contradictory warden artifacts and pronounces the binding fate.',
+    maxTimeoutSeconds: 120,
+  },
 };
 
 /** Per-warden artifact kind (matches BureauArtifactModal layout switch). */
@@ -71,6 +79,7 @@ export const ARTIFACT_KIND_BY_KEY: Record<BureauKey, 'parchment' | 'seal' | 'tab
   'bureau/argos-vision': 'tablet',
   'bureau/themis-ledger': 'tablet',
   'bureau/hermes-emissary': 'parchment',
+  'bureau/moros-arbiter': 'tablet',
 };
 
 /** Per-warden ceremony rite duration (matches AGENT_REGISTRY.defaultDurationMs). */
@@ -86,6 +95,7 @@ export const RITE_DURATION_MS_BY_KEY: Record<BureauKey, number> = {
   'bureau/argos-vision': 2800,
   'bureau/themis-ledger': 3200,
   'bureau/hermes-emissary': 2400,
+  'bureau/moros-arbiter': 4000,
 };
 
 /** Per-warden codename (upper-case mythological name). */
@@ -101,6 +111,7 @@ export const WARDEN_BY_KEY: Record<BureauKey, string> = {
   'bureau/argos-vision': 'ARGOS-VISION',
   'bureau/themis-ledger': 'THEMIS-LEDGER',
   'bureau/hermes-emissary': 'HERMES-EMISSARY',
+  'bureau/moros-arbiter': 'MOROS-ARBITER',
 };
 
 export const BUREAU_KEYS: readonly BureauKey[] = Object.keys(BUREAU_PRICING) as BureauKey[];

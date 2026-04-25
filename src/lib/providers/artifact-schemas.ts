@@ -205,6 +205,16 @@ export const hermesEmissaryBody = z.object({
   treacherous: z.string().max(220),
 }).passthrough();
 
+export const morosArbiterBody = z.object({
+  arbitrated: z.array(z.object({
+    warden: z.string().max(40),
+    claim: z.string().max(220),
+  })).min(2).max(5),
+  fate: z.string().max(440),
+  binding_clause: z.string().max(220),
+  thinking_token_count: z.number().int().min(0).max(100_000).optional(),
+}).passthrough();
+
 // ── Schema registry ──────────────────────────────────────────────────────
 export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> = {
   'research':            baseArtifact.extend({ body: oracleBody }),
@@ -232,6 +242,7 @@ export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> 
   'bureau/argos-vision': baseArtifact.extend({ body: argosVisionBody }),
   'bureau/themis-ledger': baseArtifact.extend({ body: themisLedgerBody }),
   'bureau/hermes-emissary': baseArtifact.extend({ body: hermesEmissaryBody }),
+  'bureau/moros-arbiter': baseArtifact.extend({ body: morosArbiterBody }),
 };
 
 export function validateArtifact(key: EndpointKey, payload: unknown):
