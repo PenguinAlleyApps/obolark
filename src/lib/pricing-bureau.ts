@@ -13,7 +13,8 @@ export type BureauKey =
   | 'bureau/atlas'      | 'bureau/hermes'    | 'bureau/iris'      | 'bureau/artemis'
   | 'bureau/urania'     | 'bureau/plutus'    | 'bureau/poseidon'  | 'bureau/helios'
   | 'bureau/prometheus' | 'bureau/aegis'     | 'bureau/apollo'    | 'bureau/calliope'
-  | 'bureau/themis'     | 'bureau/proteus'   | 'bureau/hephaestus'| 'bureau/hestia';
+  | 'bureau/themis'     | 'bureau/proteus'   | 'bureau/hephaestus'| 'bureau/hestia'
+  | 'bureau/argos-vision';
 
 export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
   'bureau/atlas':       { seller: 'ATLAS',     price: '0.003', supervisionFee: '0.0005', description: 'ATLAS — Titan that bears the build. Burden Apportionment: 3 loads + bearings.',         maxTimeoutSeconds: 60 },
@@ -32,6 +33,13 @@ export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
   'bureau/proteus':     { seller: 'DISCOVERY', price: '0.005', supervisionFee: '0.0005', description: 'PROTEUS — Form Reading. Three known forms of an entity + which is the true one.',         maxTimeoutSeconds: 60 },
   'bureau/hephaestus':  { seller: 'FOREMAN',   price: '0.006', supervisionFee: '0.0005', description: 'HEPHAESTUS — Forge Order. Anvil-strikes + temper steps + quench window for a piece.',     maxTimeoutSeconds: 60 },
   'bureau/hestia':      { seller: 'SCOUT',     price: '0.003', supervisionFee: '0.0005', description: 'HESTIA — Hearth Census. What burns in the hearth + which fuel is missing.',               maxTimeoutSeconds: 45 },
+  'bureau/argos-vision': {
+    seller: 'ARGUS',
+    price: '0.006',
+    supervisionFee: '0.0005',
+    description: 'ARGOS-VISION — hundred-eyed delivery-proof analyzer. Reads ≤2 buyer-supplied images and returns truthful/staged/inconclusive verdict + 3 forensic observations.',
+    maxTimeoutSeconds: 60,
+  },
 };
 
 /** Per-warden artifact kind (matches BureauArtifactModal layout switch). */
@@ -44,6 +52,7 @@ export const ARTIFACT_KIND_BY_KEY: Record<BureauKey, 'parchment' | 'seal' | 'tab
   'bureau/apollo':     'parchment', 'bureau/calliope':   'parchment',
   'bureau/themis':     'tablet',    'bureau/proteus':    'seal',
   'bureau/hephaestus': 'tablet',    'bureau/hestia':     'tablet',
+  'bureau/argos-vision': 'tablet',
 };
 
 /** Per-warden ceremony rite duration (matches AGENT_REGISTRY.defaultDurationMs). */
@@ -56,6 +65,7 @@ export const RITE_DURATION_MS_BY_KEY: Record<BureauKey, number> = {
   'bureau/apollo':     1800, 'bureau/calliope':   1800,
   'bureau/themis':     2000, 'bureau/proteus':    2000,
   'bureau/hephaestus': 1800, 'bureau/hestia':     1600,
+  'bureau/argos-vision': 2800,
 };
 
 /** Per-warden codename (upper-case mythological name). */
@@ -68,6 +78,7 @@ export const WARDEN_BY_KEY: Record<BureauKey, string> = {
   'bureau/apollo':     'APOLLO',     'bureau/calliope':   'CALLIOPE',
   'bureau/themis':     'THEMIS',     'bureau/proteus':    'PROTEUS',
   'bureau/hephaestus': 'HEPHAESTUS', 'bureau/hestia':     'HESTIA',
+  'bureau/argos-vision': 'ARGOS-VISION',
 };
 
 export const BUREAU_KEYS: readonly BureauKey[] = Object.keys(BUREAU_PRICING) as BureauKey[];

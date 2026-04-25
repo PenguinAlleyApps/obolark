@@ -51,6 +51,8 @@ export const WARDEN_PROVIDER_MAP: Record<EndpointKey, ProviderTarget> = {
   // Partner-track passthroughs — not LLM-dispatched here (own routes)
   'featherless-route':   { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
   'aisa-data':           { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
+  // Gemini multimodal passthrough — dispatched directly in bureau/argos-vision/route.ts
+  'bureau/argos-vision': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
 };
 
 export type ArtifactOutcome =

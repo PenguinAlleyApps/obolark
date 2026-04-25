@@ -175,6 +175,16 @@ export const hestiaBody = z.object({
   missing_fuel: z.string().max(220),
 }).passthrough();
 
+export const argosVisionBody = z.object({
+  verdict: z.enum(['truthful', 'staged', 'inconclusive']),
+  observations: z.array(z.object({
+    eye: z.number().int().min(1).max(100),
+    sees: z.string().max(220),
+    weight: z.enum(['confirming', 'troubling', 'damning']),
+  })).length(3),
+  image_count: z.number().int().min(1).max(2),
+}).passthrough();
+
 // ── Schema registry ──────────────────────────────────────────────────────
 export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> = {
   'research':            baseArtifact.extend({ body: oracleBody }),
@@ -199,6 +209,7 @@ export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> 
   'bureau/proteus':      baseArtifact.extend({ body: proteusBody }),
   'bureau/hephaestus':   baseArtifact.extend({ body: hephaestusBody }),
   'bureau/hestia':       baseArtifact.extend({ body: hestiaBody }),
+  'bureau/argos-vision': baseArtifact.extend({ body: argosVisionBody }),
 };
 
 export function validateArtifact(key: EndpointKey, payload: unknown):
