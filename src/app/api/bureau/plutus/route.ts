@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
+  key: 'bureau/plutus',
+  warden: 'PLUTUS',
+  artifactKind: 'tablet',
   riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  defaultSubject: 'reckon a complex obol-flow through the Bureau and name any leak in the count',
 });
 
 export const GET = route.GET;

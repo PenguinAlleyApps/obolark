@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/atlas',
+  warden: 'ATLAS',
+  artifactKind: 'tablet',
+  riteDurationMs: 1800,
+  defaultSubject: 'apportion the burden of an unnamed Bureau build across foundation, superstructure, and crowning',
 });
 
 export const GET = route.GET;

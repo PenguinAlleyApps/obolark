@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/themis',
+  warden: 'THEMIS',
+  artifactKind: 'tablet',
+  riteDurationMs: 2000,
+  defaultSubject: 'weigh two contending claims on the bronze scales; name the tilt and the missing weight to level them',
 });
 
 export const GET = route.GET;

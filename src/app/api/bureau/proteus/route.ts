@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
+  key: 'bureau/proteus',
+  warden: 'PROTEUS',
   artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  riteDurationMs: 2000,
+  defaultSubject: 'reveal three plausible forms of an entity brought before the Bureau; name which is the true form',
 });
 
 export const GET = route.GET;

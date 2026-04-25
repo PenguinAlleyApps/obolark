@@ -30,8 +30,11 @@ function buildRows(
   });
   return Object.entries(rep)
     .map<Row>(([code, r]) => {
+      // ERC-8004 contract emits uint8 in 0..100; Tab V renders 0..1.
+      // Earlier draft divided by /5 by mistake → every score clamped to 1.0
+      // and every warden displayed in the high (moss) tier. Fixed 2026-04-25.
       const raw = r.avgScore ?? 0;
-      const score = raw > 1 ? Math.max(0, Math.min(1, raw / 5)) : raw;
+      const score = raw > 1 ? Math.max(0, Math.min(1, raw / 100)) : raw;
       const rate = rateByCode[code] ?? 0;
       return {
         code,

@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/apollo',
+  warden: 'APOLLO',
+  artifactKind: 'parchment',
+  riteDurationMs: 1800,
+  defaultSubject: 'set the meter, the key, and the dramatis personae for an unrehearsed choros that opens at dusk',
 });
 
 export const GET = route.GET;

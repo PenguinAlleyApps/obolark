@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
+  key: 'bureau/aegis',
+  warden: 'AEGIS',
   artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  riteDurationMs: 1400,
+  defaultSubject: 'lay an apotropaic ward against a named threat at the gate; bind it with three sustaining conditions',
 });
 
 export const GET = route.GET;

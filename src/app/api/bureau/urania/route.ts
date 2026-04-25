@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/urania',
+  warden: 'URANIA',
+  artifactKind: 'parchment',
+  riteDurationMs: 2000,
+  defaultSubject: 'cast the star chart of an unfinished piece into three celestial houses and one constellation',
 });
 
 export const GET = route.GET;

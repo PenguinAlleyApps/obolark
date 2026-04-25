@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/helios',
+  warden: 'HELIOS',
+  artifactKind: 'tablet',
+  riteDurationMs: 1800,
+  defaultSubject: 'survey a horizon at four cardinal hours and name what shines and what hides at each',
 });
 
 export const GET = route.GET;

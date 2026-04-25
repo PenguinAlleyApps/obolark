@@ -104,9 +104,37 @@ const DEFAULT_PROMPT = 'Summarize the last hour of Bureau activity. What have th
 
 // ── Route handler ──────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const gate = await requirePayment('gemini-oracle', req);
-  if (gate.kind === 'challenge') return gate.response;
-  if (gate.kind === 'error') return gate.response;
+  // Preview path — same convention as the shared bureau handler. Skips x402
+  // settle so the dashboard "Summon" button can render an artifact without
+  // requiring an EOA. Real paid path is unaffected (no header → 402).
+  const isPreview = req.headers.get('x-preview') === 'true' && process.env.NEXT_PUBLIC_ALLOW_PREVIEW !== 'false';
+  let gate: Awaited<ReturnType<typeof requirePayment>>;
+  if (isPreview) {
+    gate = {
+      kind: 'settled',
+      requirements: {
+        scheme: 'exact',
+        network: 'arc-testnet (preview)',
+        asset: 'USDC',
+        payTo: getWalletByCode(priceOf('gemini-oracle').seller).address,
+        amount: '0',
+        maxTimeoutSeconds: 0,
+        extra: {} as never,
+      } as never,
+      receipt: {
+        scheme: 'exact',
+        network: 'arc-testnet (preview)',
+        asset: 'USDC',
+        amount: '0',
+        payer: 'PREVIEW',
+        transactionHash: '',
+      } as never,
+    } as never;
+  } else {
+    gate = await requirePayment('gemini-oracle', req);
+    if (gate.kind === 'challenge') return gate.response;
+    if (gate.kind === 'error') return gate.response;
+  }
 
   let parsed;
   try {
@@ -335,6 +363,16 @@ type BuildArgs = {
 );
 
 function buildResponse(args: BuildArgs) {
+  // Map narration bullets → BureauArtifact moiras (Oracle scroll body).
+  const moiras = args.narration.bullets.map((b, i) => ({
+    omen: b,
+    confidence: args.degraded ? 0.3 : (i === 0 ? 0.85 : 0.7),
+    ...(args.groundingSources[i]?.uri ? { source: args.groundingSources[i].uri as string } : {}),
+  }));
+  const verdict: 'revealed' | 'veiled' | 'riven' = args.degraded
+    ? 'veiled'
+    : args.groundingSources.length > 0 ? 'revealed' : 'veiled';
+
   return {
     ok: true,
     agent: 'ORACLE',
@@ -349,6 +387,17 @@ function buildResponse(args: BuildArgs) {
       transactionHash: args.gate.receipt.transactionHash,
       txExplorer: args.gate.receipt.transactionHash ? txUrl(args.gate.receipt.transactionHash) : null,
     },
+    artifact: {
+      warden: 'ORACLE',
+      artifact_kind: 'scroll' as const,
+      subject: 'a divination of the recent Bureau ledger, grounded in the open world',
+      body: { moiras, verdict },
+      writ: args.degraded
+        ? 'The vapors are still tonight. The Pythia returns the obol; another bell will sing.'
+        : 'The Pythia has spoken. The omen carries; the obol crosses; the ledger remembers.',
+      rite_duration_ms: 2400,
+    },
+    // Legacy fields kept for backwards compat with existing dashboards / cached fetchers.
     oracle: args.narration,
     grounding: {
       enabled: true,

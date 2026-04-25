@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/artemis',
+  warden: 'ARTEMIS',
+  artifactKind: 'tablet',
+  riteDurationMs: 1400,
+  defaultSubject: 'mark a quarry described only by hearsay; report tracks, last-seen, and the arrow trajectory',
 });
 
 export const GET = route.GET;

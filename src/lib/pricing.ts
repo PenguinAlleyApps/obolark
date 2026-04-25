@@ -7,6 +7,7 @@
  * routed to the PA·co treasury per CEO-confirmed Option A.
  */
 import { TREASURY_AGENT } from '@/agents/registry';
+import { BUREAU_PRICING, type BureauKey } from './pricing-bureau';
 
 export type EndpointKey =
   | 'research'
@@ -19,7 +20,10 @@ export type EndpointKey =
   // + structured output, but still 402-gated via x402-gateway.
   | 'gemini-oracle'
   | 'featherless-route'
-  | 'aisa-data';
+  | 'aisa-data'
+  // 16 Bureau warden services (lore-accurate sub-cent crossings).
+  // Defined in pricing-bureau.ts; merged into PRICING below.
+  | BureauKey;
 
 export type EndpointPricing = {
   /** Seller agent code — receives the primary payment */
@@ -35,39 +39,40 @@ export type EndpointPricing = {
 };
 
 export const PRICING: Record<EndpointKey, EndpointPricing> = {
+  ...BUREAU_PRICING,
   'research': {
     seller: 'RADAR',
     price: '0.003',
     supervisionFee: '0.0005',
-    description: "ORACLE — Pythia's three-bullet verdict on any research brief.",
+    description: 'ORACLE — Divination. Up to three moiras (omens) over a question, with confidence and verdict.',
     maxTimeoutSeconds: 60,
   },
   'design-review': {
     seller: 'PIXEL',
     price: '0.005',
     supervisionFee: '0.0005',
-    description: "DAEDALUS — Master craftsman's three observations + one fix for any UI or asset.",
+    description: 'DAEDALUS — Labyrinth Plan. A glyph-laid maze + 3 chambers, each with its minotaur (or silence).',
     maxTimeoutSeconds: 60,
   },
   'qa': {
     seller: 'SENTINEL',
     price: '0.008',
     supervisionFee: '0.0005',
-    description: "CERBERUS — Three-headed guardian's PASS/WARN/FAIL on any route.",
+    description: 'CERBERUS — Three-Gate Watch. The crossing judged by HUNGER, SCENT, and FORM, each with its rite.',
     maxTimeoutSeconds: 60,
   },
   'security-scan': {
     seller: 'PHANTOM',
     price: '0.008',
     supervisionFee: '0.0005',
-    description: "THANATOS — Silent intruder's top-3 security findings with CWE refs.",
+    description: 'THANATOS — Soul Audit. Unpaid weights revealed, each tagged psychopomp; ferry verdict rendered.',
     maxTimeoutSeconds: 60,
   },
   'audit': {
     seller: 'ARGUS',
     price: '0.004',
     supervisionFee: '0.0005',
-    description: "ARGUS — Hundred-eyed auditor's PASS/WARN/FAIL against PA·co gates.",
+    description: 'ARGUS — Vigil Roll. Seven of one hundred eyes report what they observed, each with an epitaph.',
     maxTimeoutSeconds: 60,
   },
   // ── Partner-track sellers ─────────────────────────────────────────────

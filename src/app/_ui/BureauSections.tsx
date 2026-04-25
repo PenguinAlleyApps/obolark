@@ -30,6 +30,8 @@ import {
   AgentSigilDefs,
   AGENT_REGISTRY,
 } from './AgentVFX';
+import BureauArtifactModal, { type BureauArtifact } from './BureauArtifactModal';
+import { ENDPOINT_KEY_BY_CODE } from './bureau-endpoint-map';
 import { pickCurrentRun } from './orchestrations-types';
 import type { OrchestrationFeed } from './orchestrations-types';
 
@@ -147,6 +149,41 @@ export default function BureauSections({
     | { agentCode: string; serviceLabel: string; scope: 'roster' | 'orch' }
     | null
   >(null);
+
+  // BureauArtifactModal — opens after the hire ceremony when the warden's
+  // /api/<key> route returns its artifact. Preview path skips x402 settle.
+  const [modalState, setModalState] = useState<{
+    artifact: BureauArtifact | null;
+    txHash: string | null;
+    preview: boolean;
+    degraded: boolean;
+    lastCode: string | null;
+  }>({ artifact: null, txHash: null, preview: false, degraded: false, lastCode: null });
+
+  const hireWarden = async (code: string) => {
+    const key = ENDPOINT_KEY_BY_CODE[code];
+    if (!key) return; // dormant warden — no service
+    try {
+      const res = await fetch(`/api/${key}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-preview': 'true' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const artifact = data?.artifact as BureauArtifact | undefined;
+      if (!artifact) return;
+      setModalState({
+        artifact,
+        txHash: data?.paid?.transactionHash ?? null,
+        preview: Boolean(data?.preview),
+        degraded: Boolean(data?.degraded),
+        lastCode: code,
+      });
+    } catch {
+      // silent — ceremony already played, no modal is acceptable
+    }
+  };
 
   // IV · Agents roster container — the SVG overlay reads bounding rects
   // off this ref to pin edge-pulse paths to real card positions.
@@ -268,7 +305,10 @@ export default function BureauSections({
           rosterRef={rosterRef}
           ceremony={ceremony}
           unfurl={unfurl}
-          onHire={(code, label) => setCeremony({ agentCode: code, serviceLabel: label, scope: 'roster' })}
+          onHire={(code, label) => {
+            setCeremony({ agentCode: code, serviceLabel: label, scope: 'roster' });
+            void hireWarden(code);
+          }}
           onGlyphHover={(a) => setUnfurl(a)}
           onCeremonyClear={(code) => setCeremony((c) => c?.scope === 'roster' && c.agentCode === code ? null : c)}
           serviceLabelFor={serviceLabelFor}
@@ -329,6 +369,21 @@ export default function BureauSections({
           onClose={() => setUnfurl(null)}
         />
       )}
+
+      {/* ── Bureau Artifact Modal — opens after hire ceremony ─────────── */}
+      <BureauArtifactModal
+        artifact={modalState.artifact}
+        txHash={modalState.txHash}
+        arcscanBase={arcscanBase}
+        preview={modalState.preview}
+        degraded={modalState.degraded}
+        onClose={() => setModalState((s) => ({ ...s, artifact: null }))}
+        onRerun={() => {
+          if (modalState.lastCode) {
+            void hireWarden(modalState.lastCode);
+          }
+        }}
+      />
     </>
   );
 }
