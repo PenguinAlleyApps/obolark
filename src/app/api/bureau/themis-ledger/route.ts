@@ -5,7 +5,7 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
-import { callGeminiMultimodal, type GeminiTool } from '@/lib/providers/gemini-multimodal';
+import { callGeminiMultimodal, callGeminiMultimodalWithFallback, type GeminiTool } from '@/lib/providers/gemini-multimodal';
 import { BUREAU_PERSONAS } from '@/lib/providers/personas-bureau';
 import { validateArtifact } from '@/lib/providers/artifact-schemas';
 import { silenceArtifact } from '@/lib/providers/artifact-provider';
@@ -71,22 +71,23 @@ export async function POST(req: NextRequest) {
   }
 
   const persona = BUREAU_PERSONAS[KEY];
-  const model = process.env.GEMINI_MODEL_PRO ?? 'gemini-3-pro';
+  const model = process.env.GEMINI_MODEL_PRO ?? 'gemini-3-pro-preview';
+  const fallback = process.env.GEMINI_MODEL_PRO_FALLBACK ?? 'gemini-3-flash-preview';
   const origTxHash = parsed.data.orig_tx_hash;
   const userText = `${parsed.data.subject}\n\norig_tx_hash: ${origTxHash}`;
 
   // ── TURN 1 — vision call with FC tool exposed.
   let turn1;
   try {
-    turn1 = await callGeminiMultimodal({
+    turn1 = await callGeminiMultimodalWithFallback({
       apiKey,
       model,
       systemInstruction: persona,
       userText,
       imageUris: parsed.data.image_uris,
       tools: [REFUND_TOOL],
-      maxOutputTokens: 800,
-    });
+      maxOutputTokens: 1600,
+    }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
   }
@@ -127,31 +128,31 @@ export async function POST(req: NextRequest) {
   // ── TURN 2 — model narrates the artifact body, knowing whether refund happened.
   let turn2;
   if (refundResult) {
-    const followUp = `${userText}\n\nThe refund tool fired. refund_tx_hash: ${refundResult.refundTxHash} (idempotent: ${refundResult.idempotent}). Now render the artifact body in mythic register, with refund_action.issued=true, orig_tx_hash and refund_tx_hash populated, and a reason that justifies the call.`;
+    const followUp = `${userText}\n\nThe refund tool fired. refund_tx_hash: ${refundResult.refundTxHash} (idempotent: ${refundResult.idempotent}).\n\nReturn STRICT JSON ONLY (no prose, no markdown). Required shape:\n{\n  "weighed": ["<≤220 chars: what merchant promised>", "<≤220 chars: what buyer received>"],\n  "tilt": "LEFT" | "RIGHT" | "LEVEL",\n  "refund_action": { "issued": true, "orig_tx_hash": "${origTxHash}", "refund_tx_hash": "${refundResult.refundTxHash}", "reason": "<≤220 chars>" }\n}`;
     try {
-      turn2 = await callGeminiMultimodal({
+      turn2 = await callGeminiMultimodalWithFallback({
         apiKey,
         model,
         systemInstruction: persona,
         userText: followUp,
         imageUris: parsed.data.image_uris,
         maxOutputTokens: 800,
-      });
+      }, fallback);
     } catch (err) {
       return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
     }
   } else if (!turn1.json) {
     // Model didn't call the tool AND didn't return JSON — re-prompt for the artifact body.
-    const followUp = `${userText}\n\nThe refund tool was not warranted. Now render the artifact body in mythic register, with refund_action.issued=false and a reason that justifies the non-call.`;
+    const followUp = `${userText}\n\nThe refund tool was not warranted.\n\nReturn STRICT JSON ONLY (no prose, no markdown). Required shape:\n{\n  "weighed": ["<≤220 chars: what merchant promised>", "<≤220 chars: what buyer received>"],\n  "tilt": "LEFT" | "RIGHT" | "LEVEL",\n  "refund_action": { "issued": false, "orig_tx_hash": "${origTxHash}", "refund_tx_hash": null, "reason": "<≤220 chars>" }\n}`;
     try {
-      turn2 = await callGeminiMultimodal({
+      turn2 = await callGeminiMultimodalWithFallback({
         apiKey,
         model,
         systemInstruction: persona,
         userText: followUp,
         imageUris: parsed.data.image_uris,
         maxOutputTokens: 800,
-      });
+      }, fallback);
     } catch (err) {
       return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
     }

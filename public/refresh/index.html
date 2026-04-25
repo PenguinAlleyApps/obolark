@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>OBOLARK — Agent-to-agent micropayments on Arc</title>
-  <meta name="description" content="22 PA·co agents pay each other in sub-cent USDC on Arc testnet using x402 + Circle Nanopayments. Real agents, real endpoints, real ledger." />
+  <meta name="description" content="22 PA·co agents pay each other in sub-cent USDC on Arc testnet using x402 + Circle Nanopayments. 26 monetized routes. 4 Gemini-3 multimodal wardens. Featherless open-weight + AI/ML API extras." />
   <meta property="og:title" content="OBOLARK — Agent-to-agent micropayments on Arc" />
-  <meta property="og:description" content="22 agents. 8 monetized endpoints. 61+ onchain crossings. $0.001–$0.008 per call. Margin unlocked by Arc + Circle Nanopayments." />
+  <meta property="og:description" content="22 agents · 26 monetized routes · 61+ onchain crossings · $0.001–$0.009 per call · Gemini 3 + Featherless + AI/ML API integrated · Margin unlocked by Arc + Circle Nanopayments." />
   <meta property="og:type" content="website" />
 
   <link rel="stylesheet" href="colors_and_type.css" />
@@ -870,12 +870,12 @@
           <div class="l">Circle SCA wallets</div>
         </div>
         <div class="stat">
-          <div class="n">8<span class="u">endpoints</span></div>
-          <div class="l">Monetized services · $0.001–$0.008</div>
+          <div class="n">26<span class="u">routes</span></div>
+          <div class="l">Monetized services · $0.001–$0.009</div>
         </div>
         <div class="stat">
-          <div class="n">61<span class="u">+</span></div>
-          <div class="l">Onchain crossings (live)</div>
+          <div class="n">3<span class="u">extras</span></div>
+          <div class="l">Gemini 3 · Featherless · AI/ML API</div>
         </div>
         <div class="stat">
           <div class="n">99<span class="u">% margin</span></div>
@@ -933,9 +933,9 @@
           <div class="d">22 PA·co agents + a treasury SCA (HADES, epithet "Lord of the Crossing"). Each deployed, funded, and signing on Arc.</div>
         </div>
         <div class="shipped-cell">
-          <div class="n">8<span class="u">APIs</span></div>
+          <div class="n">26<span class="u">APIs</span></div>
           <div class="l">Monetized endpoints</div>
-          <div class="d">/research · /design-review · /qa · /security-scan · /audit · /gemini-oracle · /featherless-route · /aisa-data — priced $0.001–$0.008.</div>
+          <div class="d">8 top-level (/research · /design-review · /qa · /security-scan · /audit · /gemini-oracle · /featherless-route · /aisa-data) + 18 lore wardens at <code>/api/bureau/*</code> — priced $0.001–$0.009. Includes 4 <b>Gemini-3 multimodal</b> wardens (argos-vision · themis-ledger · hermes-emissary · moros-arbiter).</div>
         </div>
         <div class="shipped-cell">
           <div class="n">61<span class="u">+</span></div>
@@ -1106,6 +1106,53 @@
     </div>
   </section>
 
+  <!-- ═══════════════════════════ EXTRA PARTNER CHALLENGES ═══════════════════════════ -->
+  <section class="slab" id="partners">
+    <div class="wrap">
+      <span class="sect-label"><span class="idx">05·b</span>EXTRA PARTNER CHALLENGES</span>
+      <h2 class="sect-head">Three sponsor extras, three lore-coherent integrations. <em>Each one adds capability the base track can't deliver alone.</em></h2>
+
+      <div class="shipped-grid" style="margin-top: 24px;">
+        <div class="shipped-cell">
+          <div class="n">G3<span class="u">multimodal</span></div>
+          <div class="l">Google · Gemini 3 family</div>
+          <div class="d">Four wardens call <b>gemini-3-pro-preview</b> + <b>gemini-3-flash-preview</b> directly:<br/>
+            • <b>ARGOS-VISION</b> — 100-eye image-proof verifier (Vision)<br/>
+            • <b>THEMIS-LEDGER</b> — Vision-gated <code>issueRefund</code> with anti-injection amarras (FC mutation)<br/>
+            • <b>HERMES-EMISSARY</b> — read-only Circle ledger queries (FC reads, 3 tools)<br/>
+            • <b>MOROS-ARBITER</b> — Deep-Think 16k-token arbitration of contradictory claims<br/>
+            All 4 routes auto-fallback within Gemini 3 family (Pro→Flash, Flash→Flash-Lite). HTTPS image URIs are fetched + inlined as base64. Strict JSON contracts via <code>responseSchema</code>.
+          </div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">5<span class="u">OSS models</span></div>
+          <div class="l">Featherless · open-weight router</div>
+          <div class="d"><code>/featherless-route</code> dispatches by agent_code:<br/>
+            • <b>RADAR</b> → DeepSeek-V3.2 (685B reasoning)<br/>
+            • <b>PIXEL</b> → Kimi-K2-Instruct (1T native tools + vision)<br/>
+            • <b>SENTINEL</b> → Llama-3.1-8B-Instruct<br/>
+            • <b>PHANTOM</b> → Qwen3-8B (cheap tool-calling)<br/>
+            • <b>ORACLE-Whisper</b> → Qwen3-8B (ambient streaming)<br/>
+            Provenance written to <code>featherless_runs</code> · $0.002 USDC per call · multi-agent multiplex (no single agent owns the seat).
+          </div>
+        </div>
+        <div class="shipped-cell">
+          <div class="n">400+<span class="u">via 1 key</span></div>
+          <div class="l">AI/ML API · unified gateway</div>
+          <div class="d">Two bureau wardens close the AI/ML extras track:<br/>
+            • <b>HEPHAESTUS</b> (Foreman) → <code>gpt-4o-mini</code> via aimlapi.com<br/>
+            • <b>HESTIA</b> → <code>Llama-3.3-70B-Instruct</code> via aimlapi.com<br/>
+            OpenAI-compatible <code>/v1/chat/completions</code> wrapper · single Bearer token · provenance recorded per call.
+          </div>
+        </div>
+      </div>
+
+      <p class="stack-note" style="margin-top: 24px;">
+        These extras aren't bolt-ons. Each was chosen because it <b>adds something Circle + Arc alone can't deliver</b>: Gemini 3 brings <em>multimodal vision + Deep-Think arbitration</em> to the bureau; Featherless brings <em>open-weight provenance + cost-per-token transparency</em>; AI/ML API brings <em>model-pluralism through a single Bearer token</em>. All three are <b>monetized through x402 like everything else</b> — no special path, no mocked outputs.
+      </p>
+    </div>
+  </section>
+
   <!-- ═══════════════════════════ TOP-3 ═══════════════════════════ -->
   <section class="slab" id="top3">
     <div class="wrap">
@@ -1147,7 +1194,7 @@
             <span class="num">03</span>
           </div>
           <div class="title">Presentation</div>
-          <div class="body">Judges <b>click a link, not watch a mock</b>. `obolark.vercel.app/bureau` shows 22 wallets, 8 endpoints, live tx feed, and reputation edges that pulse as payments settle. Every transaction deep-links to <b>Arc Explorer</b> so any judge can verify onchain in under a minute. The demo video records a real run, not a rehearsal.</div>
+          <div class="body">Judges <b>click a link, not watch a mock</b>. `obolark.vercel.app/bureau` shows 22 wallets, 26 monetized routes (8 top-level + 18 lore wardens · 4 with Gemini-3, 4 Gemini-3 multimodal), live tx feed, and reputation edges that pulse as payments settle. Every transaction deep-links to <b>Arc Explorer</b> so any judge can verify onchain in under a minute. The demo video records a real run, not a rehearsal.</div>
           <div class="evidence">
             <span class="tag">Click-to-try</span>
             <span class="tag">Arc Explorer deep-link</span>
@@ -1205,7 +1252,7 @@
       </div>
       <div class="foot-bottom">
         <div>Penguin Alley · PA·co · Solo team (CEO + PA·co)</div>
-        <div class="brass">Submit 2026-04-25 · 17:00 PST · from gerardo.rdz.g@hotmail.com</div>
+        <div class="brass">Submission window 2026-04-26 · final scope: Tier C STRETCH (Gemini 3 multimodal + Featherless + AI/ML)</div>
         <div>Arc Testnet · chain_id 5042002</div>
       </div>
     </div>

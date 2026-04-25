@@ -17,7 +17,7 @@ vi.mock('@/lib/bureau/circle-reads', () => ({
   getTxStatus: txStatusMock,
   listRecentTxs: listMock,
 }));
-vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock }));
+vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock, callGeminiMultimodalWithFallback: geminiMock }));
 
 import { POST } from '../route';
 

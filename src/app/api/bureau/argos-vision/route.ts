@@ -5,7 +5,7 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
-import { callGeminiMultimodal } from '@/lib/providers/gemini-multimodal';
+import { callGeminiMultimodalWithFallback } from '@/lib/providers/gemini-multimodal';
 import { BUREAU_PERSONAS } from '@/lib/providers/personas-bureau';
 import { validateArtifact } from '@/lib/providers/artifact-schemas';
 import { silenceArtifact } from '@/lib/providers/artifact-provider';
@@ -56,17 +56,38 @@ export async function POST(req: NextRequest) {
 
   const persona = BUREAU_PERSONAS[KEY];
   const model = process.env.GEMINI_MODEL_FLASH ?? 'gemini-3-flash-preview';
+  const fallback = process.env.GEMINI_MODEL_FLASH_FALLBACK ?? 'gemini-3.1-flash-lite-preview';
 
   let outcome;
   try {
-    outcome = await callGeminiMultimodal({
+    outcome = await callGeminiMultimodalWithFallback({
       apiKey,
       model,
-      systemInstruction: persona,
+      systemInstruction: persona + `\n\nReturn STRICT JSON ONLY (no prose, no markdown fences). Required shape:\n{\n  "verdict": "truthful" | "staged" | "inconclusive",\n  "observations": [\n    { "eye": <1..100>, "sees": "<≤220 chars mythic prose>", "weight": "confirming"|"troubling"|"damning" },\n    { "eye": <1..100>, "sees": "...", "weight": "..." },\n    { "eye": <1..100>, "sees": "...", "weight": "..." }\n  ],\n  "image_count": ${parsed.data.image_uris.length}\n}\nThe observations array MUST contain EXACTLY 3 items.`,
       userText: parsed.data.subject,
       imageUris: parsed.data.image_uris,
-      maxOutputTokens: 800,
-    });
+      maxOutputTokens: 1600,
+      responseSchema: {
+        type: 'object',
+        properties: {
+          verdict: { type: 'string', enum: ['truthful', 'staged', 'inconclusive'] },
+          observations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                eye: { type: 'integer' },
+                sees: { type: 'string' },
+                weight: { type: 'string', enum: ['confirming', 'troubling', 'damning'] },
+              },
+              required: ['eye', 'sees', 'weight'],
+            },
+          },
+          image_count: { type: 'integer' },
+        },
+        required: ['verdict', 'observations', 'image_count'],
+      },
+    }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
   }

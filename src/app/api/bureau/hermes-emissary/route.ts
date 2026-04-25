@@ -5,7 +5,7 @@ import { requirePayment, encodeReceipt } from '@/lib/x402-gateway';
 import { priceOf } from '@/lib/pricing';
 import { getWalletByCode } from '@/lib/agents';
 import { txUrl } from '@/lib/arc';
-import { callGeminiMultimodal, type GeminiTool } from '@/lib/providers/gemini-multimodal';
+import { callGeminiMultimodal, callGeminiMultimodalWithFallback, type GeminiTool } from '@/lib/providers/gemini-multimodal';
 import { BUREAU_PERSONAS } from '@/lib/providers/personas-bureau';
 import { validateArtifact } from '@/lib/providers/artifact-schemas';
 import { silenceArtifact } from '@/lib/providers/artifact-provider';
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
 
   const persona = BUREAU_PERSONAS[KEY];
   const model = process.env.GEMINI_MODEL_FLASH ?? 'gemini-3-flash-preview';
+  const fallback = process.env.GEMINI_MODEL_FLASH_FALLBACK ?? 'gemini-3.1-flash-lite-preview';
   const userText = parsed.data.subject
     + (parsed.data.wallet_id ? `\n\nwallet_id: ${parsed.data.wallet_id}` : '')
     + (parsed.data.tx_hash ? `\n\ntx_hash: ${parsed.data.tx_hash}` : '');
@@ -85,14 +86,14 @@ export async function POST(req: NextRequest) {
   // ── TURN 1 — call Gemini with READ_TOOLS exposed, expecting a functionCall.
   let turn1;
   try {
-    turn1 = await callGeminiMultimodal({
+    turn1 = await callGeminiMultimodalWithFallback({
       apiKey,
       model,
       systemInstruction: persona,
       userText,
       tools: [READ_TOOLS],
-      maxOutputTokens: 800,
-    });
+      maxOutputTokens: 1600,
+    }, fallback);
   } catch (err) {
     return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
   }
@@ -135,29 +136,29 @@ export async function POST(req: NextRequest) {
   // ── TURN 2 — re-prompt Gemini with tool_result so it can narrate findings.
   let turn2;
   if (toolResult !== null) {
-    const followUp = `${userText}\n\ntool_result: ${JSON.stringify(toolResult)}\n\nNow render the artifact body in mythic register.`;
+    const followUp = `${userText}\n\ntool_result: ${JSON.stringify(toolResult)}\n\nReturn STRICT JSON ONLY (no prose, no markdown). Required shape: { "query_kind": "balance" | "tx_status" | "recent_txs", "findings": [{ "sigil": "<≤60 chars>", "speaks": "<≤220 chars mythic prose>" }], "treacherous": "<≤220 chars warning>" }. findings array must have 1-5 items.`;
     try {
-      turn2 = await callGeminiMultimodal({
+      turn2 = await callGeminiMultimodalWithFallback({
         apiKey,
         model,
         systemInstruction: persona,
         userText: followUp,
         maxOutputTokens: 800,
-      });
+      }, fallback);
     } catch (err) {
       return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
     }
   } else if (!turn1.json) {
     // No tool called AND no JSON on turn 1 — re-prompt for artifact body.
-    const followUp = `${userText}\n\nNo tool was warranted. Now render the artifact body in mythic register.`;
+    const followUp = `${userText}\n\nNo tool was warranted. Return STRICT JSON ONLY (no prose, no markdown). Required shape: { "query_kind": "balance" | "tx_status" | "recent_txs", "findings": [{ "sigil": "<≤60 chars>", "speaks": "<≤220 chars mythic prose>" }], "treacherous": "<≤220 chars warning>" }. findings array must have 1-5 items.`;
     try {
-      turn2 = await callGeminiMultimodal({
+      turn2 = await callGeminiMultimodalWithFallback({
         apiKey,
         model,
         systemInstruction: persona,
         userText: followUp,
         maxOutputTokens: 800,
-      });
+      }, fallback);
     } catch (err) {
       return NextResponse.json(degradedResponse('provider_error', { gate, price, seller, started, detail: (err as Error).message.slice(0, 200) }), { status: 200, headers: receiptHeaders(gate.receipt) });
     }

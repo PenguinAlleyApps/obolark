@@ -27,7 +27,7 @@ vi.mock('@/lib/x402-gateway', () => ({
   encodeReceipt: vi.fn().mockReturnValue('e'),
 }));
 
-vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock }));
+vi.mock('@/lib/providers/gemini-multimodal', () => ({ callGeminiMultimodal: geminiMock, callGeminiMultimodalWithFallback: geminiMock }));
 
 import { POST } from '../route';
 
