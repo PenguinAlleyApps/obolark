@@ -104,9 +104,37 @@ const DEFAULT_PROMPT = 'Summarize the last hour of Bureau activity. What have th
 
 // ── Route handler ──────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const gate = await requirePayment('gemini-oracle', req);
-  if (gate.kind === 'challenge') return gate.response;
-  if (gate.kind === 'error') return gate.response;
+  // Preview path — same convention as the shared bureau handler. Skips x402
+  // settle so the dashboard "Summon" button can render an artifact without
+  // requiring an EOA. Real paid path is unaffected (no header → 402).
+  const isPreview = req.headers.get('x-preview') === 'true' && process.env.NEXT_PUBLIC_ALLOW_PREVIEW !== 'false';
+  let gate: Awaited<ReturnType<typeof requirePayment>>;
+  if (isPreview) {
+    gate = {
+      kind: 'settled',
+      requirements: {
+        scheme: 'exact',
+        network: 'arc-testnet (preview)',
+        asset: 'USDC',
+        payTo: getWalletByCode(priceOf('gemini-oracle').seller).address,
+        amount: '0',
+        maxTimeoutSeconds: 0,
+        extra: {} as never,
+      } as never,
+      receipt: {
+        scheme: 'exact',
+        network: 'arc-testnet (preview)',
+        asset: 'USDC',
+        amount: '0',
+        payer: 'PREVIEW',
+        transactionHash: '',
+      } as never,
+    } as never;
+  } else {
+    gate = await requirePayment('gemini-oracle', req);
+    if (gate.kind === 'challenge') return gate.response;
+    if (gate.kind === 'error') return gate.response;
+  }
 
   let parsed;
   try {
