@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/calliope',
+  warden: 'CALLIOPE',
+  artifactKind: 'parchment',
+  riteDurationMs: 1800,
+  defaultSubject: 'stitch a long song from raw fragments; name the joins, the cuts, and the refrain that binds it',
 });
 
 export const GET = route.GET;

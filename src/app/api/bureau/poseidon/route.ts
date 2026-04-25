@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
-  riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  key: 'bureau/poseidon',
+  warden: 'POSEIDON',
+  artifactKind: 'parchment',
+  riteDurationMs: 1800,
+  defaultSubject: 'read the tide for a crossing pending tonight; name window, obstacles, and the safe channel',
 });
 
 export const GET = route.GET;

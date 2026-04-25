@@ -1,11 +1,11 @@
 import { createBureauRoute } from '@/lib/bureau/route-handler';
 
 const route = createBureauRoute({
-  key: 'qa',
-  warden: 'CERBERUS',
-  artifactKind: 'seal',
+  key: 'bureau/hestia',
+  warden: 'HESTIA',
+  artifactKind: 'tablet',
   riteDurationMs: 1600,
-  defaultSubject: 'a crossing brought to the gate without prior introduction; judge it by the three heads',
+  defaultSubject: 'census the hearth at the watch-house; name what burns and the one fuel still missing tonight',
 });
 
 export const GET = route.GET;

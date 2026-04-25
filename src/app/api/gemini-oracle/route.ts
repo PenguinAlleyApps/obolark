@@ -335,6 +335,16 @@ type BuildArgs = {
 );
 
 function buildResponse(args: BuildArgs) {
+  // Map narration bullets → BureauArtifact moiras (Oracle scroll body).
+  const moiras = args.narration.bullets.map((b, i) => ({
+    omen: b,
+    confidence: args.degraded ? 0.3 : (i === 0 ? 0.85 : 0.7),
+    ...(args.groundingSources[i]?.uri ? { source: args.groundingSources[i].uri as string } : {}),
+  }));
+  const verdict: 'revealed' | 'veiled' | 'riven' = args.degraded
+    ? 'veiled'
+    : args.groundingSources.length > 0 ? 'revealed' : 'veiled';
+
   return {
     ok: true,
     agent: 'ORACLE',
@@ -349,6 +359,17 @@ function buildResponse(args: BuildArgs) {
       transactionHash: args.gate.receipt.transactionHash,
       txExplorer: args.gate.receipt.transactionHash ? txUrl(args.gate.receipt.transactionHash) : null,
     },
+    artifact: {
+      warden: 'ORACLE',
+      artifact_kind: 'scroll' as const,
+      subject: 'a divination of the recent Bureau ledger, grounded in the open world',
+      body: { moiras, verdict },
+      writ: args.degraded
+        ? 'The vapors are still tonight. The Pythia returns the obol; another bell will sing.'
+        : 'The Pythia has spoken. The omen carries; the obol crosses; the ledger remembers.',
+      rite_duration_ms: 2400,
+    },
+    // Legacy fields kept for backwards compat with existing dashboards / cached fetchers.
     oracle: args.narration,
     grounding: {
       enabled: true,
