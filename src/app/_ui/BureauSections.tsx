@@ -158,7 +158,8 @@ export default function BureauSections({
     preview: boolean;
     degraded: boolean;
     lastCode: string | null;
-  }>({ artifact: null, txHash: null, preview: false, degraded: false, lastCode: null });
+    provider: string | null;
+  }>({ artifact: null, txHash: null, preview: false, degraded: false, lastCode: null, provider: null });
 
   const hireWarden = async (code: string) => {
     const key = ENDPOINT_KEY_BY_CODE[code];
@@ -179,6 +180,7 @@ export default function BureauSections({
         preview: Boolean(data?.preview),
         degraded: Boolean(data?.degraded),
         lastCode: code,
+        provider: typeof data?.provider === 'string' ? data.provider : null,
       });
     } catch {
       // silent — ceremony already played, no modal is acceptable
@@ -377,6 +379,7 @@ export default function BureauSections({
         arcscanBase={arcscanBase}
         preview={modalState.preview}
         degraded={modalState.degraded}
+        provider={modalState.provider}
         onClose={() => setModalState((s) => ({ ...s, artifact: null }))}
         onRerun={() => {
           if (modalState.lastCode) {

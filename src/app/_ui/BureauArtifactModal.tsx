@@ -29,6 +29,9 @@ export type BureauArtifactModalProps = {
   arcscanBase: string;
   preview: boolean;
   degraded?: boolean;
+  /** Provider string from the warden API response (e.g. 'gemini'|'aisa'|'featherless').
+   *  When 'gemini', applies Gemini-blue VFX accent per EO-016 conditional gate. */
+  provider?: string | null;
   onClose: () => void;
   onRerun: () => void;
 };
@@ -41,7 +44,8 @@ const KIND_LABEL: Record<BureauArtifact['artifact_kind'], string> = {
 };
 
 export default function BureauArtifactModal(props: BureauArtifactModalProps) {
-  const { artifact, txHash, arcscanBase, preview, degraded, onClose, onRerun } = props;
+  const { artifact, txHash, arcscanBase, preview, degraded, provider, onClose, onRerun } = props;
+  const isGemini = provider === 'gemini';
 
   // Esc to close
   useEffect(() => {
@@ -81,6 +85,7 @@ export default function BureauArtifactModal(props: BureauArtifactModalProps) {
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
             data-kind={artifact.artifact_kind}
+            className={['artifact-card', isGemini ? 'artifact-card--gemini' : ''].filter(Boolean).join(' ')}
             style={{
               position: 'relative', maxWidth: 640, width: '100%',
               padding: '36px 40px 32px',
@@ -115,6 +120,13 @@ export default function BureauArtifactModal(props: BureauArtifactModalProps) {
                 {KIND_LABEL[artifact.artifact_kind]}
               </span>
             </header>
+
+            {/* Gemini provider pill — only when provider==='gemini' */}
+            {isGemini && (
+              <div style={{ marginBottom: 14 }}>
+                <span className="artifact-card__provider-pill">Gemini</span>
+              </div>
+            )}
 
             {/* Subject — italic prose */}
             <p style={{

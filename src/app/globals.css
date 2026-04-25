@@ -649,3 +649,48 @@ pre,
     animation: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Gemini accent layer — applied conditionally on `provider==='gemini'`
+   artifact cards. NOT applied globally (EO-016 still bans indigo-as-default).
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --gemini-blue:        #4285F4;
+  --gemini-blue-soft:   rgba(66, 133, 244, 0.12);
+  --gemini-blue-glow:   rgba(66, 133, 244, 0.28);
+}
+
+.artifact-card--gemini {
+  border-color: var(--gemini-blue) !important;
+  box-shadow: 0 0 0 1px var(--gemini-blue-soft), 0 0 24px var(--gemini-blue-glow), 0 30px 80px -20px rgba(0,0,0,0.7) !important;
+  position: relative;
+}
+
+.artifact-card--gemini::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gemini-blue), transparent);
+  border-radius: 6px 6px 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.artifact-card--gemini .artifact-card__provider-pill {
+  background: var(--gemini-blue-soft);
+  color: var(--gemini-blue);
+  border: 1px solid var(--gemini-blue);
+  font-family: var(--font-mono, JetBrains Mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artifact-card--gemini::before {
+    background: var(--gemini-blue);
+  }
+}
