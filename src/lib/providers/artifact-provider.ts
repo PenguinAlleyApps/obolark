@@ -53,6 +53,8 @@ export const WARDEN_PROVIDER_MAP: Record<EndpointKey, ProviderTarget> = {
   'aisa-data':           { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
   // Gemini multimodal passthrough — dispatched directly in bureau/argos-vision/route.ts
   'bureau/argos-vision': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
+  // Gemini multimodal + FC passthrough — dispatched directly in bureau/themis-ledger/route.ts
+  'bureau/themis-ledger': { provider: 'aisa', model: '-', maxTokens: 0, timeoutMs: 0 },
 };
 
 export type ArtifactOutcome =

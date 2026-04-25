@@ -14,7 +14,8 @@ export type BureauKey =
   | 'bureau/urania'     | 'bureau/plutus'    | 'bureau/poseidon'  | 'bureau/helios'
   | 'bureau/prometheus' | 'bureau/aegis'     | 'bureau/apollo'    | 'bureau/calliope'
   | 'bureau/themis'     | 'bureau/proteus'   | 'bureau/hephaestus'| 'bureau/hestia'
-  | 'bureau/argos-vision';
+  | 'bureau/argos-vision'
+  | 'bureau/themis-ledger';
 
 export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
   'bureau/atlas':       { seller: 'ATLAS',     price: '0.003', supervisionFee: '0.0005', description: 'ATLAS — Titan that bears the build. Burden Apportionment: 3 loads + bearings.',         maxTimeoutSeconds: 60 },
@@ -40,6 +41,13 @@ export const BUREAU_PRICING: Record<BureauKey, EndpointPricing> = {
     description: 'ARGOS-VISION — hundred-eyed delivery-proof analyzer. Reads ≤2 buyer-supplied images and returns truthful/staged/inconclusive verdict + 3 forensic observations.',
     maxTimeoutSeconds: 60,
   },
+  'bureau/themis-ledger': {
+    seller: 'LEDGER',
+    price: '0.009',
+    supervisionFee: '0.0008',
+    description: 'THEMIS-LEDGER — invoice/receipt OCR + on-chain refund. Reads buyer-supplied invoice, weighs the ledger, and may issue a single refund tx if the proof is staged.',
+    maxTimeoutSeconds: 90,
+  },
 };
 
 /** Per-warden artifact kind (matches BureauArtifactModal layout switch). */
@@ -53,6 +61,7 @@ export const ARTIFACT_KIND_BY_KEY: Record<BureauKey, 'parchment' | 'seal' | 'tab
   'bureau/themis':     'tablet',    'bureau/proteus':    'seal',
   'bureau/hephaestus': 'tablet',    'bureau/hestia':     'tablet',
   'bureau/argos-vision': 'tablet',
+  'bureau/themis-ledger': 'tablet',
 };
 
 /** Per-warden ceremony rite duration (matches AGENT_REGISTRY.defaultDurationMs). */
@@ -66,6 +75,7 @@ export const RITE_DURATION_MS_BY_KEY: Record<BureauKey, number> = {
   'bureau/themis':     2000, 'bureau/proteus':    2000,
   'bureau/hephaestus': 1800, 'bureau/hestia':     1600,
   'bureau/argos-vision': 2800,
+  'bureau/themis-ledger': 3200,
 };
 
 /** Per-warden codename (upper-case mythological name). */
@@ -79,6 +89,7 @@ export const WARDEN_BY_KEY: Record<BureauKey, string> = {
   'bureau/themis':     'THEMIS',     'bureau/proteus':    'PROTEUS',
   'bureau/hephaestus': 'HEPHAESTUS', 'bureau/hestia':     'HESTIA',
   'bureau/argos-vision': 'ARGOS-VISION',
+  'bureau/themis-ledger': 'THEMIS-LEDGER',
 };
 
 export const BUREAU_KEYS: readonly BureauKey[] = Object.keys(BUREAU_PRICING) as BureauKey[];

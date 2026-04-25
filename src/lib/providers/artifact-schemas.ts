@@ -185,6 +185,17 @@ export const argosVisionBody = z.object({
   image_count: z.number().int().min(1).max(2),
 }).passthrough();
 
+export const themisLedgerBody = z.object({
+  weighed: z.tuple([z.string().max(220), z.string().max(220)]),
+  tilt: z.enum(['LEFT','RIGHT','LEVEL']),
+  refund_action: z.object({
+    issued: z.boolean(),
+    orig_tx_hash: z.string().nullable(),
+    refund_tx_hash: z.string().nullable(),
+    reason: z.string().max(220),
+  }),
+}).passthrough();
+
 // ── Schema registry ──────────────────────────────────────────────────────
 export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> = {
   'research':            baseArtifact.extend({ body: oracleBody }),
@@ -210,6 +221,7 @@ export const ARTIFACT_SCHEMA_BY_KEY: Partial<Record<EndpointKey, z.ZodTypeAny>> 
   'bureau/hephaestus':   baseArtifact.extend({ body: hephaestusBody }),
   'bureau/hestia':       baseArtifact.extend({ body: hestiaBody }),
   'bureau/argos-vision': baseArtifact.extend({ body: argosVisionBody }),
+  'bureau/themis-ledger': baseArtifact.extend({ body: themisLedgerBody }),
 };
 
 export function validateArtifact(key: EndpointKey, payload: unknown):
